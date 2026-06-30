@@ -129,3 +129,26 @@ Phase 2.5 classifies every candidate feature as **[FPM Covers] / [Partial] / [Ga
 ---
 
 *Phase 0 complete. Next: Phase 2.5 gap-delta table → resolve the gate. Sources cited inline; verified facts carried from this session's prior research + the pipeline critique.*
+
+---
+
+## 8. AMENDMENT — product reframing & gate resolution (post Phase 0 review)
+
+The operator clarified the product goal, which resolves the build-vs-fork gate:
+
+**Product goal:** a tool **anyone can use by forking the GitHub repo**, that (a) fixes the **top 10 most-discussed gateway pain points across the internet** and (b) **combines the best attributes of the top ~10 tools/resources.**
+
+**Friction floor (operator decision):** Fabric-native, FPM-class prerequisites acceptable (F8+ capacity, service principal, Key Vault OK). Not required to run capacity-free.
+
+**Gate resolution: BUILD-NEW (from-scratch) Fabric-native core + OPTIONAL FPM bridge.**
+(Note: "build-new / from-scratch" replaces the generic engineering term previously used; it has no relation to any company.)
+
+Rationale (least architectural impact while retaining best features):
+- **Not a hard FPM fork** — a fork inherits FPM's KQL/Eventhouse storage, its "customizations may revert on update" problem, and its release-cycle coupling, all of which undermine "anyone forks and uses it."
+- **Not fully independent of FPM either** — FPM's gateway-node PowerShell collectors are Microsoft-maintained; re-implementing them adds undifferentiated maintenance/bugs.
+- **Therefore: standalone Fabric-native core** (own/wrapped collectors + Delta medallion + semantic model + report — cleanly forkable, FPM not required) **+ an optional adapter** that ingests FPM data via [Eventhouse OneLake availability](https://learn.microsoft.com/en-us/fabric/real-time-intelligence/event-house-onelake-availability) for those already running FPM. FPM becomes a *supported input*, not a *dependency*.
+
+**Consequences for the pipeline:**
+- Phase 3 (pain mining) is now **mandatory and primary** — the top-10 pain points are the spec driver.
+- Phase 1/2 must yield a genuine **ranked top-10 tools** so the "best attributes" synthesis is honest.
+- Phase 4 targets the build-new core + optional FPM bridge; code labeled `[STUB]/[ADAPTED-FROM-FPM]/[NET-NEW]`.
