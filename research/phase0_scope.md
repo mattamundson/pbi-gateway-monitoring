@@ -152,3 +152,15 @@ Rationale (least architectural impact while retaining best features):
 - Phase 3 (pain mining) is now **mandatory and primary** — the top-10 pain points are the spec driver.
 - Phase 1/2 must yield a genuine **ranked top-10 tools** so the "best attributes" synthesis is honest.
 - Phase 4 targets the build-new core + optional FPM bridge; code labeled `[STUB]/[ADAPTED-FROM-FPM]/[NET-NEW]`.
+
+---
+
+## 9. AMENDMENT — deployer privilege assumption
+
+**The repo owner/deployer is a Fabric + Azure tenant owner with full access to all API keys, permissions, and secrets.**
+
+Design consequences:
+- No least-privilege/non-admin fallback paths needed. Assume service principal creation, tenant-setting toggles, gateway **Admin** role, Key Vault provisioning, and **admin-level REST APIs** (Scanner, admin gateway APIs, dataset refresh history) are all available.
+- "Anyone can fork and use it" is correctly read as "any **tenant/Fabric admin** can fork and use it" — the appropriate audience for a gateway-monitoring tool.
+- The `Get-DataGatewayInfo` SP **401** is therefore a **bug to fix**, not a permission boundary to design around.
+- This reinforces the gate resolution: FPM-class prerequisites are not a barrier for this deployer, so the build-new Fabric-native core stands.
