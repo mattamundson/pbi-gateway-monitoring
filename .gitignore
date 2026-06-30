@@ -1,0 +1,41 @@
+# --- Secrets / gateway config (NEVER commit) ---
+# The FPM gateway config carries SP AppId + a machine-bound encrypted SecretText
+# and EventHub connection strings. Keep all real configs out of git.
+config.json
+Config.json
+**/configs/
+**/configs/*.json
+*.secret
+*.secrets
+.env
+.env.*
+*.pfx
+*.pem
+*.key
+
+# --- PowerShell / script runtime artifacts ---
+logs/
+**/logs/
+*.log
+Temp/
+**/Temp/
+fpm-tasks/
+*.final.xml
+
+# --- Health/validation outputs ---
+health.json
+*-health.json
+fpm-health*.csv
+
+# --- OS / editor cruft ---
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*~
+.vscode/
+.idea/
+
+# --- Build / packaging ---
+*.zip
+*.tar.gz

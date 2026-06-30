@@ -69,3 +69,7 @@ An end-to-end toolkit for monitoring **On-Premises Data Gateway** performance in
 ---
 
 *Generated as a working kit. Treat the PowerShell as a starting point — review and test in your environment before production use.*
+
+## License
+
+MIT — see [LICENSE](LICENSE).
