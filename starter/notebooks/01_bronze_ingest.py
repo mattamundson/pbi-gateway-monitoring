@@ -60,6 +60,10 @@ from pyspark.sql.types import (
 )
 from delta.tables import DeltaTable
 import json
+import csv
+import io
+import base64
+import binascii
 from datetime import datetime, timezone
 
 spark = SparkSession.builder.getOrCreate()
@@ -133,11 +137,25 @@ def parse_csv_schema_adaptive(raw_csv: str, known_cols: dict, source_file: str, 
       Power Query raises DataFormat.Error: "more columns in result than expected."
       Column-name-based parsing is immune to this failure mode.
     """
-    lines = raw_csv.strip().splitlines()
-    if len(lines) < 2:
+    # FIX (Phase 5 hardening): use a proper RFC-4180 CSV reader instead of a
+    # naive line.split(","). ErrorMessage (and QueryText/EvaluationContext) can
+    # contain commas, quotes, and embedded newlines; a naive split silently
+    # corrupts every row where that happens -- and ErrorMessage is central to
+    # Differentiator #2 (triage), so this bug would poison the highest-value join.
+    # Python's csv module handles quoted fields, escaped quotes (""), and
+    # embedded commas/newlines correctly. We still parse by column NAME (not
+    # position), preserving schema-adaptivity (Differentiator #5).
+    reader = csv.reader(io.StringIO(raw_csv))
+    try:
+        all_rows = list(reader)
+    except csv.Error:
+        # Never raise: fall back to line-based read so one bad file can't halt ingest
+        all_rows = [ln.split(",") for ln in raw_csv.strip().splitlines()]
+
+    if len(all_rows) < 2:
         return []   # Empty or header-only file
 
-    headers = [h.strip().strip('"') for h in lines[0].split(",")]
+    headers = [h.strip().strip('"') for h in all_rows[0]]
 
     # Build a mapping: csv_header_index -> (delta_col_name, type_obj) or None
     col_map = {}   # index -> (delta_name, type) for known cols
@@ -147,13 +165,12 @@ def parse_csv_schema_adaptive(raw_csv: str, known_cols: dict, source_file: str, 
         # else: will go to _extra_cols
 
     records = []
-    for line in lines[1:]:
-        if not line.strip():
+    for values in all_rows[1:]:
+        if not values or (len(values) == 1 and not values[0].strip()):
             continue
-        # [Assumption] Simple comma-split; quoted fields with embedded commas
-        # are NOT handled. Gateway log CSVs are not quoted per observation from
-        # community reports; validate in Phase 5.
-        values = [v.strip().strip('"') for v in line.split(",")]
+        # csv.reader already stripped the outer quotes and un-escaped "";
+        # trim residual whitespace only.
+        values = [v.strip() if v is not None else v for v in values]
 
         row = {}
         extra_cols = {}
@@ -224,23 +241,53 @@ def parse_evaluation_context(df):
     NOT populated for: Dataflow Gen1, Paginated Reports, or Power BI
     datasets on shared capacity. These rows will have null artifact_id.
     """
-    # [Assumption] EvaluationContext is a base64-encoded JSON or direct JSON string.
-    # Community analysis (3Cloud blog) suggests it may be base64-encoded.
-    # This implementation tries direct JSON parse first, then base64 decode.
-    # Validate in Phase 5.
+    # FIX (Phase 5 hardening): EvaluationContext may be EITHER direct JSON OR
+    # base64-encoded JSON (3Cloud community analysis indicates base64; MS docs
+    # confirm the field but not its encoding). The previous version called
+    # get_json_object directly, which returns NULL for every row if the value is
+    # base64 -- silently zeroing out Differentiator #3 (identity attribution).
+    # We now normalize first: if the raw value doesn't parse as JSON but does
+    # base64-decode into JSON, use the decoded form. A UDF auto-detects per-row
+    # so the pipeline works regardless of which encoding this gateway version emits.
+    def _normalize_eval_context(raw):
+        if raw is None:
+            return None
+        s = raw.strip()
+        if not s:
+            return None
+        # 1) Already JSON?
+        if s.startswith("{"):
+            return s
+        # 2) Try base64 -> JSON
+        try:
+            decoded = base64.b64decode(s, validate=True).decode("utf-8", errors="strict")
+            if decoded.strip().startswith("{"):
+                return decoded
+        except (binascii.Error, ValueError, UnicodeDecodeError):
+            pass
+        # 3) Unknown format -- return raw so get_json_object yields null, but we
+        #    keep the original for debugging in _extra/inspection.
+        return s
+
+    normalize_udf = F.udf(_normalize_eval_context, StringType())
+    df = df.withColumn("_eval_context_json", normalize_udf(F.col("EvaluationContext")))
+
     df = df.withColumn(
         "artifact_id",
         F.when(
-            F.col("EvaluationContext").isNotNull(),
-            F.get_json_object(F.col("EvaluationContext"), "$.artifactId")
+            F.col("_eval_context_json").isNotNull(),
+            F.get_json_object(F.col("_eval_context_json"), "$.artifactId")
         ).otherwise(F.lit(None).cast(StringType()))
     ).withColumn(
         "artifact_type",
         F.when(
-            F.col("EvaluationContext").isNotNull(),
-            F.get_json_object(F.col("EvaluationContext"), "$.artifactKind")
+            F.col("_eval_context_json").isNotNull(),
+            F.get_json_object(F.col("_eval_context_json"), "$.artifactKind")
         ).otherwise(F.lit(None).cast(StringType()))
     )
+    # [Phase 5] Confirm the actual JSON key names ($.artifactId / $.artifactKind).
+    # MS docs confirm the field carries artifactId for Fabric workloads; exact
+    # key casing/nesting is [Unverified] until inspected against real logs.
     return df
 
 

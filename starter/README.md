@@ -127,3 +127,12 @@ This repository adapts patterns from the following tools — full citations in e
 ---
 
 *Architecture documented in `kit/research/phase4_architecture.md`. Pain point evidence in `kit/research/phase3_painpoints.md`. All code is [STUB] / reference implementation pending Phase 5 pilot.*
+
+## Post-build hardening (applied)
+
+Two correctness fixes were applied to `notebooks/01_bronze_ingest.py` after the initial build and unit-tested (pure-Python logic):
+
+1. **Quote-safe CSV parsing** — replaced naive `line.split(",")` with an RFC-4180 `csv.reader`. `ErrorMessage` (central to triage, Differentiator #2) frequently contains commas and quotes; the naive split silently corrupted those rows. Now handles embedded commas, escaped quotes (`""`), and newlines. Falls back gracefully; never raises.
+2. **Robust EvaluationContext handling** — auto-detects direct-JSON vs base64-encoded JSON per row before extracting `artifactId` (Differentiator #3). The prior direct `get_json_object` call would have returned null for every row if the gateway emits base64, silently disabling attribution.
+
+Both remain `[Unverified]` against a live gateway until Phase 5 (`research/phase5_validation.md`, items U1–U3) — but the logic is unit-tested against representative inputs.
