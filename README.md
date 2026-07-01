@@ -12,6 +12,8 @@ Anyone with a Fabric + Azure tenant-admin role can fork this repo and stand up g
 
 > **Full session provenance:** [`conversation/CONVERSATION_HISTORY.md`](conversation/CONVERSATION_HISTORY.md) captures the complete design/build transcript behind every artifact.
 
+> **Readiness update:** The full medallion (bronze→silver→gold) now runs end-to-end on real Spark+Delta against synthetic data via [`starter/deploy/run_local_smoke.py`](starter/deploy/run_local_smoke.py) — all stages PASS. A one-click deploy notebook ([`starter/deploy/Deploy_GatewayMonitor.ipynb`](starter/deploy/Deploy_GatewayMonitor.ipynb)) and a PBIP report skeleton ([`starter/report/`](starter/report/)) are included. See [`PRODUCTIZATION.md`](PRODUCTIZATION.md) for the honest gap-to-market plan — the tool is **deployable-in-shape, pending one tenant pilot**, not yet a first-try product.
+
 ## Why this exists
 
 Two capabilities every gateway operator wants, that **no existing tool provides**, are the reason to build:

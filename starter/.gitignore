@@ -3,3 +3,6 @@ __pycache__/
 config/config.json
 *.local.json
 tests/synthetic_out/
+spark-warehouse/
+metastore_db/
+derby.log
