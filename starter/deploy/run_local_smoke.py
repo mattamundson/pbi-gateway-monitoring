@@ -56,10 +56,11 @@ def _check_env():
             "Set JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 and re-run."
         )
         sys.exit(0)
-    java_bin = Path(java_home) / "bin" / "java"
-    if not java_bin.exists():
+    # Windows ships java.exe; Linux/macOS ship bare `java`. Accept either.
+    java_bin_dir = Path(java_home) / "bin"
+    if not ((java_bin_dir / "java").exists() or (java_bin_dir / "java.exe").exists()):
         print(
-            f"[SKIP] Java binary not found at {java_bin}. "
+            f"[SKIP] Java binary not found in {java_bin_dir} (java / java.exe). "
             "Install Java 17 or fix JAVA_HOME."
         )
         sys.exit(0)
