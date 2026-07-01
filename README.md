@@ -63,7 +63,7 @@ All 10 operator pain points from [`research/phase3_painpoints.md`](research/phas
 | # | Pain point | Artifact | Honest status |
 |---|---|---|---|
 | 1 | No real-time gateway-offline alerting | `starter/alerting/activator-rules.json` + KQL | `[Built-Unverified]` |
-| 2 | Opaque refresh failures — can't triage gateway vs. source vs. network | `starter/kql/03_diffpatterns_triage.kql` + silver correlate notebook | `[Built-Unverified]` |
+| 2 | Opaque refresh failures — can't triage gateway vs. source vs. network | `Collect-RefreshHistory.ps1` (Service-side leg) + silver correlate triage join + `starter/kql/03_diffpatterns_triage.kql` | `[Built-Unverified]` |
 | 3 | Zero query attribution — no dataset/user/report per query | `starter/kql/01_identity_join.kql` | `[Desk-Verified]` — **live-tenant match rate is the community pilot goal** |
 | 4 | Gateway Performance PBIT breaks on log schema drift | `starter/notebooks/01_bronze_ingest.py` (schema-adaptive, column-name-based) | **PROVEN on real Spark 3.5.1** |
 | 5 | Mashup engine memory/CPU bloat with no per-process visibility | `Collect-MashupProcesses.ps1` + `gold_mashup_health` | **PROVEN (local Spark, runaway detection)**  |
@@ -146,12 +146,13 @@ pbi-gateway-monitoring/
 │   └── frontier_intelligence.md      ← AIOps: anomaly, forecast, self-healing
 │
 ├── starter/
-│   ├── collectors/                    ← 6 PowerShell collectors
+│   ├── collectors/                    ← 7 PowerShell collectors
 │   │   ├── Collect-GatewayLogs.ps1   ← primary log upload
 │   │   ├── Collect-NetworkMetrics.ps1 ← NIC throughput + latency [Built-Unverified]
 │   │   ├── Collect-EventLog.ps1       ← Windows Event Log
 │   │   ├── Collect-DiskSpool.ps1      ← disk free-space + spool trend
 │   │   ├── Collect-MashupProcesses.ps1← per-PID Mashup memory/CPU [Built-Unverified]
+│   │   ├── Collect-RefreshHistory.ps1 ← Power BI Service refresh history (triage #2) [Built-Unverified]
 │   │   └── Get-GatewayInventory.ps1   ← gateway/datasource inventory
 │   ├── notebooks/                     ← PySpark medallion (bronze→silver→gold)
 │   ├── kql/                           ← ceiling-breaker KQL queries
