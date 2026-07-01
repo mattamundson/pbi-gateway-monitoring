@@ -1,0 +1,176 @@
+Timestamp,OperationId,OperationName,ExecutingUser,ItemId,ItemName,WorkspaceId,CapacityId,DurationMs,CpuTimeMs,EventText
+2026-06-28T16:15:31Z,C1BE17C1-C89D-490C-9DD1-11D7D259BBE3,QueryEnd,bob@contoso.com,ds-fabric-006,Risk & Compliance,ws-risk-001,cap-A1-sku,18489,6107,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Risk & Compliance[Revenue])"
+2026-06-28T16:57:36Z,4119815E-9052-4486-B09F-3E9B74075EBA,ExecutionMetrics,grace@contoso.com,ds-fabric-005,Exec Dashboard,ws-exec-001,cap-A1-sku,66437,29640,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Exec Dashboard[Revenue])"
+2026-06-30T07:17:01Z,70C80C5E-8775-47DF-B7AA-9361405EB1F5,QueryEnd,grace@contoso.com,ds-fabric-005,Exec Dashboard,ws-exec-001,cap-A1-sku,105820,81712,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Exec Dashboard[Revenue])"
+2026-06-30T13:43:30Z,A9C16314-F9AF-4961-978F-F64DBCD61B4F,QueryEnd,bob@contoso.com,ds-fabric-003,HR Headcount,ws-hr-001,cap-F64-sku,45282,15448,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], HR Headcount[Revenue])"
+2026-06-29T18:02:54Z,2A9D84D2-D27E-4A41-B0B0-7D6728B74547,RefreshEnd,grace@contoso.com,ds-fabric-001,Finance Actuals v2,ws-finance-001,cap-F64-sku,25403,10778,
+2026-06-29T22:19:09Z,8E8203A4-A0D0-469E-AD15-23E6EB933A97,QueryEnd,dave@contoso.com,ds-fabric-001,Finance Actuals v2,ws-finance-001,cap-F64-sku,109528,86289,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Finance Actuals v2[Revenue])"
+2026-06-28T11:54:54Z,8A552BCA-EEA7-4793-BDE0-78493C4785CC,QueryEnd,bob@contoso.com,ds-fabric-006,Risk & Compliance,ws-risk-001,cap-A1-sku,60789,30220,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Risk & Compliance[Revenue])"
+2026-06-28T19:29:54Z,B1D54C2F-E93E-432D-8213-ED7BBEB9F5DA,QueryEnd,alice@contoso.com,ds-fabric-003,HR Headcount,ws-hr-001,cap-F64-sku,8875,6862,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], HR Headcount[Revenue])"
+2026-06-28T17:59:08Z,969C3364-B298-4C90-835F-AA8BFB64A977,RefreshEnd,grace@contoso.com,ds-fabric-004,Supply Chain KPIs,ws-ops-001,cap-A1-sku,97847,29520,
+2026-06-28T06:38:50Z,CE2FEFF3-B1C8-455D-8E88-C0A45A003DBD,QueryEnd,grace@contoso.com,ds-fabric-005,Exec Dashboard,ws-exec-001,cap-F64-sku,99261,88592,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Exec Dashboard[Revenue])"
+2026-06-29T14:32:17Z,8862CACE-790B-419F-A272-9C60F0239213,RefreshEnd,judy@contoso.com,ds-fabric-004,Supply Chain KPIs,ws-ops-001,cap-F64-sku,33153,14931,
+2026-06-28T21:23:16Z,3C12E7CC-41D8-4D47-942D-DC58428056ED,QueryEnd,ivan@contoso.com,ds-fabric-001,Finance Actuals v2,ws-finance-001,cap-A1-sku,57185,20927,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Finance Actuals v2[Revenue])"
+2026-06-30T19:40:04Z,53DD607D-A97D-4BA9-B8D9-913AF41F2F0E,QueryEnd,judy@contoso.com,ds-fabric-001,Finance Actuals v2,ws-finance-001,cap-A1-sku,47776,18111,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Finance Actuals v2[Revenue])"
+2026-06-30T23:14:31Z,912202EF-746C-44F7-8B08-D42962AF5E73,ExecutionMetrics,judy@contoso.com,ds-fabric-002,Sales Pipeline,ws-sales-001,cap-A1-sku,99893,77316,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Sales Pipeline[Revenue])"
+2026-06-30T19:39:39Z,04D7EF28-9246-4599-BC49-59373CE7B9E0,QueryEnd,carol@contoso.com,ds-fabric-005,Exec Dashboard,ws-exec-001,cap-A1-sku,70886,46310,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Exec Dashboard[Revenue])"
+2026-06-28T18:03:35Z,E39D4850-E7F1-48DC-89C0-6008925CDA78,QueryEnd,frank@contoso.com,ds-fabric-006,Risk & Compliance,ws-risk-001,cap-A1-sku,29651,11995,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Risk & Compliance[Revenue])"
+2026-06-30T14:36:31Z,32CE3A1A-02A9-492D-9F09-96E915CAF61B,QueryEnd,bob@contoso.com,ds-fabric-001,Finance Actuals v2,ws-finance-001,cap-A1-sku,43509,16361,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Finance Actuals v2[Revenue])"
+2026-06-30T10:48:53Z,73EDA5AF-B95F-4290-8062-5C8D2F184F17,ExecutionMetrics,judy@contoso.com,ds-fabric-002,Sales Pipeline,ws-sales-001,cap-F64-sku,53554,32970,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Sales Pipeline[Revenue])"
+2026-06-30T10:19:43Z,096104BF-7889-4832-9A83-62F6C778760C,RefreshEnd,alice@contoso.com,ds-fabric-004,Supply Chain KPIs,ws-ops-001,cap-F64-sku,113141,38256,
+2026-06-29T11:03:33Z,3867BB57-DC09-4943-9E86-A7E180A07BAF,ExecutionMetrics,bob@contoso.com,ds-fabric-001,Finance Actuals v2,ws-finance-001,cap-F64-sku,28216,21636,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Finance Actuals v2[Revenue])"
+2026-06-28T11:16:44Z,9971211D-0336-4E74-B052-EA628729F470,RefreshEnd,eve@contoso.com,ds-fabric-004,Supply Chain KPIs,ws-ops-001,cap-F64-sku,25090,16464,
+2026-06-28T04:09:36Z,5B006067-8A2B-4FF5-AF0C-4DC30485B518,ExecutionMetrics,frank@contoso.com,ds-fabric-001,Finance Actuals v2,ws-finance-001,cap-A1-sku,66762,40210,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Finance Actuals v2[Revenue])"
+2026-06-29T21:06:17Z,8DF58324-52DE-4ADE-A07A-3926FC3B4CBD,RefreshEnd,grace@contoso.com,ds-fabric-002,Sales Pipeline,ws-sales-001,cap-A1-sku,10945,3568,
+2026-06-28T09:33:16Z,04A0CF80-9FF4-4896-A551-814B5D1B0FD7,RefreshEnd,dave@contoso.com,ds-fabric-003,HR Headcount,ws-hr-001,cap-F64-sku,88239,54079,
+2026-06-29T20:34:12Z,26EA463D-F006-45AD-9AAF-251DA50E565F,ExecutionMetrics,frank@contoso.com,ds-fabric-002,Sales Pipeline,ws-sales-001,cap-F64-sku,105988,72708,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Sales Pipeline[Revenue])"
+2026-06-30T06:04:52Z,CE9C3552-0128-406C-9C84-E9222ECF7E0B,QueryEnd,bob@contoso.com,ds-fabric-006,Risk & Compliance,ws-risk-001,cap-A1-sku,72712,24467,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Risk & Compliance[Revenue])"
+2026-06-28T06:44:38Z,15451298-9532-4EEF-95F3-2AE54C6B33B8,ExecutionMetrics,eve@contoso.com,ds-fabric-006,Risk & Compliance,ws-risk-001,cap-A1-sku,83336,67367,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Risk & Compliance[Revenue])"
+2026-06-29T16:50:39Z,02D1E4FD-E50B-455E-ADA8-CADE8CAF9A83,ExecutionMetrics,eve@contoso.com,ds-fabric-002,Sales Pipeline,ws-sales-001,cap-F64-sku,1467,1044,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Sales Pipeline[Revenue])"
+2026-06-28T03:03:25Z,F877AF6E-1F4C-41E7-AE41-D67F5D549A02,ExecutionMetrics,judy@contoso.com,ds-fabric-003,HR Headcount,ws-hr-001,cap-A1-sku,40604,29537,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], HR Headcount[Revenue])"
+2026-06-30T08:49:35Z,52B56833-C6C9-4AEA-8D3D-A2172F206E0B,ExecutionMetrics,dave@contoso.com,ds-fabric-003,HR Headcount,ws-hr-001,cap-F64-sku,73585,25320,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], HR Headcount[Revenue])"
+2026-06-29T05:01:38Z,92DD0DDF-257A-4295-A2CF-6915909B6ECF,QueryEnd,eve@contoso.com,ds-fabric-003,HR Headcount,ws-hr-001,cap-A1-sku,43225,21321,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], HR Headcount[Revenue])"
+2026-06-28T08:25:51Z,F83A6269-0D48-4BD7-8999-B103DBED2026,QueryEnd,ivan@contoso.com,ds-fabric-006,Risk & Compliance,ws-risk-001,cap-A1-sku,115155,39084,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Risk & Compliance[Revenue])"
+2026-06-29T20:09:41Z,A3AC2385-4D41-4290-A1D0-6808C7D1A59B,ExecutionMetrics,grace@contoso.com,ds-fabric-005,Exec Dashboard,ws-exec-001,cap-F64-sku,67233,45354,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Exec Dashboard[Revenue])"
+2026-06-29T07:24:31Z,13BCA6F6-D024-4CFE-89CA-0EF62AC5FF4A,RefreshEnd,ivan@contoso.com,ds-fabric-001,Finance Actuals v2,ws-finance-001,cap-F64-sku,9371,5894,
+2026-06-29T05:19:37Z,8FD9E6A5-30BC-4C81-B1F7-D8E447969400,ExecutionMetrics,eve@contoso.com,ds-fabric-001,Finance Actuals v2,ws-finance-001,cap-F64-sku,91584,48406,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Finance Actuals v2[Revenue])"
+2026-06-29T15:55:47Z,F58A2F98-87BE-4FC4-A236-AC901D4CD29B,RefreshEnd,carol@contoso.com,ds-fabric-004,Supply Chain KPIs,ws-ops-001,cap-F64-sku,109478,67693,
+2026-06-29T13:14:23Z,EBD406AA-D13D-4D0B-9CE3-0F266A23B98B,ExecutionMetrics,frank@contoso.com,ds-fabric-006,Risk & Compliance,ws-risk-001,cap-A1-sku,62221,37539,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Risk & Compliance[Revenue])"
+2026-06-30T11:37:22Z,2EFF4F54-FA34-4C33-A931-7D80761CA6E7,ExecutionMetrics,eve@contoso.com,ds-fabric-001,Finance Actuals v2,ws-finance-001,cap-A1-sku,98653,35466,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Finance Actuals v2[Revenue])"
+2026-06-29T06:12:39Z,B47F2E96-30F3-400A-8B3A-057997E09679,RefreshEnd,dave@contoso.com,ds-fabric-001,Finance Actuals v2,ws-finance-001,cap-F64-sku,116347,42891,
+2026-06-30T08:41:53Z,BE2A0770-0334-4291-82E6-85868400214E,RefreshEnd,dave@contoso.com,ds-fabric-004,Supply Chain KPIs,ws-ops-001,cap-A1-sku,55924,38618,
+2026-06-30T13:10:48Z,F0116634-99BD-43DE-BA47-16A1C441AAD8,RefreshEnd,carol@contoso.com,ds-fabric-004,Supply Chain KPIs,ws-ops-001,cap-A1-sku,83779,61368,
+2026-06-28T19:47:52Z,FBF6C1A7-B87C-4A1D-AC6D-60E2D6B05BC7,QueryEnd,heidi@contoso.com,ds-fabric-003,HR Headcount,ws-hr-001,cap-A1-sku,44220,24676,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], HR Headcount[Revenue])"
+2026-06-29T00:06:49Z,898C80AC-D86F-47EC-AA66-677120CEBAF0,QueryEnd,carol@contoso.com,ds-fabric-004,Supply Chain KPIs,ws-ops-001,cap-F64-sku,71321,39104,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Supply Chain KPIs[Revenue])"
+2026-06-28T15:59:15Z,F3B477B6-BB5F-4E7B-B090-26B7D6A3C307,ExecutionMetrics,ivan@contoso.com,ds-fabric-004,Supply Chain KPIs,ws-ops-001,cap-F64-sku,35974,19398,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Supply Chain KPIs[Revenue])"
+2026-06-29T19:07:15Z,78364D59-ED38-41A4-9623-1D86F94BF1E8,RefreshEnd,carol@contoso.com,ds-fabric-004,Supply Chain KPIs,ws-ops-001,cap-F64-sku,74175,26484,
+2026-06-28T15:25:44Z,20CB3A44-D7EB-47DD-B10B-9CA153CCEDD8,ExecutionMetrics,carol@contoso.com,ds-fabric-004,Supply Chain KPIs,ws-ops-001,cap-F64-sku,59798,29152,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Supply Chain KPIs[Revenue])"
+2026-06-30T21:19:46Z,CBA1C9BE-83A1-43AD-BEF7-BFF635931475,ExecutionMetrics,eve@contoso.com,ds-fabric-004,Supply Chain KPIs,ws-ops-001,cap-A1-sku,46070,24167,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Supply Chain KPIs[Revenue])"
+2026-06-28T09:12:30Z,8CFF7C5E-683E-4B0E-A640-2A96BD7546AA,QueryEnd,dave@contoso.com,ds-fabric-001,Finance Actuals v2,ws-finance-001,cap-A1-sku,62270,44342,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Finance Actuals v2[Revenue])"
+2026-06-30T22:15:35Z,257D4295-CA71-4FE5-8A84-52AA4F25F43D,ExecutionMetrics,frank@contoso.com,ds-fabric-003,HR Headcount,ws-hr-001,cap-A1-sku,40968,13940,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], HR Headcount[Revenue])"
+2026-06-30T02:47:45Z,BA7DC901-E5FC-4CA4-974D-825F75B33451,QueryEnd,grace@contoso.com,ds-fabric-004,Supply Chain KPIs,ws-ops-001,cap-A1-sku,101450,36109,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Supply Chain KPIs[Revenue])"
+2026-06-28T05:02:22Z,6C0047C7-856E-4184-9013-0B176E67F309,QueryEnd,alice@contoso.com,ds-fabric-005,Exec Dashboard,ws-exec-001,cap-F64-sku,66517,49671,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Exec Dashboard[Revenue])"
+2026-06-29T07:43:03Z,D9692A81-FA3C-4A16-A00F-EA0215F43940,ExecutionMetrics,grace@contoso.com,ds-fabric-001,Finance Actuals v2,ws-finance-001,cap-A1-sku,23286,18327,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Finance Actuals v2[Revenue])"
+2026-06-30T14:01:43Z,B926176D-EA30-4A6C-B32D-3D216DDD368E,RefreshEnd,heidi@contoso.com,ds-fabric-005,Exec Dashboard,ws-exec-001,cap-F64-sku,32377,10878,
+2026-06-28T02:06:27Z,9E1B876B-ED49-4A27-B6C2-449188D9BE79,RefreshEnd,judy@contoso.com,ds-fabric-004,Supply Chain KPIs,ws-ops-001,cap-F64-sku,64989,41398,
+2026-06-29T13:37:35Z,5FA3FC02-9C01-4F28-BEF0-2CE8E4B3F09D,RefreshEnd,frank@contoso.com,ds-fabric-003,HR Headcount,ws-hr-001,cap-A1-sku,25242,9423,
+2026-06-28T21:26:01Z,30289D4F-CA2E-4821-9918-A3A2547A6AF7,ExecutionMetrics,heidi@contoso.com,ds-fabric-006,Risk & Compliance,ws-risk-001,cap-A1-sku,29245,24102,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Risk & Compliance[Revenue])"
+2026-06-29T01:38:37Z,6BCFCB63-98AB-4E2A-B07F-02469F83C8FF,ExecutionMetrics,ivan@contoso.com,ds-fabric-004,Supply Chain KPIs,ws-ops-001,cap-F64-sku,92324,75784,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Supply Chain KPIs[Revenue])"
+2026-06-28T15:47:00Z,ADF9899F-C9E5-4385-8885-43B982F7B5B5,RefreshEnd,frank@contoso.com,ds-fabric-002,Sales Pipeline,ws-sales-001,cap-A1-sku,97010,32097,
+2026-06-30T15:32:59Z,27213D59-B2F8-4424-B0CE-11038C73868D,ExecutionMetrics,eve@contoso.com,ds-fabric-005,Exec Dashboard,ws-exec-001,cap-A1-sku,1807,1193,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Exec Dashboard[Revenue])"
+2026-06-29T11:48:37Z,E8921A04-8139-480A-A99E-7EB0E93E8DEA,ExecutionMetrics,eve@contoso.com,ds-fabric-001,Finance Actuals v2,ws-finance-001,cap-F64-sku,9910,3589,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Finance Actuals v2[Revenue])"
+2026-06-29T20:10:20Z,67461914-ADDE-4493-AB08-502B54639DAE,RefreshEnd,eve@contoso.com,ds-fabric-005,Exec Dashboard,ws-exec-001,cap-F64-sku,78335,33499,
+2026-06-29T20:25:08Z,9101FAE5-BAB2-4424-9DDA-E30BCF6BB494,RefreshEnd,eve@contoso.com,ds-fabric-004,Supply Chain KPIs,ws-ops-001,cap-A1-sku,97204,57283,
+2026-06-28T00:12:34Z,9D12C567-C989-4EB2-8291-11E79B9A5838,QueryEnd,dave@contoso.com,ds-fabric-002,Sales Pipeline,ws-sales-001,cap-A1-sku,53745,27413,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Sales Pipeline[Revenue])"
+2026-06-30T09:23:47Z,F3020E99-562E-45A9-AD73-61AB8FB09108,RefreshEnd,eve@contoso.com,ds-fabric-003,HR Headcount,ws-hr-001,cap-F64-sku,103910,54088,
+2026-06-30T20:39:11Z,83D711AC-6117-4920-82E9-849D9F59FA43,ExecutionMetrics,bob@contoso.com,ds-fabric-004,Supply Chain KPIs,ws-ops-001,cap-F64-sku,35883,23125,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Supply Chain KPIs[Revenue])"
+2026-06-29T13:48:48Z,7F09BBC4-8A35-4C43-84BE-BB4014249FCF,ExecutionMetrics,eve@contoso.com,ds-fabric-006,Risk & Compliance,ws-risk-001,cap-F64-sku,85594,69082,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Risk & Compliance[Revenue])"
+2026-06-28T23:24:11Z,5EC2538A-067E-43DF-B7D0-133A974FC462,RefreshEnd,bob@contoso.com,ds-fabric-004,Supply Chain KPIs,ws-ops-001,cap-F64-sku,88035,58820,
+2026-06-29T13:45:52Z,59701796-63F0-472D-BFCE-DEADF7241012,RefreshEnd,ivan@contoso.com,ds-fabric-001,Finance Actuals v2,ws-finance-001,cap-A1-sku,47619,30192,
+2026-06-30T16:09:59Z,0472A77C-9BEF-49EE-B547-A7139ADB1B85,RefreshEnd,eve@contoso.com,ds-fabric-002,Sales Pipeline,ws-sales-001,cap-F64-sku,91721,78646,
+2026-06-29T06:17:07Z,D976FDE8-CCF1-4724-AAD1-0164E4861E8E,RefreshEnd,carol@contoso.com,ds-fabric-006,Risk & Compliance,ws-risk-001,cap-F64-sku,109608,50471,
+2026-06-28T20:08:37Z,7353CD92-7966-467E-BB45-CE6ECE837714,QueryEnd,dave@contoso.com,ds-fabric-004,Supply Chain KPIs,ws-ops-001,cap-A1-sku,101476,47081,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Supply Chain KPIs[Revenue])"
+2026-06-29T08:32:09Z,788779C5-0472-4D49-84C5-CF7BAFD6B61A,ExecutionMetrics,eve@contoso.com,ds-fabric-001,Finance Actuals v2,ws-finance-001,cap-A1-sku,70792,60380,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Finance Actuals v2[Revenue])"
+2026-06-28T17:02:18Z,10267647-8C93-4809-8055-DCF74E9588C2,ExecutionMetrics,frank@contoso.com,ds-fabric-004,Supply Chain KPIs,ws-ops-001,cap-F64-sku,112399,34131,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Supply Chain KPIs[Revenue])"
+2026-06-29T12:35:49Z,B3F4CAA4-A4D5-4CDE-82C2-B907478B24C9,QueryEnd,grace@contoso.com,ds-fabric-004,Supply Chain KPIs,ws-ops-001,cap-A1-sku,77556,49619,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Supply Chain KPIs[Revenue])"
+2026-06-30T15:26:35Z,23479B8D-B12B-4523-8CA9-BF6F222E31AE,ExecutionMetrics,heidi@contoso.com,ds-fabric-005,Exec Dashboard,ws-exec-001,cap-F64-sku,86023,29398,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Exec Dashboard[Revenue])"
+2026-06-29T21:40:05Z,B9CF8D47-8834-4DD5-9AF0-E000B6F82662,RefreshEnd,grace@contoso.com,ds-fabric-006,Risk & Compliance,ws-risk-001,cap-F64-sku,94403,64184,
+2026-06-30T23:14:38Z,CBF88F7A-6E4A-49DA-8DDC-968F4173EE40,QueryEnd,dave@contoso.com,ds-fabric-001,Finance Actuals v2,ws-finance-001,cap-F64-sku,13103,4652,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Finance Actuals v2[Revenue])"
+2026-06-28T21:22:31Z,72F2204F-1149-4FF6-A055-C55409BB9E8E,RefreshEnd,eve@contoso.com,ds-fabric-006,Risk & Compliance,ws-risk-001,cap-A1-sku,47184,20245,
+2026-06-29T21:09:02Z,8ECFEAA0-74A3-4514-9F40-4DA90B77EA1F,ExecutionMetrics,carol@contoso.com,ds-fabric-006,Risk & Compliance,ws-risk-001,cap-F64-sku,89739,51347,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Risk & Compliance[Revenue])"
+2026-06-28T05:23:40Z,F7C471FD-A303-465F-BA82-8889C076DAAD,QueryEnd,eve@contoso.com,ds-fabric-004,Supply Chain KPIs,ws-ops-001,cap-A1-sku,58098,30329,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Supply Chain KPIs[Revenue])"
+2026-06-30T14:09:19Z,DB245BAE-E5BB-4D97-A647-8F91B2D95F79,RefreshEnd,eve@contoso.com,ds-fabric-004,Supply Chain KPIs,ws-ops-001,cap-F64-sku,63535,31426,
+2026-06-29T22:21:50Z,DFFFD2F3-1CEC-4880-8A2E-BD60E729A6B1,RefreshEnd,heidi@contoso.com,ds-fabric-006,Risk & Compliance,ws-risk-001,cap-A1-sku,25120,16522,
+2026-06-28T10:16:37Z,9BC9D7AE-AED9-4C42-BA4F-BB0993D30438,QueryEnd,eve@contoso.com,ds-fabric-004,Supply Chain KPIs,ws-ops-001,cap-A1-sku,99048,38960,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Supply Chain KPIs[Revenue])"
+2026-06-28T19:16:36Z,383805F9-DB8E-41BC-A0A0-D2667D68E941,RefreshEnd,ivan@contoso.com,ds-fabric-004,Supply Chain KPIs,ws-ops-001,cap-A1-sku,70529,23264,
+2026-06-28T01:50:41Z,5DAA84B3-B7FB-4CAD-A5F9-BD82E6C321E6,QueryEnd,frank@contoso.com,ds-fabric-004,Supply Chain KPIs,ws-ops-001,cap-F64-sku,81405,37711,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Supply Chain KPIs[Revenue])"
+2026-06-28T10:10:47Z,03A28900-5B83-4412-BEC6-87393C6D10F9,RefreshEnd,heidi@contoso.com,ds-fabric-006,Risk & Compliance,ws-risk-001,cap-A1-sku,6143,3405,
+2026-06-30T00:51:00Z,A74C8E37-C495-45EF-84D6-C171FFFA54BC,RefreshEnd,ivan@contoso.com,ds-fabric-002,Sales Pipeline,ws-sales-001,cap-F64-sku,97604,55168,
+2026-06-29T05:00:05Z,54003A25-7F36-437C-AC4C-84CEF850B9CD,ExecutionMetrics,frank@contoso.com,ds-fabric-001,Finance Actuals v2,ws-finance-001,cap-A1-sku,36360,15610,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Finance Actuals v2[Revenue])"
+2026-06-28T17:44:26Z,B85E9EDE-9BD6-4EFB-8BB9-01F4C5490D6C,RefreshEnd,dave@contoso.com,ds-fabric-006,Risk & Compliance,ws-risk-001,cap-F64-sku,16705,6152,
+2026-06-28T01:05:42Z,5974E326-3BDD-4A52-8ABE-CB4C0AF21B01,ExecutionMetrics,eve@contoso.com,ds-fabric-005,Exec Dashboard,ws-exec-001,cap-A1-sku,47155,17283,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Exec Dashboard[Revenue])"
+2026-06-30T06:17:59Z,25A7561E-E78C-44EB-BB10-CDBE9EAC08C5,RefreshEnd,alice@contoso.com,ds-fabric-003,HR Headcount,ws-hr-001,cap-A1-sku,8530,6031,
+2026-06-29T09:22:37Z,6AA235AB-18EE-4CC4-8B42-E893A10E72E1,ExecutionMetrics,ivan@contoso.com,ds-fabric-004,Supply Chain KPIs,ws-ops-001,cap-F64-sku,84523,52079,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Supply Chain KPIs[Revenue])"
+2026-06-30T17:29:07Z,F0BB2781-5E36-4181-A83A-828ECB1EA832,ExecutionMetrics,bob@contoso.com,ds-fabric-004,Supply Chain KPIs,ws-ops-001,cap-A1-sku,10789,3530,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Supply Chain KPIs[Revenue])"
+2026-06-29T19:31:11Z,CF18956D-3CA1-47A1-AA68-8AEC468B2B49,ExecutionMetrics,judy@contoso.com,ds-fabric-006,Risk & Compliance,ws-risk-001,cap-F64-sku,69741,62116,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Risk & Compliance[Revenue])"
+2026-06-29T08:54:48Z,87571844-2BF2-4218-B09A-13B531BE1B55,QueryEnd,bob@contoso.com,ds-fabric-006,Risk & Compliance,ws-risk-001,cap-F64-sku,116603,35518,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Risk & Compliance[Revenue])"
+2026-06-30T21:26:38Z,5F4EEF6E-BA88-4309-852C-1A821E63325D,ExecutionMetrics,frank@contoso.com,ds-fabric-001,Finance Actuals v2,ws-finance-001,cap-F64-sku,20206,17522,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Finance Actuals v2[Revenue])"
+2026-06-29T16:30:57Z,1D10FD96-7F92-4D6D-BF71-E41B48AA727E,QueryEnd,grace@contoso.com,ds-fabric-001,Finance Actuals v2,ws-finance-001,cap-A1-sku,8061,6114,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Finance Actuals v2[Revenue])"
+2026-06-29T19:43:54Z,6CC4B9F9-F710-40D6-94AC-DF4F1914A4BC,ExecutionMetrics,frank@contoso.com,ds-fabric-004,Supply Chain KPIs,ws-ops-001,cap-F64-sku,41153,20447,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Supply Chain KPIs[Revenue])"
+2026-06-30T07:32:28Z,885333C0-8CC6-4C51-A3CB-302331E1D23E,QueryEnd,dave@contoso.com,ds-fabric-004,Supply Chain KPIs,ws-ops-001,cap-A1-sku,36712,21969,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Supply Chain KPIs[Revenue])"
+2026-06-28T13:08:50Z,366119EC-E540-46EF-B27A-E14647E9C4DF,ExecutionMetrics,judy@contoso.com,ds-fabric-005,Exec Dashboard,ws-exec-001,cap-A1-sku,36018,14602,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Exec Dashboard[Revenue])"
+2026-06-28T10:21:28Z,7DC7E93C-9C87-4F29-AA2F-8ECE4035A308,ExecutionMetrics,carol@contoso.com,ds-fabric-002,Sales Pipeline,ws-sales-001,cap-A1-sku,97320,60294,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Sales Pipeline[Revenue])"
+2026-06-29T08:17:25Z,402B91DF-767A-4EB1-934C-626C21A168B5,QueryEnd,carol@contoso.com,ds-fabric-002,Sales Pipeline,ws-sales-001,cap-F64-sku,86961,52190,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Sales Pipeline[Revenue])"
+2026-06-30T01:24:39Z,209B9ED3-0D0D-40CA-A46E-ADAC33D1CC1E,RefreshEnd,bob@contoso.com,ds-fabric-005,Exec Dashboard,ws-exec-001,cap-F64-sku,89130,69852,
+2026-06-30T20:50:38Z,10E1D0DA-2E59-42DA-90A5-6583754202B0,QueryEnd,judy@contoso.com,ds-fabric-004,Supply Chain KPIs,ws-ops-001,cap-F64-sku,27886,15009,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Supply Chain KPIs[Revenue])"
+2026-06-29T14:48:25Z,02148774-86B6-4FA2-B0F5-896F24B32914,RefreshEnd,heidi@contoso.com,ds-fabric-001,Finance Actuals v2,ws-finance-001,cap-F64-sku,92431,30075,
+2026-06-30T14:47:17Z,57DD1870-D831-4963-859A-C486419DACFE,QueryEnd,alice@contoso.com,ds-fabric-006,Risk & Compliance,ws-risk-001,cap-A1-sku,41233,23744,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Risk & Compliance[Revenue])"
+2026-06-30T10:22:22Z,8AD94477-C8A2-4BA1-80FF-0E8586BA2773,QueryEnd,bob@contoso.com,ds-fabric-003,HR Headcount,ws-hr-001,cap-A1-sku,81218,66376,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], HR Headcount[Revenue])"
+2026-06-29T04:51:01Z,A84E91B9-E17B-4729-9545-8B5CC7EE0339,RefreshEnd,dave@contoso.com,ds-fabric-001,Finance Actuals v2,ws-finance-001,cap-A1-sku,114301,63730,
+2026-06-29T01:35:33Z,55328CD7-0B97-4397-A6FB-CC0831A7C014,ExecutionMetrics,ivan@contoso.com,ds-fabric-001,Finance Actuals v2,ws-finance-001,cap-F64-sku,95539,69332,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Finance Actuals v2[Revenue])"
+2026-06-28T12:55:38Z,400F6F0B-F0B4-4FA9-AA6B-4667EB450635,ExecutionMetrics,eve@contoso.com,ds-fabric-002,Sales Pipeline,ws-sales-001,cap-A1-sku,101498,48080,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Sales Pipeline[Revenue])"
+2026-06-29T08:01:30Z,3178478B-C5E7-4B5E-A8D1-FD0FA44114B8,ExecutionMetrics,judy@contoso.com,ds-fabric-004,Supply Chain KPIs,ws-ops-001,cap-A1-sku,9150,2859,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Supply Chain KPIs[Revenue])"
+2026-06-29T18:16:41Z,3CCDC425-DD4C-4540-8713-2FF000AAFB8D,ExecutionMetrics,judy@contoso.com,ds-fabric-001,Finance Actuals v2,ws-finance-001,cap-F64-sku,72855,29369,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Finance Actuals v2[Revenue])"
+2026-06-30T21:44:29Z,24007A85-CCF7-4770-8A3B-A3F45404E2E5,RefreshEnd,dave@contoso.com,ds-fabric-005,Exec Dashboard,ws-exec-001,cap-A1-sku,8309,4786,
+2026-06-28T18:03:56Z,309E8469-9A24-49B5-BE2A-C05BE5B49C0F,RefreshEnd,bob@contoso.com,ds-fabric-006,Risk & Compliance,ws-risk-001,cap-A1-sku,92949,79179,
+2026-06-30T01:27:26Z,04F4509D-83FA-44F5-A672-E9DEE8ED4E7B,QueryEnd,frank@contoso.com,ds-fabric-003,HR Headcount,ws-hr-001,cap-F64-sku,78566,44156,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], HR Headcount[Revenue])"
+2026-06-29T16:42:47Z,DA273651-2525-437F-90A3-9AC4812CDD47,QueryEnd,grace@contoso.com,ds-fabric-006,Risk & Compliance,ws-risk-001,cap-F64-sku,49572,22108,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Risk & Compliance[Revenue])"
+2026-06-28T21:34:10Z,79142BB7-31CC-4F16-A829-4F2DD5992675,RefreshEnd,dave@contoso.com,ds-fabric-004,Supply Chain KPIs,ws-ops-001,cap-A1-sku,110880,59905,
+2026-06-28T11:14:17Z,DFD3544E-968C-4FB6-8021-0327A33C0866,QueryEnd,alice@contoso.com,ds-fabric-005,Exec Dashboard,ws-exec-001,cap-F64-sku,21466,11537,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Exec Dashboard[Revenue])"
+2026-06-29T20:28:20Z,434E27EC-4935-49FF-8188-0464FA32E3ED,ExecutionMetrics,grace@contoso.com,ds-fabric-001,Finance Actuals v2,ws-finance-001,cap-F64-sku,37546,28064,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Finance Actuals v2[Revenue])"
+2026-06-30T15:39:52Z,0A71CE76-B52D-47B7-865A-0B9921532BB0,QueryEnd,judy@contoso.com,ds-fabric-002,Sales Pipeline,ws-sales-001,cap-F64-sku,48855,24419,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Sales Pipeline[Revenue])"
+2026-06-30T17:56:27Z,4BE36D7F-38A2-4B71-B87B-80B099D1D6C1,QueryEnd,eve@contoso.com,ds-fabric-001,Finance Actuals v2,ws-finance-001,cap-F64-sku,67486,23338,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Finance Actuals v2[Revenue])"
+2026-06-29T12:34:07Z,B0B13951-F558-4672-9CFB-F92354DC2E9B,RefreshEnd,frank@contoso.com,ds-fabric-004,Supply Chain KPIs,ws-ops-001,cap-F64-sku,49215,18131,
+2026-06-30T18:49:57Z,397B605E-EF83-4299-8D81-2B30B8CD8874,RefreshEnd,frank@contoso.com,ds-fabric-001,Finance Actuals v2,ws-finance-001,cap-F64-sku,108958,45363,
+2026-06-28T15:44:01Z,5B0F956B-21CA-4FE1-8A76-0EE0EACDF6DF,ExecutionMetrics,judy@contoso.com,ds-fabric-004,Supply Chain KPIs,ws-ops-001,cap-F64-sku,109640,55988,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Supply Chain KPIs[Revenue])"
+2026-06-29T06:35:37Z,47AE5942-4C4C-4F0D-A4F2-853A8F91A9FC,RefreshEnd,dave@contoso.com,ds-fabric-003,HR Headcount,ws-hr-001,cap-A1-sku,83948,66236,
+2026-06-28T21:13:31Z,541A41B0-B3BD-49FA-8986-6219031513EA,QueryEnd,judy@contoso.com,ds-fabric-004,Supply Chain KPIs,ws-ops-001,cap-A1-sku,56461,20420,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Supply Chain KPIs[Revenue])"
+2026-06-29T04:27:49Z,54E84148-5EB0-4BAE-8D20-CB0D090442D0,ExecutionMetrics,bob@contoso.com,ds-fabric-006,Risk & Compliance,ws-risk-001,cap-A1-sku,114669,47973,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Risk & Compliance[Revenue])"
+2026-06-30T08:12:00Z,03805645-ACBE-4772-8381-1E95423BF884,RefreshEnd,frank@contoso.com,ds-fabric-001,Finance Actuals v2,ws-finance-001,cap-A1-sku,76471,29955,
+2026-06-30T11:05:46Z,E020E4BC-C8F0-4B03-925E-FB2870A7180D,RefreshEnd,carol@contoso.com,ds-fabric-003,HR Headcount,ws-hr-001,cap-A1-sku,17875,6170,
+2026-06-30T16:47:05Z,E09D36FC-F4FD-43C8-889B-853DD2EC2700,RefreshEnd,frank@contoso.com,ds-fabric-001,Finance Actuals v2,ws-finance-001,cap-F64-sku,52631,31392,
+2026-06-30T04:57:35Z,FD32ED5A-F7B5-4A21-BAC1-37D234E5B8E2,RefreshEnd,heidi@contoso.com,ds-fabric-002,Sales Pipeline,ws-sales-001,cap-A1-sku,55840,42210,
+2026-06-29T08:29:33Z,4383D82D-1793-4C21-8106-EE3D6CE5C5E9,ExecutionMetrics,bob@contoso.com,ds-fabric-003,HR Headcount,ws-hr-001,cap-F64-sku,79186,56117,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], HR Headcount[Revenue])"
+2026-06-28T05:29:19Z,50D337DB-6EDE-4235-AB03-514EAB16097A,RefreshEnd,frank@contoso.com,ds-fabric-001,Finance Actuals v2,ws-finance-001,cap-A1-sku,88173,60468,
+2026-06-29T03:06:19Z,C0B85D1B-16A8-4AFE-BC1F-FF473F10E3F0,RefreshEnd,judy@contoso.com,ds-fabric-001,Finance Actuals v2,ws-finance-001,cap-F64-sku,58388,28839,
+2026-06-29T12:21:29Z,41C06E7C-339C-40CA-B3D0-38BB0D404477,RefreshEnd,eve@contoso.com,ds-fabric-003,HR Headcount,ws-hr-001,cap-A1-sku,68061,33328,
+2026-06-28T14:34:51Z,F3CFD174-6AEF-407B-800D-DC995F939159,ExecutionMetrics,heidi@contoso.com,ds-fabric-006,Risk & Compliance,ws-risk-001,cap-F64-sku,16274,5548,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Risk & Compliance[Revenue])"
+2026-06-30T16:54:56Z,17108CB8-B7F4-416E-A74B-0B11A0EF18A4,ExecutionMetrics,frank@contoso.com,ds-fabric-001,Finance Actuals v2,ws-finance-001,cap-F64-sku,39515,26824,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Finance Actuals v2[Revenue])"
+2026-06-30T09:40:53Z,D61F464D-F4F6-4FBA-B6E7-5E75D04DCD42,ExecutionMetrics,frank@contoso.com,ds-fabric-002,Sales Pipeline,ws-sales-001,cap-A1-sku,18402,12050,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Sales Pipeline[Revenue])"
+2026-06-28T22:32:10Z,E9228277-1BF4-4D1B-828B-ACAC18D41E76,ExecutionMetrics,ivan@contoso.com,ds-fabric-004,Supply Chain KPIs,ws-ops-001,cap-A1-sku,52387,31662,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Supply Chain KPIs[Revenue])"
+2026-06-29T08:46:59Z,DD2398EF-0DF6-425B-B39F-CAA6B1A3EFF5,ExecutionMetrics,judy@contoso.com,ds-fabric-004,Supply Chain KPIs,ws-ops-001,cap-A1-sku,61257,35348,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Supply Chain KPIs[Revenue])"
+2026-06-30T12:32:40Z,CFEDFF5A-2064-4C9C-A2C5-0E33EA778CCA,QueryEnd,judy@contoso.com,ds-fabric-005,Exec Dashboard,ws-exec-001,cap-A1-sku,16474,5504,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Exec Dashboard[Revenue])"
+2026-06-28T18:15:19Z,5F15054E-21EF-426B-8627-33F953A5D437,ExecutionMetrics,dave@contoso.com,ds-fabric-006,Risk & Compliance,ws-risk-001,cap-A1-sku,25929,8972,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Risk & Compliance[Revenue])"
+2026-06-28T12:29:25Z,A7F052C8-F5CD-4DE7-AAD0-BB1C31C5546E,QueryEnd,ivan@contoso.com,ds-fabric-005,Exec Dashboard,ws-exec-001,cap-A1-sku,86541,57896,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Exec Dashboard[Revenue])"
+2026-06-29T23:25:16Z,2879C51F-202B-423F-98B8-2072A0E71818,RefreshEnd,alice@contoso.com,ds-fabric-005,Exec Dashboard,ws-exec-001,cap-F64-sku,27831,14769,
+2026-06-28T17:51:38Z,59698D95-FA3E-4066-9DFA-41EC0126642D,RefreshEnd,ivan@contoso.com,ds-fabric-006,Risk & Compliance,ws-risk-001,cap-F64-sku,105672,66847,
+2026-06-28T14:52:07Z,9B784B5A-0648-440A-93FF-6A7F0941B7E0,RefreshEnd,carol@contoso.com,ds-fabric-001,Finance Actuals v2,ws-finance-001,cap-F64-sku,44789,37511,
+2026-06-28T17:37:11Z,22CA0A15-A342-4C19-B402-68693A51309D,ExecutionMetrics,grace@contoso.com,ds-fabric-003,HR Headcount,ws-hr-001,cap-F64-sku,61341,51859,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], HR Headcount[Revenue])"
+2026-06-30T20:00:52Z,C61A94EA-CB33-4CF6-8F10-41F127EBD984,RefreshEnd,judy@contoso.com,ds-fabric-004,Supply Chain KPIs,ws-ops-001,cap-F64-sku,75918,52467,
+2026-06-28T06:34:16Z,428C4453-3095-423F-8C28-6793445B04AE,ExecutionMetrics,heidi@contoso.com,ds-fabric-005,Exec Dashboard,ws-exec-001,cap-A1-sku,51743,34305,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Exec Dashboard[Revenue])"
+2026-06-29T15:04:51Z,0985E731-BADC-40A1-A8F5-165FBC6BB1B9,RefreshEnd,alice@contoso.com,ds-fabric-001,Finance Actuals v2,ws-finance-001,cap-F64-sku,1271,496,
+2026-06-29T17:32:48Z,70CA5D0D-C7BD-4922-82DA-2A4F12FC8B1A,QueryEnd,grace@contoso.com,ds-fabric-003,HR Headcount,ws-hr-001,cap-A1-sku,73838,42110,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], HR Headcount[Revenue])"
+2026-06-30T23:00:24Z,A1E84D88-ACE2-4922-BEF0-DBF0DCE3717A,ExecutionMetrics,eve@contoso.com,ds-fabric-005,Exec Dashboard,ws-exec-001,cap-A1-sku,12872,11448,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Exec Dashboard[Revenue])"
+2026-06-28T03:18:01Z,BA7FF558-6D6B-49C8-8BDF-6352E6D7EBE8,QueryEnd,carol@contoso.com,ds-fabric-003,HR Headcount,ws-hr-001,cap-A1-sku,5300,3194,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], HR Headcount[Revenue])"
+2026-06-29T04:38:11Z,AF8B9635-8EDA-4A36-9FAD-96FB32CD5678,QueryEnd,ivan@contoso.com,ds-fabric-005,Exec Dashboard,ws-exec-001,cap-A1-sku,81005,26203,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Exec Dashboard[Revenue])"
+2026-06-30T11:24:05Z,C41FDB64-146C-4EA2-89DE-2E3CCEF61D54,RefreshEnd,ivan@contoso.com,ds-fabric-005,Exec Dashboard,ws-exec-001,cap-F64-sku,2380,1339,
+2026-06-30T04:31:56Z,C0C66288-C6A8-432E-8DAB-426592EFFE6F,ExecutionMetrics,alice@contoso.com,ds-fabric-006,Risk & Compliance,ws-risk-001,cap-A1-sku,6931,4258,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Risk & Compliance[Revenue])"
+2026-06-28T01:23:42Z,1A74B604-0D0F-4C0D-BA1C-C87BA588C101,RefreshEnd,carol@contoso.com,ds-fabric-004,Supply Chain KPIs,ws-ops-001,cap-A1-sku,58007,22927,
+2026-06-29T13:46:36Z,DE80E6B5-411B-4494-A759-D9696DBA3EC7,ExecutionMetrics,judy@contoso.com,ds-fabric-005,Exec Dashboard,ws-exec-001,cap-A1-sku,27376,23290,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Exec Dashboard[Revenue])"
+2026-06-30T01:14:35Z,3D4EAA1F-BE0A-4D19-9A85-4A57C5B390D7,ExecutionMetrics,carol@contoso.com,ds-fabric-003,HR Headcount,ws-hr-001,cap-F64-sku,101386,55281,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], HR Headcount[Revenue])"
+2026-06-28T16:23:06Z,7BAD343B-54ED-4005-A2F5-CFAAEE6BDBDC,ExecutionMetrics,heidi@contoso.com,ds-fabric-005,Exec Dashboard,ws-exec-001,cap-F64-sku,39208,27733,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Exec Dashboard[Revenue])"
+2026-06-28T08:53:43Z,55A8C531-C712-4DDD-9828-C70DF6CE26C8,QueryEnd,heidi@contoso.com,ds-fabric-003,HR Headcount,ws-hr-001,cap-F64-sku,75366,58298,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], HR Headcount[Revenue])"
+2026-06-30T19:18:01Z,42084112-FF8C-40B7-83E2-2C0DBD57E054,RefreshEnd,eve@contoso.com,ds-fabric-002,Sales Pipeline,ws-sales-001,cap-F64-sku,58183,29137,
+2026-06-28T07:58:33Z,9F54622D-5EFF-446C-8C68-9D6BC8A93ED7,ExecutionMetrics,eve@contoso.com,ds-fabric-005,Exec Dashboard,ws-exec-001,cap-A1-sku,80898,28856,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Exec Dashboard[Revenue])"
+2026-06-29T00:04:38Z,FD351592-6052-415D-8210-6BCB1FE7806D,RefreshEnd,dave@contoso.com,ds-fabric-005,Exec Dashboard,ws-exec-001,cap-F64-sku,94225,50121,
+2026-06-29T23:22:40Z,4183677E-AD88-46F6-88BC-8C685C40B0F2,ExecutionMetrics,carol@contoso.com,ds-fabric-005,Exec Dashboard,ws-exec-001,cap-F64-sku,26343,19342,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Exec Dashboard[Revenue])"
+2026-06-28T00:41:08Z,D558E083-9987-4334-A96F-DAFFD141F02A,RefreshEnd,heidi@contoso.com,ds-fabric-004,Supply Chain KPIs,ws-ops-001,cap-A1-sku,39310,34539,
+2026-06-28T19:52:27Z,86632242-0C79-493C-80EF-28016AD03675,RefreshEnd,ivan@contoso.com,ds-fabric-006,Risk & Compliance,ws-risk-001,cap-F64-sku,25472,20988,
+2026-06-29T17:22:08Z,582A96E0-A149-4EDB-BD29-5F8B91D533F5,ExecutionMetrics,carol@contoso.com,ds-fabric-006,Risk & Compliance,ws-risk-001,cap-F64-sku,88595,30910,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Risk & Compliance[Revenue])"
+2026-06-30T00:44:13Z,F2A154DF-BC65-4BA4-BB59-E19E4036E1B5,RefreshEnd,grace@contoso.com,ds-fabric-004,Supply Chain KPIs,ws-ops-001,cap-F64-sku,12702,4888,
+2026-06-29T18:26:22Z,0CA00066-BDA7-433A-93D2-B978ED7BB087,ExecutionMetrics,dave@contoso.com,ds-fabric-004,Supply Chain KPIs,ws-ops-001,cap-F64-sku,94949,46158,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Supply Chain KPIs[Revenue])"
+2026-06-30T01:58:36Z,E9CEE23F-F99F-47DF-B72C-9D76DAB96C8F,RefreshEnd,bob@contoso.com,ds-fabric-001,Finance Actuals v2,ws-finance-001,cap-F64-sku,66066,47507,
+2026-06-30T21:43:03Z,57F23929-F5A0-4CE3-899A-92F34C1CA954,ExecutionMetrics,eve@contoso.com,ds-fabric-006,Risk & Compliance,ws-risk-001,cap-A1-sku,17707,6682,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Risk & Compliance[Revenue])"
+2026-06-30T01:34:06Z,975D087B-8A0B-4C48-A83A-598108EC8834,RefreshEnd,heidi@contoso.com,ds-fabric-005,Exec Dashboard,ws-exec-001,cap-A1-sku,99125,85525,
+2026-06-30T12:22:09Z,F938C72F-5272-4197-BDD6-67B74339213D,ExecutionMetrics,frank@contoso.com,ds-fabric-006,Risk & Compliance,ws-risk-001,cap-A1-sku,71981,45733,"EVALUATE SUMMARIZECOLUMNS('Date'[Year], Risk & Compliance[Revenue])"
+2026-06-28T06:39:17Z,46E173A0-89C1-4AE7-B338-3CD68A716DF0,RefreshEnd,ivan@contoso.com,ds-fabric-003,HR Headcount,ws-hr-001,cap-F64-sku,118019,91464,
