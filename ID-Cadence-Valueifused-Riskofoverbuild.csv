@@ -1,0 +1,7 @@
+"ID","Cadence","Value if used","Risk of overbuild"
+"4215f7d9 Jarvis tracker","Mon 6:00 AM","High — replaces a real local task","Low"
+"55ac8fb7 Sunday pre-check","Sun 8:00 PM","High — prevents Monday failures","Low"
+"1659eea3 Drift audit","Mon 7:00 AM","Medium — catches connector rot","Low"
+"579dc58b Contention audit","Mon 8:00 AM","Medium — needs 2+ weeks of data","Medium"
+"e7454d09 Top-3 killers","Mon 8:15 AM","Medium — depends on process sampler","Medium"
+"a9d6a4bb Sync pattern audit","Mon 8:30 AM","Low until you have 8+ weeks of data","High — meta-audit of audits"
