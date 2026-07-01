@@ -98,13 +98,68 @@ the gateway is installed** (ask whoever manages it, or do it yourself if that's 
    ```
    - Replace `PASTE-YOUR-REQUESTID-HERE` with the real value (keep the quotes).
 
-### Step 1.6 — Tell me the result (this is the whole point)
-Copy me back one of these three outcomes:
-- ✅ **"It matched — I see a row with ExecutingUser and ItemName filled in."** → the
-  flagship claim is TRUE. I'll finalize v3.
-- ⚠️ **"The guest list has data, but my RequestId returned nothing."** → close;
-  we may need `EvaluationContext` instead. Send me the outcome + a QueryStart row.
-- ❌ **"Empty / error / no data at all."** → tell me the exact message. We adjust.
+### Step 1.6 — Read the single-row result
+One `RequestId` gives you a yes/no. You're looking for one of:
+- ✅ **A row came back with ExecutingUser and ItemName filled in.** → the flagship
+  claim holds. Proceed to Step 1.7 to measure *how often* it holds.
+- ⚠️ **The guest list has data, but this RequestId returned nothing.** → close;
+  we may need `EvaluationContext` instead. Still run Step 1.7, then grab a
+  QueryStart row (TASK 2).
+- ❌ **Empty / error / no data at all.** → note the exact message; still run 1.7.
+
+### Step 1.7 — Measure the match rate (THE number — this is what to report)
+One row is anecdote; the **match rate** is the result. This computes it directly, and
+it's fully self-contained — you do **not** need the `bronze_query_execution` table yet.
+
+1. From the `QueryExecutionReport...` file (Step 1.4), pull **10–30 `RequestId`
+   values** from a recent window (more is better; a mix of refresh *and* DirectQuery
+   if you have both).
+2. Paste them into the `datatable` below (one per line, keep the quotes and commas),
+   then **Run**:
+
+   ```kql
+   // Paste your gateway RequestId values here — one per line, quoted, comma-separated.
+   let gatewayRequestIds = datatable(RequestId: string)
+   [
+       "PASTE-REQUESTID-1",
+       "PASTE-REQUESTID-2",
+       "PASTE-REQUESTID-3"
+       // ...add the rest
+   ];
+   let attributed =
+       PowerBIDatasetsWorkspace
+       | where Timestamp > ago(2d)
+       | where isnotempty(ExecutingUser)
+       | distinct OperationId, ExecutingUser, ItemName;
+   gatewayRequestIds
+   | join kind=leftouter attributed on $left.RequestId == $right.OperationId
+   | summarize
+       Total        = count(),
+       Matched      = countif(isnotempty(ExecutingUser)),
+       MatchRatePct = round(100.0 * countif(isnotempty(ExecutingUser)) / count(), 1)
+   ```
+   - `MatchRatePct` is **the one number** we can't get without a live tenant.
+   - *Tip:* widen `ago(2d)` if your RequestIds are older than two days.
+3. **Optional DirectQuery split** — if some of your RequestIds are DirectQuery and
+   some are refresh, tag them in a second column so we learn whether DirectQuery
+   attributes (the open question). Ask and I'll hand you the tagged-datatable variant.
+
+### Step 1.8 — File the result as a pilot report
+When you have the number, **don't summarize it in chat** — file it so every gateway's
+result is captured in the same shape and we can compare across the fleet. In the repo,
+go to **Issues → New issue → "Pilot report"** and fill the form. If you'd rather paste
+it here, copy this block and fill it in — it maps 1:1 to the issue form:
+
+```text
+Environment:            <gateway version, Fabric SKU, standard/VNet, node count>
+Identity-join result:   <matched | partially matched | did NOT match | didn't test>
+Match rate (Step 1.7):  <MatchRatePct>%  (Matched <n> of <Total>)
+DirectQuery attributed: <yes | no | didn't test>
+EvaluationContext:      <starts with { (JSON) | base64 blob | empty>   (from TASK 2)
+Schema corrections:     <any column name that differed, or "none">
+Notebooks/collectors:   <ran 01→02→03? errors? or "didn't run">
+Anything else:          <coverage gaps, surprises, cmdlet corrections>
+```
 
 That's the big test. Everything else below is quick copy-paste info gathering.
 
@@ -186,17 +241,16 @@ screen lets me write the other rules to match what you really see.
 
 ## The most important advice (please read)
 
-**Do TASK 1 first, and stop there if you're short on time.** Its result decides
-what's worth building next. We have already built a lot of well-grounded design and
-code; the single highest-value thing now is *proof from your real environment*, not
-more features.
+**Do TASK 1 first — including the Step 1.7 match rate — and stop there if you're short
+on time.** That number decides what's worth building next. We have already built a lot
+of well-grounded design and code; the single highest-value thing now is *proof from your
+real environment*, not more features.
 
-When you reply, even a short message helps enormously, e.g.:
-> "Task 1: matched, saw my name + 'Sales Model'. Task 5: standard gateways, cluster
-> of 3, about 6 total. Couldn't get to the rest yet."
-
-From that alone I can turn most of the `[Unverified]` labels into verified ones and
-build v3 on solid ground.
+**File the Step 1.8 report block even if it's partial.** A one-gateway result with a
+real match rate beats a long message with none. If three teammates each run Task 1 on a
+different gateway and file the block, we get a fleet-wide picture in the same shape —
+that's exactly what turns the `[Unverified]` labels into verified ones and builds v3 on
+solid ground.
 
 ---
 
