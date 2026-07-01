@@ -349,7 +349,12 @@ def ingest_gateway_logs():
     # Read all staged gateway log JSON files
     # [Assumption] Fabric Lakehouse Files/ is accessible via ABFSS path
     try:
-        landing_df = spark.read.json(f"{LANDING_PATH}/gateway_logs_*.json")
+        # multiLine=True: collectors write pretty-printed ConvertTo-Json (a single
+        # multi-line root object), NOT JSONL. Spark's default (multiLine=false) reads
+        # line-by-line and would corrupt a pretty object into _corrupt_record.
+        landing_df = spark.read.option("multiLine", True).json(
+            f"{LANDING_PATH}/gateway_logs_*.json"
+        )
     except Exception as e:
         print(f"[WARN] No gateway log staging files found or read error: {e}")
         return
@@ -502,7 +507,9 @@ def _emit_schema_warnings(records: list, known_cols: dict, log_type: str):
 def ingest_network_metrics():
     """Ingest network metrics JSON from Collect-NetworkMetrics.ps1."""
     try:
-        df = spark.read.json(f"{LANDING_PATH}/network_metrics_*.json")
+        df = spark.read.option("multiLine", True).json(
+            f"{LANDING_PATH}/network_metrics_*.json"
+        )
     except Exception as e:
         print(f"[WARN] No network metrics files: {e}")
         return
@@ -541,7 +548,9 @@ def ingest_network_metrics():
 def ingest_event_log():
     """Ingest Windows Event Log JSON from Collect-EventLog.ps1."""
     try:
-        df = spark.read.json(f"{LANDING_PATH}/event_log_*.json")
+        df = spark.read.option("multiLine", True).json(
+            f"{LANDING_PATH}/event_log_*.json"
+        )
     except Exception as e:
         print(f"[WARN] No event log files: {e}")
         return
@@ -573,7 +582,9 @@ def ingest_event_log():
 def ingest_disk_spool():
     """Ingest disk spool JSON from Collect-DiskSpool.ps1."""
     try:
-        df = spark.read.json(f"{LANDING_PATH}/disk_spool_*.json")
+        df = spark.read.option("multiLine", True).json(
+            f"{LANDING_PATH}/disk_spool_*.json"
+        )
     except Exception as e:
         print(f"[WARN] No disk spool files: {e}")
         return
@@ -598,7 +609,9 @@ def ingest_disk_spool():
 def ingest_gateway_inventory():
     """Ingest gateway inventory JSON from Get-GatewayInventory.ps1."""
     try:
-        df = spark.read.json(f"{LANDING_PATH}/gateway_inventory_*.json")
+        df = spark.read.option("multiLine", True).json(
+            f"{LANDING_PATH}/gateway_inventory_*.json"
+        )
     except Exception as e:
         print(f"[WARN] No gateway inventory files: {e}")
         return
@@ -635,7 +648,9 @@ def ingest_refresh_history():
     against the refresh error the operator actually sees.
     """
     try:
-        df = spark.read.json(f"{LANDING_PATH}/refresh_history_*.json")
+        df = spark.read.option("multiLine", True).json(
+            f"{LANDING_PATH}/refresh_history_*.json"
+        )
     except Exception as e:
         print(f"[WARN] No refresh history files: {e}")
         return

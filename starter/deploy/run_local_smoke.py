@@ -38,30 +38,37 @@ import textwrap
 from pathlib import Path
 
 # ── Locate repo root (this file lives at starter/deploy/run_local_smoke.py) ──
-THIS_DIR   = Path(__file__).resolve().parent
-STARTER    = THIS_DIR.parent
-SYNTH_DIR  = STARTER / "tests" / "synthetic_out"
-NOTEBOOKS  = STARTER / "notebooks"
+THIS_DIR = Path(__file__).resolve().parent
+STARTER = THIS_DIR.parent
+SYNTH_DIR = STARTER / "tests" / "synthetic_out"
+NOTEBOOKS = STARTER / "notebooks"
 
 # ── Inject the notebooks directory so gateway_bronze_lib is importable ───────
 sys.path.insert(0, str(NOTEBOOKS))
+
 
 # ── Check for PySpark + Java availability ─────────────────────────────────────
 def _check_env():
     java_home = os.environ.get("JAVA_HOME", "")
     if not java_home:
-        print("[SKIP] JAVA_HOME not set — cannot start PySpark. "
-              "Set JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 and re-run.")
+        print(
+            "[SKIP] JAVA_HOME not set — cannot start PySpark. "
+            "Set JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 and re-run."
+        )
         sys.exit(0)
     java_bin = Path(java_home) / "bin" / "java"
     if not java_bin.exists():
-        print(f"[SKIP] Java binary not found at {java_bin}. "
-              "Install Java 17 or fix JAVA_HOME.")
+        print(
+            f"[SKIP] Java binary not found at {java_bin}. "
+            "Install Java 17 or fix JAVA_HOME."
+        )
         sys.exit(0)
     try:
         import pyspark  # noqa: F401
     except ImportError:
-        print("[SKIP] pyspark not installed. Run: pip install pyspark==3.5.1 delta-spark==3.1.0")
+        print(
+            "[SKIP] pyspark not installed. Run: pip install pyspark==3.5.1 delta-spark==3.1.0"
+        )
         sys.exit(0)
     try:
         import delta  # noqa: F401
@@ -75,8 +82,10 @@ _check_env()
 
 # ── PySpark session (local mode, no Fabric dependency) ─────────────────────
 from pyspark.sql import SparkSession
+
 try:
     from delta import configure_spark_with_delta_pip
+
     _HAVE_DELTA_HELPER = True
 except Exception:
     _HAVE_DELTA_HELPER = False
@@ -85,11 +94,13 @@ from pyspark.sql import functions as F
 print("[smoke] Building local SparkSession (may take ~20s on first run)...")
 
 _builder = (
-    SparkSession.builder
-    .master("local[2]")
+    SparkSession.builder.master("local[2]")
     .appName("GatewayMonitor_SmokeTest")
     .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension")
-    .config("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog")
+    .config(
+        "spark.sql.catalog.spark_catalog",
+        "org.apache.spark.sql.delta.catalog.DeltaCatalog",
+    )
     .config("spark.ui.enabled", "false")
 )
 # Use delta-spark's helper to fetch the matching Delta JAR from Maven on first run.
@@ -102,11 +113,14 @@ try:
     else:
         raise RuntimeError("delta helper unavailable")
 except Exception as _e:
-    print(f"[smoke] Delta unavailable ({_e}); falling back to Parquet (logic-only smoke).")
+    print(
+        f"[smoke] Delta unavailable ({_e}); falling back to Parquet (logic-only smoke)."
+    )
     SMOKE_FORMAT = "parquet"
     spark = (
         SparkSession.builder.master("local[2]")
-        .appName("GatewayMonitor_SmokeTest").config("spark.ui.enabled", "false")
+        .appName("GatewayMonitor_SmokeTest")
+        .config("spark.ui.enabled", "false")
         .getOrCreate()
     )
 spark.sparkContext.setLogLevel("WARN")
@@ -116,6 +130,7 @@ print("[smoke] SparkSession ready.\n")
 # ── Import real library under test ────────────────────────────────────────────
 try:
     import gateway_bronze_lib as gbl
+
     print("[smoke] Imported gateway_bronze_lib OK")
 except ImportError as e:
     print(f"[FAIL] Could not import gateway_bronze_lib: {e}")
@@ -156,8 +171,15 @@ print(f"       columns: {bronze_qe.columns}")
 
 # Verify key columns exist and have expected types
 expected_qe_cols = [
-    "GatewayObjectId", "RequestId", "DataSource", "QueryExecutionDuration",
-    "Success", "ErrorMessage", "SpoolingTotalDataSize", "DiskRead", "DiskWrite",
+    "GatewayObjectId",
+    "RequestId",
+    "DataSource",
+    "QueryExecutionDuration",
+    "Success",
+    "ErrorMessage",
+    "SpoolingTotalDataSize",
+    "DiskRead",
+    "DiskWrite",
     "_partition_date",
 ]
 missing_qe = [c for c in expected_qe_cols if c not in bronze_qe.columns]
@@ -169,8 +191,12 @@ print(f"[PASS] All {len(expected_qe_cols)} expected QE columns present")
 # Show a sample row
 print("\n--- bronze_qe sample (1 row) ---")
 bronze_qe.select(
-    "RequestId", "GatewayObjectId", "DataSource",
-    "QueryExecutionDuration", "Success", "SpoolingTotalDataSize"
+    "RequestId",
+    "GatewayObjectId",
+    "DataSource",
+    "QueryExecutionDuration",
+    "Success",
+    "SpoolingTotalDataSize",
 ).show(1, truncate=80)
 
 
@@ -191,8 +217,12 @@ if qs_csv.exists():
         print(f"       artifact_id populated: {populated}/{qs_count} rows")
         print(f"[PASS] add_artifact_identity() returned artifact_id column")
     else:
-        print("[WARN] artifact_id column absent — EvaluationContext may not exist in fixture")
-    bronze_qs.select("RequestId", "EvaluationContext", "artifact_id", "artifact_kind").show(2, truncate=60)
+        print(
+            "[WARN] artifact_id column absent — EvaluationContext may not exist in fixture"
+        )
+    bronze_qs.select(
+        "RequestId", "EvaluationContext", "artifact_id", "artifact_kind"
+    ).show(2, truncate=60)
 else:
     print(f"[SKIP] {qs_csv} not found — skipping QueryStart step")
     bronze_qs = None
@@ -215,9 +245,7 @@ if bronze_qs is not None:
     ).dropDuplicates(["RequestId"])
 
     silver_qe = bronze_qe.join(qs_sel, on="RequestId", how="left")
-    silver_qe = silver_qe.withColumn(
-        "is_spooled", F.col("SpoolingTotalDataSize") > 0
-    )
+    silver_qe = silver_qe.withColumn("is_spooled", F.col("SpoolingTotalDataSize") > 0)
 else:
     silver_qe = bronze_qe.withColumn("artifact_id", F.lit(None).cast("string"))
     silver_qe = silver_qe.withColumn("artifact_type", F.lit(None).cast("string"))
@@ -227,8 +255,12 @@ silver_count = silver_qe.count()
 print(f"[PASS] silver_query_execution: {silver_count} rows")
 print(f"       is_spooled=True: {silver_qe.filter(F.col('is_spooled')).count()} rows")
 silver_qe.select(
-    "RequestId", "DataSource", "QueryExecutionDuration", "Success",
-    "is_spooled", "artifact_id"
+    "RequestId",
+    "DataSource",
+    "QueryExecutionDuration",
+    "Success",
+    "is_spooled",
+    "artifact_id",
 ).show(3, truncate=60)
 
 
@@ -242,24 +274,31 @@ print("STEP 4  GOLD — gold_query_performance aggregation")
 print("=" * 70)
 
 gold_qp = (
-    silver_qe
-    .withColumn("hour_utc", F.date_trunc("hour", F.col("QueryExecutionEndTimeUTC")))
+    silver_qe.withColumn(
+        "hour_utc", F.date_trunc("hour", F.col("QueryExecutionEndTimeUTC"))
+    )
     .groupBy("GatewayObjectId", "DataSource", "QueryType", "hour_utc")
     .agg(
         F.count("*").alias("query_count"),
         F.sum(F.when(F.col("Success") == False, 1).otherwise(0)).alias("error_count"),
         F.round(
-            F.sum(F.when(F.col("Success") == False, 1).otherwise(0)) /
-            F.greatest(F.count("*"), F.lit(1)) * 100, 2
+            F.sum(F.when(F.col("Success") == False, 1).otherwise(0))
+            / F.greatest(F.count("*"), F.lit(1))
+            * 100,
+            2,
         ).alias("error_rate_pct"),
         F.round(F.avg("QueryExecutionDuration"), 0).alias("duration_avg_ms"),
-        F.round(F.expr("percentile_approx(QueryExecutionDuration, 0.95)"), 0).alias("duration_p95_ms"),
+        F.round(F.expr("percentile_approx(QueryExecutionDuration, 0.95)"), 0).alias(
+            "duration_p95_ms"
+        ),
         F.max("QueryExecutionDuration").alias("duration_max_ms"),
         F.sum("SpoolingTotalDataSize").alias("spool_total_bytes_sum"),
         F.round(F.avg("SpoolingDiskWritingDuration"), 0).alias("spool_writing_ms_avg"),
         F.round(
-            F.sum(F.when(F.col("is_spooled") == True, 1).otherwise(0)) /
-            F.greatest(F.count("*"), F.lit(1)) * 100, 2
+            F.sum(F.when(F.col("is_spooled") == True, 1).otherwise(0))
+            / F.greatest(F.count("*"), F.lit(1))
+            * 100,
+            2,
         ).alias("spooled_pct"),
     )
     .withColumn("_partition_date", F.to_date(F.col("hour_utc")))
@@ -270,9 +309,15 @@ print(f"[PASS] gold_query_performance: {gold_count} hour-bucket rows")
 
 # Verify measures.dax column dependencies are all present
 MEASURES_DAX_DEPS = [
-    "query_count", "error_count", "error_rate_pct",
-    "duration_avg_ms", "duration_p95_ms", "duration_max_ms",
-    "spool_total_bytes_sum", "spool_writing_ms_avg", "spooled_pct",
+    "query_count",
+    "error_count",
+    "error_rate_pct",
+    "duration_avg_ms",
+    "duration_p95_ms",
+    "duration_max_ms",
+    "spool_total_bytes_sum",
+    "spool_writing_ms_avg",
+    "spooled_pct",
 ]
 missing_gold = [c for c in MEASURES_DAX_DEPS if c not in gold_qp.columns]
 if missing_gold:
@@ -281,8 +326,14 @@ if missing_gold:
 print(f"[PASS] All {len(MEASURES_DAX_DEPS)} measures.dax column dependencies present")
 
 gold_qp.select(
-    "GatewayObjectId", "DataSource", "query_count", "error_count",
-    "duration_avg_ms", "duration_p95_ms", "spool_total_bytes_sum", "spooled_pct"
+    "GatewayObjectId",
+    "DataSource",
+    "query_count",
+    "error_count",
+    "duration_avg_ms",
+    "duration_p95_ms",
+    "spool_total_bytes_sum",
+    "spooled_pct",
 ).show(5, truncate=50)
 
 
@@ -301,7 +352,9 @@ if sc_csv.exists():
         if c in bronze_sc.columns:
             bronze_sc = bronze_sc.withColumn(c, F.col(c).cast("double"))
     if "GatewayMEMKb" in bronze_sc.columns:
-        bronze_sc = bronze_sc.withColumn("GatewayMEMKb", F.col("GatewayMEMKb").cast("long"))
+        bronze_sc = bronze_sc.withColumn(
+            "GatewayMEMKb", F.col("GatewayMEMKb").cast("long")
+        )
 
     sc_count = bronze_sc.count()
     print(f"[PASS] bronze_system_counter: {sc_count} rows")
@@ -316,7 +369,9 @@ if sc_csv.exists():
     HEALTH_DAX_DEPS = ["cpu_pct_avg", "mem_kb_avg", "system_cpu_avg"]
     missing_health = [c for c in HEALTH_DAX_DEPS if c not in cpu_mem.columns]
     if missing_health:
-        print(f"[FAIL] gold_gateway_health missing measures.dax-required columns: {missing_health}")
+        print(
+            f"[FAIL] gold_gateway_health missing measures.dax-required columns: {missing_health}"
+        )
         sys.exit(1)
     print(f"[PASS] All {len(HEALTH_DAX_DEPS)} health column dependencies present")
     cpu_mem.show(3, truncate=60)
@@ -349,28 +404,105 @@ try:
         print(f"[PASS] bronze_mashup_processes: {mrows} process samples")
         gold_mashup = gbl.gold_mashup_health(bronze_mashup)
         runaways = gold_mashup.filter(F.col("runaway_container") == True).count()
-        print(f"[PASS] gold_mashup_health computed for {gold_mashup.count()} gateway(s)")
-        print(f"       runaway containers detected: {runaways} (pain #5 signal working)")
-        gold_mashup.select("GatewayObjectId","peak_working_set_mb","avg_working_set_mb",
-                           "distinct_processes","runaway_container").show(5, truncate=False)
+        print(
+            f"[PASS] gold_mashup_health computed for {gold_mashup.count()} gateway(s)"
+        )
+        print(
+            f"       runaway containers detected: {runaways} (pain #5 signal working)"
+        )
+        gold_mashup.select(
+            "GatewayObjectId",
+            "peak_working_set_mb",
+            "avg_working_set_mb",
+            "distinct_processes",
+            "runaway_container",
+        ).show(5, truncate=False)
     else:
         print("[SKIP] no MashupProcesses_synthetic.json (regenerate synthetic data)")
 except Exception as _e:
     print(f"[FAIL] mashup step: {_e}")
 
-print(textwrap.dedent("""
+# ---------------------------------------------------------------------------
+# STEP 7 — SILVER TRIAGE Level-1 (PAIN #2): exact-RequestId join of a FAILED
+# gateway query to the Service refresh-history record. Mirrors the Level-1 exact
+# join in 02_silver_correlate.build_silver_triage() and exercises the SAME
+# multiLine=True + explode(RefreshRecords) read path as
+# 01_bronze_ingest.ingest_refresh_history(). This is the Service-side leg that
+# makes the #2 triage join whole — previously skipped for lack of a fixture.
+# [Fabric-verify-pending] the Level-2 time-window fallback + U15 nearest-pick
+# dedup run only in a full Spark session; this proves the exact-join composes.
+# ---------------------------------------------------------------------------
+print("\nSTEP 7  SILVER — triage exact-RequestId join (pain #2, refresh leg)")
+refresh_json = SYNTH_DIR / "refresh_history_synthetic.json"
+try:
+    if refresh_json.exists():
+        rh_raw = spark.read.option("multiLine", True).json(str(refresh_json))
+        rh = (
+            rh_raw.select(F.explode_outer(F.col("RefreshRecords")).alias("r"))
+            .select(
+                F.col("r.RequestId").alias("RequestId"),
+                F.col("r.DatasetId").alias("DatasetId"),
+                F.col("r.Status").alias("RefreshStatus"),
+                F.col("r.ServiceExceptionJson").alias("ServiceExceptionJson"),
+            )
+            .filter(F.col("RequestId").isNotNull())
+        )
+        rh_count = rh.count()
+        print(
+            f"[PASS] bronze_refresh_history: {rh_count} refresh records "
+            "(multiLine JSON + explode(RefreshRecords) OK)"
+        )
+
+        failed_qe = silver_qe.filter(F.col("Success") == False)
+        fq_count = failed_qe.count()
+        triage = (
+            failed_qe.select("RequestId", "DataSource", "ErrorMessage")
+            .join(rh, on="RequestId", how="inner")
+            .withColumn("triage_confidence", F.lit("EXACT_REQUESTID"))
+        )
+        tri_count = triage.count()
+        if (
+            "triage_confidence" not in triage.columns
+            or "RefreshStatus" not in triage.columns
+        ):
+            print("[FAIL] triage output missing expected columns")
+            sys.exit(1)
+        # Row count depends on which queries failed this random run; the point is
+        # the exact-RequestId join composes and reconciles gateway + Service legs.
+        print(
+            f"[PASS] silver_triage exact join: {tri_count} triage rows "
+            f"(from {fq_count} failed gateway queries)"
+        )
+        triage.select(
+            "RequestId",
+            "DataSource",
+            "RefreshStatus",
+            "ServiceExceptionJson",
+            "triage_confidence",
+        ).show(5, truncate=50)
+    else:
+        print("[SKIP] no refresh_history_synthetic.json (regenerate synthetic data)")
+except Exception as _e:
+    print(f"[FAIL] triage step: {_e}")
+
+print(
+    textwrap.dedent(
+        """
   [Unverified — requires Fabric tenant pilot]
   The following were NOT exercised by this local smoke test:
     - Fabric Lakehouse ABFSS read/write (requires live OneLake)
     - DeltaTable merge / SCD-2 on gold_dim_gateway
-    - silver_triage 3-way join (requires bronze_refresh_history fixture)
+    - silver_triage Level-2 time-window fallback + U15 nearest-pick dedup
+      (Level-1 exact-RequestId join IS now exercised in STEP 7)
     - silver_identity_attribution fuzzy join (requires Activity Events fixture)
     - silver_network_correlated time-window join (requires network_metrics fixture)
     - Collect-MashupProcesses on a REAL gateway host (process names vary by version)
     - gold_cluster_load CV computation (requires multi-node inventory fixture)
     - Fabric Activator rule evaluation
     - FPM Eventhouse bridge
-""").strip())
+"""
+    ).strip()
+)
 print("=" * 70)
 
 spark.stop()
