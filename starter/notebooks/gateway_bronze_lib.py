@@ -8,7 +8,10 @@
 # PRIMARY PATH: native Spark distributed CSV reader (spark.read.csv) in PERMISSIVE
 # mode. This is RFC-4180-correct (handles commas/quotes/multiline natively),
 # distributed (parses on executors, not the driver), and schema-adaptive:
-#   - unknown/new columns flow through (mergeSchema on write) -> survives pain #4
+#   - unknown/new columns flow through (mergeSchema on write) -> survives pain #4,
+#     but are first run through _sanitize_columns() so a new unit-suffixed header
+#     (e.g. NewMetric(ms)) can't break the Delta write with InvalidColumnName --
+#     a live-tenant-confirmed failure mode (2026-07-01, LIVE-TENANT-FINDINGS.md)
 #   - malformed rows captured in _corrupt_record instead of failing the job
 #
 # The driver-side Python parser (parse_csv_rows) is retained as a documented
@@ -21,6 +24,7 @@ import base64
 import binascii
 import csv
 import io
+import re
 
 # The Spark functions below need pyspark; the pure-Python helpers (parse_csv_rows,
 # normalize_eval_context_py, cast_error_columns) do NOT. Guard the import so this
@@ -58,6 +62,50 @@ QE_NUMERIC_DOUBLE = ["DiskRead", "DiskWrite"]
 QE_TIMESTAMPS = ["QueryExecutionEndTimeUTC", "DataProcessingEndTimeUTC"]
 
 
+# ---- column-name sanitizer (pain #4 live-tenant fix, 2026-07-01) -------------
+# Delta / Parquet (and Fabric's schema inference) reject these characters in a
+# column identifier: space , ; { } ( ) newline tab = and '/'. Gateway exports use
+# unit suffixes like "(ms)", "(bytes)", "(byte/sec)" that hit exactly this. Known
+# columns are normalized by QUERY_EXECUTION_RENAME; UNKNOWN/new columns (the pain
+# #4 gateway-upgrade case) are not, so without this a new "SomeMetric(ms)" header
+# would break the bronze write with InvalidColumnName. See LIVE-TENANT-FINDINGS.md.
+_ILLEGAL_COL_CHARS = re.compile(r"[ ,;{}()\n\t=/]+")
+
+
+def _safe_col_name(name):
+    """Pure-Python (Spark-free, unit-testable) column-name sanitizer.
+
+    Collapses each run of Delta/Parquet-illegal characters to a single '_' and
+    trims leading/trailing '_'. Info-preserving and collision-avoiding:
+    'QueryExecutionDuration(ms)' -> 'QueryExecutionDuration_ms',
+    'DiskRead(byte/sec)' -> 'DiskRead_byte_sec'. A name with no illegal chars is
+    returned unchanged. If sanitizing would empty the name, the original is kept.
+    """
+    safe = _ILLEGAL_COL_CHARS.sub("_", name).strip("_")
+    return safe if safe else name
+
+
+def _sanitize_columns(df):
+    """Rename any DataFrame column whose name contains Delta/Parquet-illegal
+    characters to its `_safe_col_name`. No-op for already-safe names. Collisions
+    (two raw names sanitizing to the same safe name) are disambiguated with a
+    numeric suffix so no column is silently dropped."""
+    used = set(df.columns)
+    for c in list(df.columns):
+        safe = _safe_col_name(c)
+        if safe == c:
+            continue
+        if safe in used and safe != c:
+            i = 2
+            while f"{safe}_{i}" in used:
+                i += 1
+            safe = f"{safe}_{i}"
+        df = df.withColumnRenamed(c, safe)
+        used.discard(c)
+        used.add(safe)
+    return df
+
+
 def read_gateway_csv(spark, path, rename_map=None):
     """
     PRIMARY PATH — native distributed Spark CSV read.
@@ -67,6 +115,9 @@ def read_gateway_csv(spark, path, rename_map=None):
       never fail the job
     - multiLine + escape='"': RFC-4180 quoted commas / embedded quotes handled
     - inferSchema=False: read as strings, cast explicitly downstream (safe)
+    - _sanitize_columns: after known-column renames, scrub any remaining
+      illegal-char headers (unknown unit-suffixed columns) so the Delta write
+      never fails with InvalidColumnName (pain #4 live-tenant fix).
     """
     df = (
         spark.read.option("header", True)
@@ -82,6 +133,8 @@ def read_gateway_csv(spark, path, rename_map=None):
         for src, dst in rename_map.items():
             if src in df.columns:
                 df = df.withColumnRenamed(src, dst)
+    # Scrub any remaining illegal-character headers (unknown/new columns).
+    df = _sanitize_columns(df)
     return df
 
 
@@ -263,9 +316,15 @@ def parse_csv_rows(raw_csv, known_cols):
 def read_mashup_processes(spark, path):
     """Read NDJSON mashup-process samples into a typed DataFrame."""
     df = spark.read.option("multiLine", False).json(path)
-    for c, t in [("WorkingSetMB", "double"), ("PrivateBytesMB", "double"),
-                 ("CpuPercent", "double"), ("ThreadCount", "int"),
-                 ("HandleCount", "int"), ("ProcessId", "long"), ("LogicalCores", "int")]:
+    for c, t in [
+        ("WorkingSetMB", "double"),
+        ("PrivateBytesMB", "double"),
+        ("CpuPercent", "double"),
+        ("ThreadCount", "int"),
+        ("HandleCount", "int"),
+        ("ProcessId", "long"),
+        ("LogicalCores", "int"),
+    ]:
         if c in df.columns:
             df = df.withColumn(c, F.col(c).cast(t))
     if "CollectedAtUtc" in df.columns:
@@ -276,12 +335,20 @@ def read_mashup_processes(spark, path):
 def gold_mashup_health(df, runaway_working_set_mb=6000.0):
     """Per-gateway mashup rollup: peak/avg working set, container count, and a
     runaway flag when any container's working set exceeds the threshold."""
-    agg = (df.groupBy("GatewayObjectId", "HostName")
-             .agg(F.max("WorkingSetMB").alias("peak_working_set_mb"),
-                  F.avg("WorkingSetMB").alias("avg_working_set_mb"),
-                  F.max("CpuPercent").alias("peak_cpu_pct"),
-                  F.countDistinct("ProcessId").alias("distinct_processes"),
-                  F.sum(F.when(F.col("IsMashupContainer") == True, 1).otherwise(0)).alias("mashup_samples"))
-             .withColumn("runaway_container",
-                         F.col("peak_working_set_mb") > F.lit(runaway_working_set_mb)))
+    agg = (
+        df.groupBy("GatewayObjectId", "HostName")
+        .agg(
+            F.max("WorkingSetMB").alias("peak_working_set_mb"),
+            F.avg("WorkingSetMB").alias("avg_working_set_mb"),
+            F.max("CpuPercent").alias("peak_cpu_pct"),
+            F.countDistinct("ProcessId").alias("distinct_processes"),
+            F.sum(F.when(F.col("IsMashupContainer") == True, 1).otherwise(0)).alias(
+                "mashup_samples"
+            ),
+        )
+        .withColumn(
+            "runaway_container",
+            F.col("peak_working_set_mb") > F.lit(runaway_working_set_mb),
+        )
+    )
     return agg

@@ -39,6 +39,14 @@ try:
 except Exception:
     _HAS_CAST_ERR = False
 
+# Pain #4 column-name sanitizer (Spark-free helper) — import separately too.
+try:
+    from gateway_bronze_lib import _safe_col_name
+
+    _HAS_SANITIZE = True
+except Exception:
+    _HAS_SANITIZE = False
+
 
 # ---- mirror of notebook column maps (names only; types simplified to str/int/float/bool) ----
 QE_KNOWN = {
@@ -219,6 +227,45 @@ def run(out_dir):
             "QueryExecutionDuration"
             in cast_error_columns({"QueryExecutionDuration": "3.5"}),
         )
+
+    print("Test group 4: illegal column-name sanitizer (pain #4 live-tenant fix)")
+    if not _HAS_SANITIZE:
+        check("_safe_col_name importable from lib", False)
+    else:
+        # The live-tenant offenders: unit-suffixed headers with ( ) and /.
+        check(
+            "(ms) suffix stripped to safe name",
+            _safe_col_name("QueryExecutionDuration(ms)") == "QueryExecutionDuration_ms",
+        )
+        check(
+            "(bytes) suffix stripped to safe name",
+            _safe_col_name("SpoolingTotalDataSize(bytes)")
+            == "SpoolingTotalDataSize_bytes",
+        )
+        check(
+            "(byte/sec) with slash sanitized",
+            _safe_col_name("DiskRead(byte/sec)") == "DiskRead_byte_sec",
+        )
+        # An already-clean name must be returned UNCHANGED (no churn).
+        check("clean name unchanged", _safe_col_name("RequestId") == "RequestId")
+        # Result must contain no Delta/Parquet-illegal characters at all.
+        import re as _re
+
+        bad = _re.compile(r"[ ,;{}()\n\t=/]")
+        check(
+            "no illegal chars remain in any sanitized name",
+            all(
+                not bad.search(_safe_col_name(n))
+                for n in [
+                    "QueryExecutionDuration(ms)",
+                    "DataTransferSize(bytes)",
+                    "DiskWrite(byte/sec)",
+                    "Weird Name = (x)",
+                ]
+            ),
+        )
+        # Empty-after-sanitize falls back to the original (never returns "").
+        check("degenerate name falls back to original", _safe_col_name("()") == "()")
 
     print(f"\n{'='*48}")
     if FAILS:
