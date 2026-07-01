@@ -1,0 +1,7 @@
+{
+  "user_description": "Confirming FUAM activities and refreshables table columns",
+  "url": "https://raw.githubusercontent.com/microsoft/fabric-toolbox/main/monitoring/fabric-unified-admin-monitoring/media/documentation/FUAM_Architecture.md",
+  "force_fetch": false,
+  "prompt": "List the exact FUAM_Lakehouse table names populated by the Activities, Capacity Refreshables, Capacity Metrics, and Inventory modules. For activities, capacity_refreshables, and capacity_metrics_by_item_by_operation_by_day tables, what columns/keys do they contain (datasource, semantic model id, workspace, capacity, timestamps, user, refresh duration)? I need the join keys usable to correlate to gateway query logs by time window and data source.",
+  "max_length": 40000
+}

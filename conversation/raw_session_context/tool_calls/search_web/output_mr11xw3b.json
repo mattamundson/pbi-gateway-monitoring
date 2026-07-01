@@ -1,0 +1,256 @@
+{
+  "results": [
+    {
+      "title": "Upload Speed to Fabric from On Premise SQL Gateway - Reddit",
+      "url": "https://www.reddit.com/r/MicrosoftFabric/comments/1rhgzw0/upload_speed_to_fabric_from_on_premise_sql_gateway/",
+      "domain": "reddit",
+      "snippet": "",
+      "date": "2026-03-01T00:00:00",
+      "summary": "Are you implementing SSL encryption for the data transmission from your SQL server to the gateway, or is it being encrypted from the gateway to Azure blob storage?\nKeep in mind that both encryption and decryption processes require time, which can hinder the speed of data transfer.\nAnother factor to consider could be a bottleneck in the network, such as a firewall or a sluggish internet connection, including the link to Azure.\n...\nHave you considered using SQL mirroring?\n...\nWhen you refer to the on-prem SQL gateway, you're specifically talking about the Power BI gateway, correct?\nWe've been encountering a similar issue with S3 shortcuts on our side as well.\nFor the past two months, we've been in talks with Microsoft, and it has come to light that there is a limitation on the Azure Relay from their end.\nCertain packets are being generated, and Azure Relay has restrictions on the number of those packets.\nWe are collaborating with Microsoft and exploring alternative solutions, but this process will definitely require some time.\n...\nIndeed, it's a Power BI data gateway in standard mode, not the personal version.",
+      "trust": null
+    },
+    {
+      "title": "Analyze Dataflow Performance : r/PowerBI - Reddit",
+      "url": "https://www.reddit.com/r/PowerBI/comments/nssijs/analyze_dataflow_performance/",
+      "domain": "reddit.com",
+      "snippet": "",
+      "date": "2021-06-05T00:00:00",
+      "summary": "Maybe you can do the same transformations on the desktop and check them with Query Diagnostics https://docs.microsoft.com/en-us/power-query/querydiagnostics\nIf you can implement incremental refresh, do it, at least for the transaction table.\nEven if source table does not have a datetime column you can get around that fairly easily generating that \"period\" column that exists on the source based on the datetime column you generate yourself on powerquery.\nThat works fine in dataset at least...\nSplit your dataflows up.\n1 for ingestion and 1 for transforms using linked entities.\nThats best practices for datafloe architecture.\nJust another suggestion if applicable, for your transactional data, can you split it up logically into a historical and current data?\nIf so, you can split them up, run historical nightly or weekly while running the current multiple times a day.\nThe goal here is not to take the 40 minutes every time.\nIn this scenario, you will have to create another dataflow that combines the historical and current.\nSince you don’t have premium, they won’t be linked (I.e. auto refresh the combined with one up stream dataflows is in process) but you can either schedule it or use Power Automate to automatically kick off a refresh once complete\nAs a side note, roughly how much data are we talking about for your transactions?\n40 minutes is a long time so I’m thinking you either have a lot of data (wide tables and lots of rows), costly transformations, or the data source is slow.\nI would go with the historical and current load and yearly or based on the volume move data to historical.\nAnother thing you can look to do is premium per user, specially if there are not many users on it.",
+      "trust": null
+    },
+    {
+      "title": "Power BI Gateway Tuning - Slow Upload/Send Speed After Mashup ...",
+      "url": "https://www.reddit.com/r/PowerBI/comments/1m8sh1i/power_bi_gateway_tuning_slow_uploadsend_speed/",
+      "domain": "reddit",
+      "snippet": "",
+      "date": "2025-07-25T00:00:00",
+      "summary": "**subreddit: /r/PowerBI**\n...\nThe Gateway has the capability to write data to disk, but your performance is inherently constrained by the available network bandwidth.\nThis limitation is influenced by the connection from the server running the Gateway to your network gateway, as well as your internet upload speed.\nWhen it comes to data transfers, consistent latency plays a crucial role.\nFluctuating latency can disrupt the networking stack's ability to accurately determine the optimal transmission speed.\nAdditionally, network reliability is essential.\nIf packets are being lost, not only will they need to be resent, but this can also lead to throttling within the networking stack.\nTo address these issues, start by monitoring all system resources, not just the CPU, to identify any bottlenecks on the local machine.\nNext, attempt to upload a file to an Azure destination located in the same region as your Power BI tenant.\nThis should provide you with further insights to investigate or troubleshoot.\n...\nThank you for the suggestion.I was able to tune the model to load data in 40 minutes by adjusting fact tables parallelism and DLL settings.\nThere were no packet losses before or after the tuning, and the latency remained consistently between 129 and 136 ms.\nCurrently, we are using views, and if we switch to tables, the refresh should complete in approximately 34 minutes.",
+      "trust": null
+    },
+    {
+      "title": "Not a DBA, looking for a solution for keeping on prem MSSQL ...",
+      "url": "https://www.reddit.com/r/SQLServer/comments/wk13cn/not_a_dba_looking_for_a_solution_for_keeping_on/",
+      "domain": "reddit",
+      "snippet": "",
+      "date": "2022-08-09T00:00:00",
+      "summary": "What replication doesn’t need is big resources.\nIt’s slow by design.",
+      "trust": null
+    },
+    {
+      "title": "Best method for handiling large fact tables snd using incremental ...",
+      "url": "https://www.reddit.com/r/PowerBI/comments/1p6mkx4/best_method_for_handiling_large_fact_tables_snd/",
+      "domain": "reddit",
+      "snippet": "",
+      "date": "2025-11-25T00:00:00",
+      "summary": "It might be more practical to consolidate the five years of data into a single table and implement incremental refresh from there.\nIf handling all that historical data in one go is overwhelming during the initial refresh, you can opt for a manual approach to process each partition individually.\n...\nIf you're suggesting displaying the transactions in a tabular format for users to analyze, and they require a brief time span for the data, you might want to utilize direct query mode for the table.\nThis way, you wouldn't need to import any data at all.\n...\nIf the focus is on analyzing specific transactions, there's no requirement to have all 10 million records available at the same time.\nI would recommend configuring this as a direct query table, especially if immediate report generation speed isn't critical.\nAdditionally, incorporating a slicer would allow users to choose the time frame for the transactions they need, along with other filters to further refine the query parameters.\nThis would effectively reduce the volume of data being processed.\n...\nIf it’s a view, I’d recommend assessing its performance as well.\nAdditionally, does your Power Query include any transformations that can’t be folded?\nAre there any calculated columns created with DAX in the table?\nEven with 30 columns—something to reconsider and ensure they’re all necessary—24 million rows should process significantly faster based on my experience.\nYou might also want to monitor the refresh process to pinpoint where the delays are occurring.\n...\nIn my opinion, this original poster (OP) should focus on identifying the source of the slowdown in their query instead of merely finding ways to circumvent the issue.\nSeveral elements could be affecting performance, but ideally, your query should only take minutes, not hours.\nDAX Studio offers various tools that could assist in this process.\nAdditionally, testing the query independently of Power BI might provide insights into its performance.\nIt's also possible that the gateway is imposing some limitations.\nHowever, I would prioritize examining the query itself and assessing its efficiency; utilizing AI could be an effective way to quickly analyze and evaluate it.\n...\nI propose dividing the query into five separate tables, each representing a one-year segment.\nThe most recent table should utilize incremental refresh, while the other four tables can be configured to remain static without refreshing.\nI recommend exploring the functionality of Power BI's \"incremental refresh,\" as it operates similarly.\nThe advantage is that you won’t need to segment the table within your query; Power BI can handle that automatically if configured properly.\n...\nThe issue lies in the duration required for the initial refresh, which surpasses four hours, causing the query to timeout.\n...\nIs it possible to use SSMS Analysis Services to establish a connection with the dataset?\nIf it successfully reached the stage of partition creation, you can load them individually by hand.\n...\nYou have the option to increase the timeout duration in Power Query.\nFor more details, you can refer to the documentation on Sql.Database in PowerQuery M available on Microsoft Learn:://share/iNCDzs79aLg4aQ",
+      "trust": null
+    },
+    {
+      "title": "Why is the reason my report is slow in powerbi service? - Reddit",
+      "url": "https://www.reddit.com/r/PowerBI/comments/1c0adgm/why_is_the_reason_my_report_is_slow_in_powerbi/",
+      "domain": "reddit.com",
+      "snippet": "",
+      "date": "2024-04-10T00:00:00",
+      "summary": "Look at your gateway configuration id think\nIs Dax calculated in the gateway or in the service, do you know?\nThis, make sure your gateway is beefy enough.\nLike the others: make sure the gateway can handle the data.\nWe have two gateways that perform load-balancing to optimize performance.\nAll of the data cleaning, transforming, and enriching is done on our SQL Server.\nWe use Power BI, except for some measures, solely for visualization purposes.\nExplain your Power Query steps to the person that manages your dataset and ask them if they can be moved upstream into the database.\nAlso, if you have unoptimized DAX, review this (see where you can use variables for example instead of executing the same SUM function three times in one measure).\nOne of my first projects when I started at my organization was improving the performance of a dashboard (some visuals took longer than 5 minutes to load).\nBy moving data transformations upstream, improving the data model and star schema, rewriting/optimizing DAX, and creating indexes in the SQL database, I reduced that 5+ minute load time to 15 seconds maximum.",
+      "trust": null
+    },
+    {
+      "title": "VNet Data Gateway Capacity Consumption is Too Dang High - Reddit",
+      "url": "https://www.reddit.com/r/MicrosoftFabric/comments/1kmrksj/vnet_data_gateway_capacity_consumption_is_too/",
+      "domain": "reddit",
+      "snippet": "",
+      "date": "2025-05-14T00:00:00",
+      "summary": "The VNet gateways tend to be pricey and relatively slow for their purpose.\nIdeally, however, avoid using any data gateway unless absolutely necessary!",
+      "trust": null
+    },
+    {
+      "title": "r/PowerBI - Is there a way to monitor/find out in detail what happens ...",
+      "url": "https://www.reddit.com/r/PowerBI/comments/1ha8don/is_there_a_way_to_monitorfind_out_in_detail_what/",
+      "domain": "reddit",
+      "snippet": "",
+      "date": "2024-12-09T00:00:00",
+      "summary": "There’s truly no clear reason for this model to suddenly require so much time to refresh, and it occurs occasionally.\n...\nIt happens to me occasionally.\nRoughly one in every 150 or so refreshes fails.\nThe smaller and more efficient your model is, the fewer problems you run into.\nIf you want to investigate further, you can turn on tracing and examine the refresh logs for your data model.\nI’ve done this to try to identify critical errors.\nIt’s very tedious and technical, so I don’t recommend it.\nThe option is located in the diagnostics settings on the desktop.\n...\nSkip this if you’re on Fabric capacity.\nOn shared capacity, the wait time and resources for your refresh depend on how many refreshes are assigned to you and to other companies randomly sharing the same cloud capacity.\nWe frequently saw this issue with PRO workspaces.\nSwitching to PPU has lessened the occurrences.\nThis explains why scheduled refreshes often don’t start exactly on time: many users compete for refresh slots.\nIt also shows why the time of day matters for scheduled refreshes, as users worldwide or in the same region may schedule around the same window.\n...\nYou can watch it in real time using KQL, Direct Query, Log Analytics, and Power BI Premium, though it’s unclear how much actionable information those sources provide.\n...\nu/plytagipsowa referenced the Phile Seamarks refresh visualizer.\nYou *should* be able to connect SQL Server Profiler to the XMLA endpoint (if you have Power BI Premium) and obtain highly detailed data, but I have only tested it locally, not against the XMLA endpoint.\nFor local optimization of refreshes, the best tools are Power Query Diagnostics and the refresh visualizer.\n...\nYou can also do that in Semantic Link Labs now.\nHere’s a notebook to help you get started: https://github.com/microsoft/semantic-link-labs/blob/main/notebooks/Semantic%20Model%20Refresh.ipynb",
+      "trust": null
+    },
+    {
+      "title": "Power BI Service Refresh Suddenly Slow / Timing Out on Pro ...",
+      "url": "https://www.reddit.com/r/PowerBI/comments/1qdamd0/power_bi_service_refresh_suddenly_slow_timing_out/",
+      "domain": "reddit",
+      "snippet": "",
+      "date": "2026-01-15T00:00:00",
+      "summary": "**subreddit: /r/PowerBI**\n...\n- Today, however, the service refresh has extended to 2 hours, with some reports timing out entirely.\n...\nA helpful tip I picked up is to purchase a premium per-user license and place your content in a premium workspace, as it seems these setups receive additional resources.\nIt costs only an extra $10 monthly, which is more economical compared to opting for full embedded or dedicated capacity.\nThe only downside is that anyone you share your work with will also need to have a premium per-user license.",
+      "trust": null
+    },
+    {
+      "title": "What would be an equivalent to our current MSSQL On-Prem setup?",
+      "url": "https://www.reddit.com/r/MicrosoftFabric/comments/1n56c5g/what_would_be_an_equivalent_to_our_current_mssql/",
+      "domain": "reddit",
+      "snippet": "",
+      "date": "2025-08-31T00:00:00",
+      "summary": "",
+      "trust": null
+    },
+    {
+      "title": "What is acceptable load lag for a PBI dashboard with data ... - Reddit",
+      "url": "https://www.reddit.com/r/PowerBI/comments/vvnlog/what_is_acceptable_load_lag_for_a_pbi_dashboard/",
+      "domain": "reddit.com",
+      "snippet": "",
+      "date": "2022-07-10T00:00:00",
+      "summary": "I think so he means the time taken to refresh the dataset.\n...\nAre you using import or direct query mode, or a mix?\nIf there are direct queries being executed each time you interact with the report this could be adding to the lag.\nGenerally import mode leads to a better speed.\nAre you modelling to a star schema and using generally simple dax for your calculations?\nA poorly constructed model can lead to long query times.\nYou can check this using the query performance analyser.\n2a.\nAre you using a distinct count?\nDistinct counts are quite slow and get slower the more rows there are in the table- consider summarising in power query using a group by if this is the case.\n3. How many visuals are on your page?\nMicrosoft recommends around 30 at most after this it gets slowwwww\nLots of good questions and points you made!\n...\nIf your page takes more than 7 seconds to load then unless your report has ENORMOUS value people will not use it.\nYou need to define what requirements you need up front and make sure IT deliver and that you build suitable models.\n...\nIt depends on what you mean by slow.\nAre you talking slow for end users to load the published report?\nSlow to run a scheduled refresh on the dataset?\nSlow to work with in PBI desktop?\nEach of these has a wildly different \"acceptable\" refresh time and each is fixed differently.\nI would put the acceptable lag time for a Power BI Report at less than 3-seconds.\n...\nOk I will verify again tomorrow but I think it’s definitely more than 3 seconds at its current set up.\n...\nMany data sources may potentially mean a spiderweb of a data model lol.\nMost likely that may be the primary issue but you must first assess where the slowness is coming from.\nIt could be many factors.\nYou must troubleshoot and hone in on the issue(s).\nBelow is a small guide.\nIs it from certain bulky visualizations, too many tooltips, calculated columns, dax, and power query transformations?\nIs it due to the sql query/ data source pull?\nIs it the data sources themselves (eg database) that are slow?\nMost likely a combo?\nFirst, how's your data model?\nAre tables denormalized when coming into PBI?\nAre there any both-sided filter directions and/or many-to-many relationships in your mode?\nAre there are tons of roles and filter rules for RLS?\nHow are the data sources connected?\nVia import, Direct query, live connection?\nThese are factors you must take into consideration.\nNext, troubleshoot the actual with performance analyzer coupled with a supplementary tool like report anlyzer or pbi helper which will simplify performance analyzers output to vastly make troubleshooting easier.\nThis should shed light on wether your report view, certain visualizations, dax, or tons of PQ transformations are causing performance issues.\nThen, assuming you use pbi service (or pbi RS on prem) use the built in tools to see how data refreshes, user stats, etc.\nIt may shed light on something.\nFinally, check your sql pulls (assuming some of your data sources are set up that way).\nCheck the actual servers computing your sql pulls and have them assess how long your sql is taking.",
+      "trust": null
+    },
+    {
+      "title": "Power BI Gateway Monitoring - why is it so bad? : r/PowerBI - Reddit",
+      "url": "https://www.reddit.com/r/PowerBI/comments/srb143/power_bi_gateway_monitoring_why_is_it_so_bad/",
+      "domain": "reddit",
+      "snippet": "",
+      "date": "2022-02-13T00:00:00",
+      "summary": "once you have documented what you want to manage, you can use the API to run checks and alert you when problems occur.\neg, get a list of all datasets in a workspace: https://docs.microsoft.com/en-us/rest/api/power-bi/datasets/get-datasets-in-group then, for each dataset ID collected in\nstep one, check when a refresh is scheduled: https://docs.microsoft.com/en-us/rest/api/power-bi/datasets/get-refresh-schedule-in-group then, for each dataset ID, audit the refresh history and look for failures: https://docs.microsoft.com/en-us/rest/api/power-bi/datasets/get-refresh-history-in\n-group once you wrap your head around it and have learned a bit of powershell, it is pretty straight forward.\nexamples for your other questions:  https://docs.microsoft.com/en-us/rest/api/power-bi/gateways/get-datasource-status (check status of datasources linked to a gateway) https://docs.microsoft.com/en-us/rest/api/power-bi/gateways/get-gateway (check gateway status, you will need to use another api to pull out all the gateway id's)\n...\nThe Gateway logs don't cover dataflow refreshes currently.\nAPI's for Dataflows are not as robust as Datasets.\n...\nIt is still pretty bad.\nThere is a gateway monitoring pibx template that will give some insight.\nAs mentioned before, pulling data from the APIs and storing it in a DB is helpful, but doesn't tell you anything about the internal workings of the gateways.\nFUAM is supposed to help a lot but it is so brand spanking new it is still wet behind the ears and requires Fabric.\n...\nWhen you say you downloaded the monitoring template from Microsoft do you mean this one?\nhttps://docs.microsoft.com/en-us/data-integration/gateway/service-gateway-performance If you updated those gateway configs to write out performance logs as that article describes then you can use the folder connector (since the logging destination local path will now exist on each gateway) to pull them into a dataset and get the answers to those questions and way more.\n...\nThe one we have to watch for the most is the users trying to game the system on datasets that don't allow live connections by setting the refresh rate to every 1 minute or every 5 minutes to simulate live connections.",
+      "trust": null
+    },
+    {
+      "title": "My dashboard of size ~300mb is unable to refresh on my virtual ...",
+      "url": "https://www.reddit.com/r/PowerBI/comments/nm82kw/my_dashboard_of_size_300mb_is_unable_to_refresh/",
+      "domain": "reddit",
+      "snippet": "",
+      "date": "2021-05-27T00:00:00",
+      "summary": "I’m not sure your dashboard really needs to be 300 MB.\nFile size usually depends more on how many columns you include and their cardinality than on the number of rows in your fact tables.\nPower BI’s storage engine treats each column independently, so a column with many distinct values consumes more space.\nA column of 100 million rows that only contains “yes” or “no” will occupy almost no space, whereas a column of unique transaction IDs will have high cardinality and require much more storage and processing power.\nConsider these points for your data model:\n* **Load only the columns you need now.** Are you pulling in columns just in case you might use them later?\n* **Avoid high‑cardinality columns when possible.** In dimensional modeling you don’t need a primary key in a fact table.\nIf your main fact table has 100 million rows, the Transaction_ID column will have 100 million unique values and take up a lot of space.\nIf a simple COUNTROWS() suffices instead of DISTINCTCOUNT([Transaction_ID]), omit the Transaction_ID column.\n* **Reduce numeric column cardinality.** For financial data, do you really need 10 significant digits, or can you use a fixed‑decimal type with only 4 decimals?\nRounding to the nearest dollar, with prices between $1 and $100, limits the column to 100 unique values.\nExtending to 4 decimals introduces up to 1 000 000 possible values; 6 decimals could create another primary‑key‑like column for a 100 million‑row table.\n* **Reduce date/time column cardinality.** If you have a Date/Time column but only use the date, convert it to Date only.\nIf you need the time, split it into separate date and time columns—each will have far lower cardinality (365 days per year for date and 86 400 seconds for time) than the combined column (365 × 86 400 per year).\nIf you only need the hour, replace the time column with an integer 0–23.\n* **Prefer numeric over text values.** A 16‑digit numeric customer ID is faster than a 16‑character alphanumeric ID, and an integer is always better than a float or fixed decimal.\nNone of these may apply to your specific issue, but a smaller file size could indirectly help.",
+      "trust": null
+    },
+    {
+      "title": "How do you guys rule out crowdstrike as the culprit of performance ...",
+      "url": "https://www.reddit.com/r/crowdstrike/comments/1bjdfwk/how_do_you_guys_rule_out_crowdstrike_as_the/",
+      "domain": "reddit.com",
+      "snippet": "",
+      "date": "2024-03-20T00:00:00",
+      "summary": "The new Falcon for IT module will actually allow you to pull, as needed, per process performance metrics.\nIn these instances, you could query the user's system to see which specific process is causing issues:\nhttps://imgur.com/a/jF83xQ4\nAs you can see, the results also go into Raptor so you can get funky with visuals.\nThis problem comes up a lot.\nThe easiest solution is to have a policy to the side with everything turned off.\nWhen a performance issue comes up move the affected hosts to that policy.\nYou should be able to show you have virtually turned off the agent so if performance is still getting hit it's not CS.\nHope this helps.\n...\nRight?\nIt's always the network or AV software causing the problem.\nNever shitty code.\nSomewhere along the way (with legacy AV most likely) security got the bad wrap for performance.\n...\nCS was causing signifigant performance issues in our environment during a certain programs installation that was 100% not apparent at first glance.\n...\nI just ask them to evidence it's Crowdstrike causing the issue\nTake performance monitor metrics for X amount of time with CS enabled as normal.\nTurn off policies or uninstall CS, make the same recording.\nProve to them it’s not CS.\nAdd this information to my catalogue of every time time this has happened so eventually I will have an almanac of data to support me\nI send them the link to our confluence page on how to run performance and stack traces.\nWhen they (always) tell me they don't know how to follow that guidance, I ask them how they know the issue is Crowdstrike if they're supposedly a system administrator but don't know how to use performance tracing tools.\n...\nWpr.exe -start GeneralProfile\nReproduce\nWpr.exe -stop c:\\gp.etl\nUse WPA.\n...\nOn our linux machines we can start/stop the falcon-sensor.\nTo test impact we run iperf commands.\nOn G9 Linux servers, we see when falcon-sensor is on, upwards of 20% UDP throughput send reduction and 50% TCP throughput send reduction.\n...\nWe are working with security team to address these issues but iperf in my view is the best way to test impact to any server that pushes a lot of network traffic.\nIn addition, we run perf top.\nperf top reports a ton of methods like cshook_ reported as kernel methods.\nThese are clearly Crowdstrike hook events.\nCrowdstrike does appear quite intrusive as it is sitting in the Linux kernel and these methods only appear when we kick up data rates.",
+      "trust": null
+    },
+    {
+      "title": "Trying to run the Gateway Performance Template file and getting all ...",
+      "url": "https://www.reddit.com/r/PowerBI/comments/1grepvc/trying_to_run_the_gateway_performance_template/",
+      "domain": "reddit",
+      "snippet": "",
+      "date": "2024-11-14T00:00:00",
+      "summary": "**subreddit: /r/PowerBI**\n...\nTo access the Power Query editor, click on Transform Data twice from the ribbon.\nOnce opened, refreshing the preview will reveal any data access errors you may be encountering, which could likely be related to naming.\nAfter addressing any issues, simply select Close and Apply in the upper left corner of the editor to refresh everything and ensure it operates correctly.",
+      "trust": null
+    },
+    {
+      "title": "Is 8GB ram enough for Power BI 2022? : r/PowerBI - Reddit",
+      "url": "https://www.reddit.com/r/PowerBI/comments/s4jive/is_8gb_ram_enough_for_power_bi_2022/",
+      "domain": "reddit",
+      "snippet": "",
+      "date": "2022-01-15T00:00:00",
+      "summary": "Edit: it appears everyone agrees that 8GB is currently insufficient.\nThanks!\n...\nMy IT department upgraded me from 8 to 16, and that resolved my problems.\n...\nI’m working on a Remote Desktop with 8 GB of RAM.\nEditing the import query or any part of the query editor can take an hour or more, even for simple tasks like adding a column.\nI can only run one Power BI instance at a time, so switching files requires closing and reopening the program, which is inconvenient.\nI also experience crashes that stem from exhausting working memory.\nThis usually isn’t a problem unless I need features such as incremental refresh.\n...\nMy data loads through an on‑premises gateway on the same machine as Power BI, which probably doesn’t help.\n...\nMin 16",
+      "trust": null
+    },
+    {
+      "title": "Help me identify areas of cost improvement as well as modernization",
+      "url": "https://www.reddit.com/r/AZURE/comments/1t0l089/help_me_identify_areas_of_cost_improvement_as/",
+      "domain": "reddit",
+      "snippet": "",
+      "date": "2026-05-01T00:00:00",
+      "summary": "",
+      "trust": null
+    },
+    {
+      "title": "How much work is a Power BI Data Gateway? : r/PowerBI - Reddit",
+      "url": "https://www.reddit.com/r/PowerBI/comments/1avpktw/how_much_work_is_a_power_bi_data_gateway/",
+      "domain": "reddit.com",
+      "snippet": "",
+      "date": "2024-02-20T00:00:00",
+      "summary": "IMO, and this is based on how the IT organization's policies and standards are, the actual installation of the gateway is straightforward.\nI would say no more than 2 hours of installation of the gateway, configuring the gateway connection in the service as well.\nIn some instances (Oracle, ODBC connectivity, etc.) additional software may need to be installed on the gateway server.\nHowever, the longest time that's been a constraint is just making sure firewalls are opened between the azure power bi service, gateway server, and the DB server (the ports opened from each would be different based on the source and target), OR what is the strategy of the organization.\nIn short, assuming firewalls or strategy are not a constraint, the gateway piece is no more than 2 hours of installation and configuration on the gateway side and the PowerBI service side.\n...\nAssuming no issues provisioning the virtual machine and no issues with the firewall, it's a 30 minute install.\n...\nOur architect for power bi will set up a new gateway for me in about 2 hours if I have provided the requisite credentials and server information.\n...\nOur security bods provided us with accounts, we configured the VMs, logged into the gateway software and setup connections to databases.\nThen provide access to those data sources via AD groups for our users to use, and if they need others then we configure those too.\nDoesnt take too long these days, and can be minutes if all the stars align, but it took\nmonthsto get everything in place.\nFairly straight forward.\nWe spooked up an AWS EC2 server cleared the firewalls for communication then just followed the guide.\nAs others have indicated this is likely more a traffic management/routing issue than the actual provisioning and setup.\nIf this is premise-based mostly its unlikely you've got clear transport to all your data sources with VLANS in place to segment traffic.\nReverting back to an IT management perspective - scope the ask to a data source, show it works and use the momentum and their previous runbook to be successful at one and use a phased approach versus asking for everything in a single request.\nIt'll show empathy towards the size of the ask and get you a win to build others off of.",
+      "trust": null
+    },
+    {
+      "title": "Refresh Runs Forever / Runs out of Memory on Service, Runs Fine ...",
+      "url": "https://www.reddit.com/r/PowerBI/comments/15soo27/refresh_runs_forever_runs_out_of_memory_on/",
+      "domain": "reddit.com",
+      "snippet": "",
+      "date": "2023-08-16T00:00:00",
+      "summary": "30m to refresh locally isn't a good thing, it's to much, really.\nYou should try changing the datasource or use a intermediary database or use direct query\nWhere should I start looking to find what the problem aspects/datasources are?\nIt sounds like you may need to re-evaluate your queries to make them more efficient.\nThat can get pretty advanced, so if that is not something you can do easily, the simplest thing to try first is to see if maybe you can get incremental refresh working.\nAlthough, I am guessing with this long of a refresh time you may be pulling from manual sources like large CSV's or something?\nIn which case, incremental refresh may not be super helpful.\n...\nIt turns out because my sql statements are not views and the enhanced computational engine are not turned on for my dataflows, I am unlikely to be able to set up incremental refresh.\nIf pulling from excel spreadsheets, make sure you do not have a date at the bottom of a column.\nThat is what caused this for me.\nIt was not a date column and the date was the date the source report ran.\ncaused all sorts of havoc until I removed it. then ran fine.\n...\nYou're not doing any joins/merges of different queries?\nThat would have been my first guess as to what is causing performance issues this bad.\n...\nIt is normal that it doesn't work on PBI Service, there is a limit of CPU on the platform that depends on the subscription you have.\nAlso by experience, a direct connection to a SharePoint is not ideal if you have a huge volume of data (I assume it is the case if you have a pbix file exceeding 100MB).\nThe possibilities :\neither you change your subscription, and buy a new capacity that matches your need (see documentation here )\nor you develop a real infrastructure with a SQL DB to store the data coming from your data sources, and eventually an Azure Analysis Service / SSAS if your database is on premise.\nThe computation will be done directly in the database / cube, your data model will be more efficient.\nor you simplify your queries / transformation / DAX formulas\nor a mix of the three previous propositions",
+      "trust": null
+    },
+    {
+      "title": "Significant Samba speed/performance improvement by changing ...",
+      "url": "https://www.reddit.com/r/OpenMediaVault/comments/11gwi1g/significant_samba_speedperformance_improvement_by/",
+      "domain": "reddit",
+      "snippet": "",
+      "date": "2023-03-03T00:00:00",
+      "summary": "**TL;DR: these settings made the difference:**\n```\nwrite cache size = 2097152\nmin receivefile size = 16384\ngetwd cache = true\n```\nI first tested with only `getwd cache = true`, which noticeably improved peak speeds during the video file copy tests (starting at a similar speed to before, then climbing to a higher speed about halfway).\n...\nI switched the socket options from\n```\nsocket options = TCP_NODELAY IPTOS_LOWDELAY SO_RCVBUF=8192 SO_SNDBUF=8192\n```\nto\n```\nsocket options = TCP_NODELAY IPTOS_THROUGHPUT SO_RCVBUF=131072 SO_SNDBUF=131072\n```\nand the write throughput jumped to 450‑600 MB/s for the first 3‑4 GB, compared to the previous 105 MB/s.\n...\nOther global settings:\n```\nacl allow execute always = true\nacl map full control = yes\ndeadtime = 60\ngetwd cache = true\nmin receivefile size = 16384\nstrict sync = no\nsync always = no\nuse sendfile = true\n```\n...\n* The write cache size is 2,097,152 bytes.\n...\nAfter adding these lines to `/etc/samba/smb.conf`:\n```\ngetwd cache = true\nread raw = Yes\nwrite raw = Yes\nmin receivefile size = 16384\nuse sendfile = true\naio read size = 16384\naio write size = 16384\n```\nthe write speed jumped to about 280 MB/s for at least 200 GB of data.",
+      "trust": null
+    },
+    {
+      "title": "r/PowerBI - Reddit",
+      "url": "https://www.reddit.com/r/PowerBI/",
+      "domain": "reddit",
+      "snippet": "",
+      "date": "2024-08-20T16:26:29",
+      "summary": "",
+      "trust": null
+    },
+    {
+      "title": "Eugene Meidinger AMA: Performance tuning, Power BI, and ... - Reddit",
+      "url": "https://www.reddit.com/r/PowerBI/comments/1aeoglg/eugene_meidinger_ama_performance_tuning_power_bi/",
+      "domain": "reddit.com",
+      "snippet": "",
+      "date": "2024-01-30T00:00:00",
+      "summary": "I just put out some YouTube videos on performance tuning (Reddit post), so I thought I thought it'd be a good time to do an AMA on Power BI performance tuning.\n...\nA few tips:\na) Your star schema needs to be tight.\nYou want to make sure DAX queries can stay relatively basic, as you don't want to be performing cartwheels through fiery hoops with your queries.\n2) dual mode is the way ahead.\nDQ your facts but use dual for dims and keep them on a refresh schedule\niii) try and limit visual interactions.\nMake sure you enable the option to 'apply all' filters so navigation doesn't get too noisy.\nD) there are some hidden properties in the TOM that will help optimise DQ performance on Databricks.\nIf you're coming from an AAS background then hopefully you're comfortable with Visual Studio or Tabular Editor for working with PBI.\nTweaking this property had INSANE effects on query performance for us: https://learn.microsoft.com/en-gb/dotnet/api/microsoft.analysisservices.tabular.model.maxparallelismperquery?view=analysisservices-dotnet\n5) make sure the underlying DBX tables are optimised.\nThat means Z-Ordering and bloom filters, or if you have it available to you, liquid clustering.\nOn a call with MSFT and DBX last week and it was mentioned that whilst it hasn't been formally benchmarked yet, liquid clustering can achieve comparative performance with V-Ordered Direct Lake.\nvi) beyond that, it's thinking about right sizing your DBX clusters.\nWhat size do you go, how do you set the min/max scaling?\nDo you go serverless or pay for always on?\nYou probs want Photon enabled for BI workloads.\n...\nAs far as I'm aware, there's no significant performance hit from pages that aren't being actively rendered.\nIf the tooltip pages are hidden and only come up when hovering, you should be good.\nIf it's a serious concern, you can do a test by publishing a report with a bunch of tooltip pages and one without and comparing the performance in your browser's dev tools.\nSee below for how:\n...\nWe use a mix of field parameters and the new card visual to make tool tips even more dynamic.\nWe experience zero observable performance hit.\n...\nIf online refresh works, I'd see if you can move the data into a dataflow and point at that.\nIf you need the dev version you are tweaking to be different than the prod version, I'd look into Power Query parameters or deployment pipelines for swapping the data source.\n...\nSo the first option would be to make a \"thin report\" that points at the online\n~~dataset~~semantic model, so it always has the latest data when you open it up.\n...\nFinally, Power BI runs a copy of SSAS for the data model in the background, so there might be a way to script that but that gets into dark voodoo magic.\n...\nIdentifying the problem\nOptimizing Power Query for import\nOptimizing SQL for import\nOptimizing the data model for performance\nOptimizing DAX for performance\nOptimizing Layout and Visuals for performance\nOptimizing DirectQuery for performance",
+      "trust": null
+    },
+    {
+      "title": "Microsoft Azure - Reddit",
+      "url": "https://www.reddit.com/r/AZURE/",
+      "domain": "reddit.com",
+      "snippet": "",
+      "date": null,
+      "summary": "",
+      "trust": null
+    },
+    {
+      "title": "Microsoft Power BI - Reddit",
+      "url": "https://www.reddit.com/r/PowerBI/new/",
+      "domain": "reddit.com",
+      "snippet": "",
+      "date": null,
+      "summary": "",
+      "trust": null
+    },
+    {
+      "title": "I'm embarrassed to ask, but I need help explaining something to my ...",
+      "url": "https://www.reddit.com/r/sysadmin/comments/17wg5bv/im_embarrassed_to_ask_but_i_need_help_explaining/",
+      "domain": "reddit",
+      "snippet": "",
+      "date": "2023-11-16T00:00:00",
+      "summary": "",
+      "trust": null
+    },
+    {
+      "title": "Why am I not getting 1Gbps? I have 1 Gbps from my ISP. My router ...",
+      "url": "https://www.reddit.com/r/HomeNetworking/comments/syos45/why_am_i_not_getting_1gbps_i_have_1_gbps_from_my/",
+      "domain": "Why am I not getting 1Gbps? I have 1 Gbps from my ISP. My router supports 1Gbps. I'm using a cat 6 ethernet cable. I've tried resetting my network adapters and disabling power saving features and setting it to 1Gb full duplex.",
+      "snippet": "",
+      "date": "2022-02-22T00:00:00",
+      "summary": "Plug your computer directly into your modem and see what you get.",
+      "trust": null
+    },
+    {
+      "title": "Microsoft Fabric - Reddit",
+      "url": "https://www.reddit.com/r/MicrosoftFabric/rising/",
+      "domain": "reddit.com",
+      "snippet": "",
+      "date": null,
+      "summary": "",
+      "trust": null
+    },
+    {
+      "title": "powerBI consumes a lot of resources and became incredibly slow",
+      "url": "https://www.reddit.com/r/PowerBI/comments/yu25ap/powerbi_consumes_a_lot_of_resources_and_became/",
+      "domain": "reddit.com",
+      "snippet": "",
+      "date": "2022-11-13T00:00:00",
+      "summary": "We have upgraded everyone on my team to have a min of 32 gb.\nWith that being said, there are a couple things you can check.\nHow is your data model?\nDo you have extra columns in your tables that are not being used on your report?\nIs auto date/time enabled in your options (this could have a really big impact).\n...\nLikely this not in any way a RAM problem.\nSounds like you have too many calculated columns added or misused date/time.\nAlways eliminate all date/time columns from your models.\nDragging date time into any visual will crash power bi by creating too many rows in aggregate.\nAlways use separate date and time columns.\nThis is likely your problem.\nDo as many transformations as possible in your data model views.\nStay away from custom columns you can easily create in SQL source.\nConstruct your data model as star schemas to avoid slowness in relationships and having to find complex solutions in PBIX that should be done in your SQL source.\nCalculated columns can be a HUGE bitch, especially when you're using ones that have several variables and your datasets are 1mil+ rows.\nI learned that the hard way ☹️.\nNever had this issue, but 16gb of RAM for authoring reports is really low.\nThe size of your dataset will directly drive memory consumption...\nalong with measures and calculations happening.\n...\nToo often report builders will try to compensate for a poorly designed model with more RAM without realizing that performance will be even worse for end users in the service.\n...\nYou need to give your data model some love to ensure it has proper cardinality, this sovles 90% of issues like this, because it lets PBi properly compress your dataset.\nAfter that, review your DAX measures and make sure they don't suck.\nYou might be running sloppy code that is creating the equivalent of a bunch of loops, overriding the benefits of the data compression and filtering (DAX is single threaded).\nIf you are able to confirm the above is correct (I seriously suspect it isn't), or you find it isn't worth the time to refactor the code, a quick/dirty way to speed up your user experience is to convert your DAX Meaures to Columns, and then tweaking your workflow to just lookup the results from those tiems.\nThis results in an eager-load that will slow down your data refresh, but significantly speed up your filter selection.\nThe “other” category is the hardest to troubleshoot.\nThe most common reason is a high count of visuals on the page and the standard advice is to consolidate or eliminate visuals to reduce the total number.\nBut an issue that’s happened to me a couple times is that one or more of the visuals either gets affected by an orphaned filter or the visual itself gets “corrupted.”\nIf you’re convinced that you cannot reduce the count of visuals, go through each them and eliminate any excess fields in the filter pane.\nIf that doesn’t help, try removing visuals from the page a few at a time to see if it’s caused by certain visuals.\nRemoving and rebuilding the offending visual(s) has fixed the performance/OOM issue for me.\nI'm no expert, but I've had some third party visuals suddenly cause issues and make reports slow.\nI had one that I had been using for months start causing my computer to overheat and shut down within 10 minutes of opening the file a few times before I figured out it was causing the issue.\nRemoving the visual and replacing it with a different similar one took my EdgeView 20%+ disk usage down to less than 5%.\nI figured it out by making copies of my file and deleting things while monitoring performance.",
+      "trust": null
+    }
+  ]
+}

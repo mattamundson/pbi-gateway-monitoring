@@ -1,0 +1,12 @@
+{
+  "user_description": "Searching X/Twitter for Power BI gateway performance insights",
+  "queries": [
+    "Power BI gateway performance monitoring",
+    "on-premises data gateway logs query duration",
+    "Power BI gateway StreamBeforeRequestCompletes spooling"
+  ],
+  "allowed_domains": [
+    "x.com",
+    "twitter.com"
+  ]
+}

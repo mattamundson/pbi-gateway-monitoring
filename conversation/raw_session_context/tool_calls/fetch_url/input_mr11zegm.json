@@ -1,0 +1,7 @@
+{
+  "user_description": "Reading the Reddit thread on gateway monitoring being hard",
+  "url": "https://www.reddit.com/r/PowerBI/comments/srb143/power_bi_gateway_monitoring_why_is_it_so_bad/",
+  "force_fetch": false,
+  "prompt": "Extract all practical advice for monitoring/analyzing Power BI gateway performance: REST API approaches, gateway performance template, FUAM, logging to a DB, what works and what doesn't. Capture specific tools and API endpoints mentioned.",
+  "max_length": 40000
+}

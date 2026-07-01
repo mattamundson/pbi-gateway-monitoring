@@ -1,0 +1,14 @@
+{
+  "url": "https://github.com/microsoft/fabric-toolbox/tree/main/monitoring/fabric-unified-admin-monitoring",
+  "title": "fabric-toolbox/monitoring/fabric-unified-admin-monitoring at main · microsoft/fabric-toolbox",
+  "description": "Fabric toolbox is a repository of tools, accelerators, scripts, and samples to accelerate your success with Microsoft Fabric, brought to you by Fabric CAT. - microsoft/fabric-toolbox",
+  "authors": [
+    "Microsoft"
+  ],
+  "published_date": "2023-06-21T00:00:00",
+  "domain": "github.com",
+  "is_paywall": false,
+  "is_cached": true,
+  "extracted": "## Inclusion of ingestion notebooks and connected dashboard/report\n\nYes. The page states that FUAM is built with Fabric capabilities, with **Pipelines and Notebooks as the main tool to extract and transform data**, and that it comes with **a set of standard reports**. It also states the architecture includes **Pipelines, Notebooks, Lakehouses, Semantic Models and Power BI reports**.\n\n## On-premises data gateway performance logs\n\nThis is **not stated on the page**. The page does **not** mention on-premises data gateway performance logs, **Query Execution**, or **System Counter**.\n\n## What FUAM ingests\n\nThe page explicitly says FUAM extracts the following data from the tenant:\n\n- Tenant Settings\n- Delegated Tenant Settings\n- Activities\n- Workspaces\n- Capacities\n- Capacity Metrics\n- Tenant meta data (Scanner API)\n- Capacity Refreshables\n- Git Connections\n- Engine level insights (coming soon in optimization module)\n\n## Notebooks, lakehouse, and report/semantic model\n\n### Notebooks\n- The page states that **Notebooks** are one of the main tools used to **extract and transform data**.\n- It also states the architecture is built on **Pipelines, Notebooks, Lakehouses, Semantic Models and Power BI reports**.\n\n### Lakehouse\n- The page says **FUAM Lakehouse is one of the core components in architecture**.\n- It states that **all the data is transformed and persisted** there in a way that enables analysis in a semantic model with **DirectLake mode**.\n- It also says the data is stored:\n  - in its **raw format**\n  - in **Delta Parquet**\n\n### Report / semantic model\n- The page says FUAM comes with **a set of standard reports**.\n- It also says the architecture includes **Semantic Models** and **Power BI reports**.\n- The page states the data can be used through **Power BI Direct Lake** or the **Lakehouse SQL Endpoint via SQL**.\n\n## Is it open source and free?\n\n### Open source\n- The page shows the repository is **Public**.\n- However, it does **not explicitly state** that FUAM is open source.\n\n### Free\n- The page does **not explicitly state** that FUAM is free.\n- It does state it is **not an official Microsoft product** and **not an official Microsoft service**.",
+  "truncated": false
+}

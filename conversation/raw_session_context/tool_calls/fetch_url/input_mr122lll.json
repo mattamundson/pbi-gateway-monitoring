@@ -1,0 +1,7 @@
+{
+  "user_description": "Checking the FUAM GitHub repo for gateway monitoring coverage",
+  "url": "https://github.com/microsoft/fabric-toolbox/tree/main/monitoring/fabric-unified-admin-monitoring",
+  "force_fetch": false,
+  "prompt": "Does FUAM (Fabric Unified Admin Monitoring) include ingestion notebooks AND a connected dashboard/report? Does it specifically cover on-premises data gateway performance logs (Query Execution, System Counter)? List what it ingests, the notebooks, the lakehouse, and the report/semantic model. Is it open source and free?",
+  "max_length": 40000
+}

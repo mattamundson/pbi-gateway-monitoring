@@ -1,0 +1,274 @@
+{
+  "results": [
+    {
+      "title": "Robert Kottelin (@robertkottelin) / Posts / X",
+      "url": "https://x.com/robertkottelin",
+      "domain": "X (formerly Twitter)",
+      "snippet": "",
+      "date": "2017-09-24T00:00:00",
+      "summary": "",
+      "trust": null
+    },
+    {
+      "title": "Microsoft Power BI Performance Best Practices ...",
+      "url": "https://x.com/KirkDBorne/status/1997815765303488528",
+      "domain": "X (formerly Twitter)",
+      "snippet": "",
+      "date": "2025-12-07",
+      "summary": "𝓚𝓮𝔂 𝓕𝓮𝓪𝓽𝓾𝓻𝓮𝓼: Learn how to build performant data models and apply row-level security Identify and fix performance issues in reports, DAX, and datasets using DAX Studio and VertiPaq Analyzer Implement a formal process for performance management, from setting targets to monitoring and remediating issues Purchase of the print or Kindle book includes a free PDF eBook",
+      "trust": null
+    },
+    {
+      "title": "Power BI Sentinel (@PBISentinel) / Posts / X",
+      "url": "https://x.com/PBISentinel",
+      "domain": "X (formerly Twitter)",
+      "snippet": "",
+      "date": "2018-12-04",
+      "summary": "",
+      "trust": null
+    },
+    {
+      "title": "Prisma Postgres on X: \"Debug like a pro with Prisma logging 🎯 ✨ See raw SQL queries ✨ Track query duration ✨ Monitor errors in real time ✨ Subscribe to custom events Two modes: simple stdout or event-based for advanced use cases. https://t.co/TYgVR5ZQSJ\" / X",
+      "url": "https://x.com/prisma/status/2008543345749233804",
+      "domain": "X (formerly Twitter)",
+      "snippet": "",
+      "date": "2026-01-06",
+      "summary": "Debug like a pro with Prisma logging See raw SQL queries Track query duration Monitor errors in real time Subscribe to custom events Two modes: simple stdout or event-based for advanced use cases.",
+      "trust": null
+    },
+    {
+      "title": "The PBIR CLI is now in public beta! Install from PyPi (uv tool install ...",
+      "url": "https://x.com/kurtbuhler/status/2040505247760633933",
+      "domain": "X (formerly Twitter)",
+      "snippet": "",
+      "date": "2026-04-04",
+      "summary": "The PBIR CLI is now in public beta!\nInstall from PyPi (uv tool install pbir-cli) or from the dist repo: https://github.com/maxanatsko/pbir.tools… Make sure you get the pbir-cli and related skills from power-bi-agentic-development or by running \"pbir setup\": https://github.com/data-goblin/power-bi-agentic-development/…",
+      "trust": null
+    },
+    {
+      "title": "Gateway FM (@gateway_eth) on X",
+      "url": "https://x.com/gateway_eth/status/2008879839043002846",
+      "domain": "X (formerly Twitter)",
+      "snippet": "",
+      "date": "2026-01-07",
+      "summary": "- Provided private analytics per project with breakdowns by key, method, status code, and more.",
+      "trust": null
+    },
+    {
+      "title": "Kyle Jeong (@kylejeong) on X",
+      "url": "https://x.com/kylejeong/status/2044878529666662616",
+      "domain": "X (formerly Twitter)",
+      "snippet": "",
+      "date": "2026-04-16",
+      "summary": "Our feature request pipeline runs at 100% coverage with zero human effort.\nEvery closed support ticket and every meeting transcript gets scanned automatically, helping reduce 99% of our first response time to <24hrs.\n...\nYou need four things:\n1. A sandbox — any isolated execution environment with snapshot support and fast cold starts\n2. A proxy — a serverless function that holds real credentials and brokers access with scoped permissions\n3. An agent harness — we use\n...\n4. An agent interface — Slack is the highest-leverage starting point because it's where your team already communicates",
+      "trust": null
+    },
+    {
+      "title": "ClickHouse on X: \"IBM Instana helps DevOps teams spot and fix ...",
+      "url": "https://x.com/ClickHouseDB/status/1880279577546621438",
+      "domain": "X (formerly Twitter)",
+      "snippet": "",
+      "date": "2025-01-17",
+      "summary": "Discover how a clever solution built with OpenTelemetry is helping Instana push the boundaries of observability clickhouse.comIBM Instana’s solution for monitoring ClickHouse performanceDiscover how Instana built a custom OpenTelemetry span exporter to efficiently monitor ClickHouse performance.3:42 PM · Jan 17, 2025·601 Views3",
+      "trust": null
+    },
+    {
+      "title": "Kyle Tully (@KyleTully) / Posts / X - Twitter",
+      "url": "https://x.com/KyleTully",
+      "domain": "X (formerly Twitter)",
+      "snippet": "",
+      "date": "2008-02-05T00:00:00",
+      "summary": "",
+      "trust": null
+    },
+    {
+      "title": "SGLang Model Gateway v0.2 Drops SGL-Router pioneered cache ...",
+      "url": "https://x.com/lmsysorg/status/1981458341579886718",
+      "domain": "X (formerly Twitter)",
+      "snippet": "",
+      "date": "2025-10-23",
+      "summary": "",
+      "trust": null
+    },
+    {
+      "title": "Postgres has a ton of useful information inside its catalog ...",
+      "url": "https://x.com/crunchydata/status/1938616402736218466",
+      "domain": "X (formerly Twitter)",
+      "snippet": "",
+      "date": "2025-06-27",
+      "summary": "Postgres has a ton of useful information inside its catalog tables to give you insights to what is happening inside the database.\nThere's several views as well that combine system table information for easier access.\nFor those new to Postgres or developers just getting their feet wet on the database end of things, these essential catalog views are great to get familiar with so you can see what is happening inside your database, spot any issues, and troubleshoot.\npg_stat_activity —> currently running queries and sessions pg_stat_statements —>\nquery log and duration pg_stat_user_indexes —> non-system indexes, including primary keys pg_roles —> system and login user roles pg_locks —> processes holding locks pg_stats —> table statistics, data distribution, column cardinality pg_settings —> config params, things in ALTER SYSTEM pg_stat_database —> db details like transaction volume",
+      "trust": null
+    },
+    {
+      "title": "AR.IO Network Gateway Extensions",
+      "url": "https://x.com/ar_io_network/status/1946247255805083986",
+      "domain": "X (formerly Twitter)",
+      "snippet": "",
+      "date": "2025-07-18",
+      "summary": "Gateway Extensions\nare plugins for gateways, tools for operators to enhance and customize their nodes with new capabilities, improved performance, and potential revenue opportunities.\n...\n- Grafana Dashboards: Pre-configured monitoring dashboards powered by Grafana, providing real-time visualizations of node metrics, traffic, and health for proactive optimization and troubleshooting.",
+      "trust": null
+    },
+    {
+      "title": "Forecasting SQL query resource usage with machine learning",
+      "url": "https://blog.x.com/engineering/en_us/topics/insights/2021/forecasting-sql-query-resource-usage-with-machine-learning",
+      "domain": "blog.x.com",
+      "snippet": "",
+      "date": null,
+      "summary": "By contrast, we now leverage machine learning techniques to train two models on historical SQL query request logs for CPU time and peak memory prediction.\n...\nWe train two machine learning models, a CPU model and memory model, from historical request logs for CPU time and peak memory prediction.\n...\nThe serving cluster fetches models from the model repository and wraps the models into a web-based prediction service.\nThis process exposes RESTful API endpoints for external requests.\nThese endpoints can be used to forecast the CPU time and peak memory for online SQL queries from notebook/BI tools (for customers to obtain an estimate of query resource usage) and the router (for query scheduling and preemptive scaling).\n...\nThe service exposes two RESTful API endpoints to forecast CPU time and peak memory of a SQL query.\n...\nWith machine learning techniques, we developed a SQL-query-cost prediction system to accurately (>97%) forecast the CPU time and peak memory consumption of SQL queries.",
+      "trust": null
+    },
+    {
+      "title": "I created an Actual vs Budget Executive Dashboard in Power BI ...",
+      "url": "https://x.com/Data_Chy/status/1917562233984270741",
+      "domain": "X (formerly Twitter)",
+      "snippet": "",
+      "date": "2025-04-30",
+      "summary": "",
+      "trust": null
+    },
+    {
+      "title": "Martin Rublik",
+      "url": "https://x.com/martin_rublik/status/1800889033306079712",
+      "domain": "X (formerly Twitter)",
+      "snippet": "",
+      "date": "2024-06-12",
+      "summary": "",
+      "trust": null
+    },
+    {
+      "title": "Metrica Software Inc. (@metricasoftware) / Posts / X - Twitter",
+      "url": "https://x.com/metricasoftware",
+      "domain": "X (formerly Twitter)",
+      "snippet": "",
+      "date": "2026-03-19",
+      "summary": "",
+      "trust": null
+    },
+    {
+      "title": "Interactive Analytics at MoPub: Querying Terabytes of Data in Seconds",
+      "url": "https://blog.x.com/engineering/en_us/topics/infrastructure/2019/interactive-analytics-at-mopub",
+      "domain": "blog.x.com",
+      "snippet": "",
+      "date": "2019-07-03",
+      "summary": "Imply provides a designed-for-Druid UI (Imply Pivot) as well as Imply Clarity, a tool for performance management.\n...\n**Monitoring**\nWe monitor high-level MoPub Analytics service level objectives with Twitter’s Observability monitoring stack.\nThis allows us to track things like data availability, aggregate query success rates, and query latencies based on percentiles.\nWe use Clarity, a Imply-provided performance telemetry suite, to understand and improve cluster performance.\nClarity runs as a separate Druid cluster and UI.\nOur production Druid cluster pushes metrics to the Clarity cluster via Kafka and they are ingested into the Clarity cluster in real time.\nClarity is extremely useful for understanding and improving cluster performance.",
+      "trust": null
+    },
+    {
+      "title": "Our team just wrapped up a groundbreaking test on our CDK-Erigon ...",
+      "url": "https://x.com/gateway_eth/status/1775245996273889330",
+      "domain": "X (formerly Twitter)",
+      "snippet": "",
+      "date": "2024-03-29",
+      "summary": "",
+      "trust": null
+    },
+    {
+      "title": "Partly Cloudy: Architecture",
+      "url": "https://blog.x.com/engineering/en_us/topics/infrastructure/2019/partly-cloudy-architecture",
+      "domain": "blog.x.com",
+      "snippet": "",
+      "date": "2019-05-09",
+      "summary": "",
+      "trust": null
+    },
+    {
+      "title": "Ahmed Hilal (@irb7t) / Posts / X - Twitter",
+      "url": "https://x.com/irb7t",
+      "domain": "X (formerly Twitter)",
+      "snippet": "",
+      "date": "2016-05-14",
+      "summary": "Today’s #dashboard focuses on a critical machine in the factory, and we continuously measure its performance in production based on the following: •The highest temperature the machine reached during operation.\n•The lowest temperature the machine reached during operation.\n•The\n...\nThis is a #dashboard in the #PowerBI application designed to measure the performance levels of customer service employees through the following: •Measuring the time spent serving customers.\n•Tracking the number of attendance and absence days.\n•Counting the number of customers",
+      "trust": null
+    },
+    {
+      "title": "New tweets are delayed by ~10 seconds in 'API v2.0' vs. 'API v1.1'",
+      "url": "https://devcommunity.x.com/t/new-tweets-are-delayed-by-10-seconds-in-api-v2-0-vs-api-v1-1/147322",
+      "domain": "X Developers",
+      "snippet": "",
+      "date": null,
+      "summary": "",
+      "trust": null
+    },
+    {
+      "title": "Power BI Weekly (@PowerBIWeekly) / Posts / X",
+      "url": "https://x.com/PowerBIWeekly",
+      "domain": "X (formerly Twitter)",
+      "snippet": "",
+      "date": "2019-03-06",
+      "summary": "",
+      "trust": null
+    },
+    {
+      "title": "MetricsDB: TimeSeries Database for storing metrics at Twitter",
+      "url": "https://blog.x.com/engineering/en_us/topics/infrastructure/2019/metricsdb",
+      "domain": "blog.x.com",
+      "snippet": "",
+      "date": "2019-05-13",
+      "summary": "Using a custom storage backend instead of traditional key value store reduced the overall cost by a factor of 10.\nThis also reduced latency by a factor of five.",
+      "trust": null
+    },
+    {
+      "title": "BenMakesDataEasy (@data_ben) / Posts / X",
+      "url": "https://x.com/data_ben",
+      "domain": "X (formerly Twitter)",
+      "snippet": "",
+      "date": "2022-06-07",
+      "summary": "",
+      "trust": null
+    },
+    {
+      "title": "Debug API requests and responses (method, status, headers ...",
+      "url": "https://x.com/p1njc70r/status/1998471777597452492",
+      "domain": "X (formerly Twitter)",
+      "snippet": "",
+      "date": "2025-12-09",
+      "summary": "## BrowserLogs Retrieves browser console logs and/or network request logs from the application web preview - Useful for debugging frontend issues, checking client-side API calls, monitoring errors - Supports filtering by log type (console/network/all), log level (for console), and regex patterns - Can limit output to last N entries for brevity Common use cases: - Debug API requests and responses (method, status, headers, payloads) - Monitor network calls to verify endpoints are being hit correctly - Investigate frontend runtime errors or console warnings Args: log_type: Type of logs to retrieve -",
+      "trust": null
+    },
+    {
+      "title": "Arman Hezarkhani (@ArmanHezarkhani) on X",
+      "url": "https://x.com/ArmanHezarkhani/status/2027418328000504099",
+      "domain": "X (formerly Twitter)",
+      "snippet": "",
+      "date": "2026-02-27",
+      "summary": "Get the data.\nWire it up directly or export a CSV.\nBuild the dashboard with a prompt.\nDeploy in an afternoon.\n...\nIn practice, here's what a new dashboard actually requires:\n1. Define requirements (meetings, 1-2 weeks)\n2. Data modeling: connect sources, build extracts, define relationships (1-2 weeks)\n3. Build the dashboard (1-2 weeks)\n4. Review and iterate (1-2 weeks)\n...\nClaude / ChatGPT / Gemini\n- Upload a CSV or Excel file\n- Ask questions in natural language\n- Get charts, tables, and analysis back instantly\n- Starting at $20/month\n- Best for: One-off analysis, exploring data before building anything, replacing the dashboards people check once and forget\n...\n# Approach 1: Export and Upload\nThe simplest path.\nNo engineering required.\n1. Export your data from wherever it lives (CSV, Excel, JSON)\n2. Upload it to your AI tool\n3. Build the visualization\nThis works when:\n...\nFor recurring reports, set up a scheduled export.\nSalesforce, HubSpot, Google Analytics, Stripe all support automated CSV exports or API-based data pulls.\n...\nFor teams that need live data, you connect your AI-built dashboard directly to the data source.\nWith vibe coding tools (Lovable,\nBolt.new\n):\n- Connect to Supabase (built-in with Lovable) as your data layer\n- Set up a data sync from your source to Supabase using tools like Fivetran, Airbyte, or custom scripts\n- Your dashboard reads from Supabase in real-time\nWith AI engineering tools (Claude Code, Cursor):\n- Connect directly to your database (PostgreSQL, MySQL, BigQuery)\n- Build API routes that query your data\n- Add authentication and permissions as needed\n...\n## Step 1: Document What You Have\nBefore you build anything, capture the current dashboard:\n- Screenshot every view\n- List every metric, filter, and interaction\n- Note the data sources and refresh cadence\n- Identify what people actually use vs. what's just there\nMost dashboards have 5-10 views.\nOf those, 2-3 get used regularly.\nThe rest are noise.\nOnly rebuild what matters.\n## Step 2: Get the Data\nExport the underlying data from your current tool.\nIn Tableau, right-click any view, then \"Download,\" then \"Data.\"\nIn Power BI, export to CSV.\nIn Looker, download the explore results.\nIf the dashboard pulls from a database you have access to, even better.\nYou can connect directly later.\n...\n## Step 4: Iterate\nLovable will generate a working dashboard.\nIt won't be perfect.\nIterate:\n...\nInstead of building a static dashboard that tries to anticipate every question, you upload your data to Claude or ChatGPT and ask questions as they come up.\nStep 1: Export your data (CSV, Excel)\nStep 2: Upload to Claude and ask:\n> \"This is our sales data for Q4.\n...\nGive me charts where they help.\n...\nCall out anything surprising.\"\n...\n# Phase 1: Identify the Low-Hanging Fruit (Week 1)\nAudit your existing dashboards.\nFor each one, answer:\n- How many people use it?\n- How often?\n- Could the underlying data be exported as a CSV?\n- Is the visualization standard (charts, tables, filters) or highly custom?\nDashboards used by fewer than 10 people, checked less than daily, with exportable data and standard visualizations: these are your migration candidates.\n...\n# Phase 3: Migrate the Easy Ones (Weeks 3-6)\nWork through your low-hanging fruit list.\nEach dashboard gets faster to rebuild as you develop your prompting patterns and reusable components.\nKeep a scorecard: time to build, monthly cost, user feedback.\n# Phase 4: Evaluate the Hard Ones (Week 7+)\nFor dashboards that are complex, widely used, or require enterprise features, make a deliberate decision.\nSome will migrate.\nSome will stay.\nThe goal isn't zero Tableau.\nIt's zero unnecessary Tableau.\n# Phase 5: Reduce Licenses\nAs dashboards migrate, reduce your traditional tool licenses.\nMost contracts allow you to downscale at renewal.\nTime your migration to align with contract renewals for maximum savings.\n...\n# The 30-Minute Test\n1. Pick a dashboard your team uses\n2. Export the underlying data as a CSV\n3. Open\nlovable.dev\nor\nclaude.ai\n4. Describe the dashboard you want (use the prompt patterns above)\n5. See what comes out\nIf the result is 80% of what your current dashboard does, you have your answer.\nThe remaining 20% is iteration, not weeks of development.\n# The \"Just Ask Claude\" Test\n1. Export any report your team looks at regularly\n2. Upload to Claude\n3. Ask: \"Analyze this data.\nWhat are the key trends, anomalies, and insights?\nShow me the most important charts.\"\n4. Compare what Claude surfaces to what your dashboard shows\n...\nThe key is getting the data.\nExport it (CSV, Excel) or wire it up directly (database connection, API).\nOnce you have the data, building the visualization is a prompt away.\nThree workflows:\n1. Vibe code it.\nDescribe your dashboard in Lovable or v0.\nBest for most teams.\n1-3 hours.\n2. AI engineer it.\nBuild with Claude Code or Cursor for complex needs.\nBest for technical teams.\n1-2 days.\n3. Skip the dashboard.\nUpload data to Claude and ask questions directly.\nBest for weekly/monthly analysis.",
+      "trust": null
+    },
+    {
+      "title": "Ben Goertzel (@bengoertzel) / Posts / X - Twitter",
+      "url": "https://x.com/bengoertzel",
+      "domain": "X (formerly Twitter)",
+      "snippet": "",
+      "date": "2008-04-02T00:00:00",
+      "summary": "",
+      "trust": null
+    },
+    {
+      "title": "Next generation data insights using natural language queries",
+      "url": "https://blog.x.com/engineering/en_us/topics/insights/2022/next-generation-data-insights-using-natural-language-queries",
+      "domain": "blog.x.com",
+      "snippet": "",
+      "date": null,
+      "summary": "",
+      "trust": null
+    },
+    {
+      "title": "Every Prompt Is a Confession: The Case for Private AI Inference",
+      "url": "https://x.com/ClusterProtocol/article/2067648109262549040",
+      "domain": "X (formerly Twitter)",
+      "snippet": "",
+      "date": "2026-06-18T00:00:00",
+      "summary": "",
+      "trust": null
+    },
+    {
+      "title": "Choosing a historical API | Docs - Twitter Developer Platform",
+      "url": "https://developer.x.com/en/docs/tutorials/choosing-historical-api",
+      "domain": "developer.x.com",
+      "snippet": "",
+      "date": "2012-01-01",
+      "summary": "Full-Archive Search is best for collecting lower-volume datasets, while Historical PowerTrack is more appropriate for higher-volume datasets.",
+      "trust": null
+    }
+  ]
+}
