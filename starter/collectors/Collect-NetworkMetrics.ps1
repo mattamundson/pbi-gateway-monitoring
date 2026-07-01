@@ -164,10 +164,15 @@ try {
                               -Count $LatencyProbeCount `
                               -ErrorAction Stop
 
-    # Handle both PS 5.1 (ResponseTime) and PS 7 (Latency) property names
+    # Handle both PS 5.1 (ResponseTime) and PS 7 (Latency) property names.
+    # NOTE: under `Set-StrictMode -Version Latest` (set above), accessing a
+    # property that doesn't exist THROWS instead of returning $null, so we must
+    # probe for the property via PSObject.Properties rather than `$ping.X`.
     $latencies = foreach ($ping in $pings) {
-        if ($null -ne $ping.ResponseTime) { $ping.ResponseTime }
-        elseif ($null -ne $ping.Latency)  { $ping.Latency }
+        $rt  = $ping.PSObject.Properties['ResponseTime']
+        $lat = $ping.PSObject.Properties['Latency']
+        if     ($rt  -and $null -ne $rt.Value)  { $rt.Value }
+        elseif ($lat -and $null -ne $lat.Value) { $lat.Value }
         else { $null }
     }
     $latencies = $latencies | Where-Object { $null -ne $_ }
