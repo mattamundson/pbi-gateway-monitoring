@@ -1,0 +1,52 @@
+RequestId,DatasetId,DatasetName,WorkspaceId,Status,StartTime,EndTime,ServiceExceptionJson
+70C80C5E-8775-47DF-B7AA-9361405EB1F5,ds-fabric-005,Exec Dashboard,ws-exec-001,Failed,2026-06-30T07:15:16Z,2026-06-30T07:17:01Z,"{""errorCode"":""ModelRefreshFailed_CredentialsNotSpecified""}"
+B1D54C2F-E93E-432D-8213-ED7BBEB9F5DA,ds-fabric-003,HR Headcount,ws-hr-001,Failed,2026-06-28T19:29:46Z,2026-06-28T19:29:54Z,"{""errorCode"":""ModelRefreshFailed_CredentialsNotSpecified""}"
+3C12E7CC-41D8-4D47-942D-DC58428056ED,ds-fabric-001,Finance Actuals v2,ws-finance-001,Failed,2026-06-28T21:22:19Z,2026-06-28T21:23:16Z,"{""errorCode"":""ModelRefreshFailed_CredentialsNotSpecified""}"
+E39D4850-E7F1-48DC-89C0-6008925CDA78,ds-fabric-006,Risk & Compliance,ws-risk-001,Failed,2026-06-28T18:03:06Z,2026-06-28T18:03:35Z,"{""errorCode"":""ModelRefreshFailed_CredentialsNotSpecified""}"
+32CE3A1A-02A9-492D-9F09-96E915CAF61B,ds-fabric-001,Finance Actuals v2,ws-finance-001,Failed,2026-06-30T14:35:48Z,2026-06-30T14:36:31Z,"{""errorCode"":""ModelRefreshFailed_CredentialsNotSpecified""}"
+096104BF-7889-4832-9A83-62F6C778760C,ds-fabric-004,Supply Chain KPIs,ws-ops-001,Failed,2026-06-30T10:17:50Z,2026-06-30T10:19:43Z,"{""errorCode"":""ModelRefreshFailed_CredentialsNotSpecified""}"
+5B006067-8A2B-4FF5-AF0C-4DC30485B518,ds-fabric-001,Finance Actuals v2,ws-finance-001,Failed,2026-06-28T04:08:30Z,2026-06-28T04:09:36Z,"{""errorCode"":""ModelRefreshFailed_CredentialsNotSpecified""}"
+CE9C3552-0128-406C-9C84-E9222ECF7E0B,ds-fabric-006,Risk & Compliance,ws-risk-001,Failed,2026-06-30T06:03:40Z,2026-06-30T06:04:52Z,"{""errorCode"":""ModelRefreshFailed_CredentialsNotSpecified""}"
+02D1E4FD-E50B-455E-ADA8-CADE8CAF9A83,ds-fabric-002,Sales Pipeline,ws-sales-001,Failed,2026-06-29T16:50:38Z,2026-06-29T16:50:39Z,"{""errorCode"":""ModelRefreshFailed_CredentialsNotSpecified""}"
+A3AC2385-4D41-4290-A1D0-6808C7D1A59B,ds-fabric-005,Exec Dashboard,ws-exec-001,Failed,2026-06-29T20:08:34Z,2026-06-29T20:09:41Z,"{""errorCode"":""ModelRefreshFailed_CredentialsNotSpecified""}"
+F58A2F98-87BE-4FC4-A236-AC901D4CD29B,ds-fabric-004,Supply Chain KPIs,ws-ops-001,Failed,2026-06-29T15:53:58Z,2026-06-29T15:55:47Z,"{""errorCode"":""ModelRefreshFailed_CredentialsNotSpecified""}"
+2EFF4F54-FA34-4C33-A931-7D80761CA6E7,ds-fabric-001,Finance Actuals v2,ws-finance-001,Failed,2026-06-30T11:35:44Z,2026-06-30T11:37:22Z,"{""errorCode"":""ModelRefreshFailed_CredentialsNotSpecified""}"
+BE2A0770-0334-4291-82E6-85868400214E,ds-fabric-004,Supply Chain KPIs,ws-ops-001,Failed,2026-06-30T08:40:58Z,2026-06-30T08:41:53Z,"{""errorCode"":""ModelRefreshFailed_CredentialsNotSpecified""}"
+CBA1C9BE-83A1-43AD-BEF7-BFF635931475,ds-fabric-004,Supply Chain KPIs,ws-ops-001,Failed,2026-06-30T21:19:00Z,2026-06-30T21:19:46Z,"{""errorCode"":""ModelRefreshFailed_CredentialsNotSpecified""}"
+257D4295-CA71-4FE5-8A84-52AA4F25F43D,ds-fabric-003,HR Headcount,ws-hr-001,Failed,2026-06-30T22:14:55Z,2026-06-30T22:15:35Z,"{""errorCode"":""ModelRefreshFailed_CredentialsNotSpecified""}"
+5FA3FC02-9C01-4F28-BEF0-2CE8E4B3F09D,ds-fabric-003,HR Headcount,ws-hr-001,Failed,2026-06-29T13:37:10Z,2026-06-29T13:37:35Z,"{""errorCode"":""ModelRefreshFailed_CredentialsNotSpecified""}"
+9101FAE5-BAB2-4424-9DDA-E30BCF6BB494,ds-fabric-004,Supply Chain KPIs,ws-ops-001,Failed,2026-06-29T20:23:31Z,2026-06-29T20:25:08Z,"{""errorCode"":""ModelRefreshFailed_CredentialsNotSpecified""}"
+5EC2538A-067E-43DF-B7D0-133A974FC462,ds-fabric-004,Supply Chain KPIs,ws-ops-001,Failed,2026-06-28T23:22:43Z,2026-06-28T23:24:11Z,"{""errorCode"":""ModelRefreshFailed_CredentialsNotSpecified""}"
+8ECFEAA0-74A3-4514-9F40-4DA90B77EA1F,ds-fabric-006,Risk & Compliance,ws-risk-001,Failed,2026-06-29T21:07:33Z,2026-06-29T21:09:02Z,"{""errorCode"":""ModelRefreshFailed_CredentialsNotSpecified""}"
+B0418DAD-0F46-4753-B46F-7DED03670CDC,ds-fabric-006,Risk & Compliance,ws-risk-001,Failed,2026-06-30T09:25:29Z,2026-06-30T09:26:26Z,"{""errorCode"":""ModelRefreshFailed_CredentialsNotSpecified""}"
+383805F9-DB8E-41BC-A0A0-D2667D68E941,ds-fabric-004,Supply Chain KPIs,ws-ops-001,Failed,2026-06-28T19:15:26Z,2026-06-28T19:16:36Z,"{""errorCode"":""ModelRefreshFailed_CredentialsNotSpecified""}"
+54003A25-7F36-437C-AC4C-84CEF850B9CD,ds-fabric-001,Finance Actuals v2,ws-finance-001,Failed,2026-06-29T04:59:29Z,2026-06-29T05:00:05Z,"{""errorCode"":""ModelRefreshFailed_CredentialsNotSpecified""}"
+98B815D6-8AA9-4837-9726-3B0979B0C3F5,ds-fabric-001,Finance Actuals v2,ws-finance-001,Failed,2026-06-29T08:54:26Z,2026-06-29T08:54:31Z,"{""errorCode"":""ModelRefreshFailed_CredentialsNotSpecified""}"
+04F4509D-83FA-44F5-A672-E9DEE8ED4E7B,ds-fabric-003,HR Headcount,ws-hr-001,Failed,2026-06-30T01:26:08Z,2026-06-30T01:27:26Z,"{""errorCode"":""ModelRefreshFailed_CredentialsNotSpecified""}"
+4BE36D7F-38A2-4B71-B87B-80B099D1D6C1,ds-fabric-001,Finance Actuals v2,ws-finance-001,Failed,2026-06-30T17:55:20Z,2026-06-30T17:56:27Z,"{""errorCode"":""ModelRefreshFailed_CredentialsNotSpecified""}"
+B0B13951-F558-4672-9CFB-F92354DC2E9B,ds-fabric-004,Supply Chain KPIs,ws-ops-001,Failed,2026-06-29T12:33:18Z,2026-06-29T12:34:07Z,"{""errorCode"":""ModelRefreshFailed_CredentialsNotSpecified""}"
+5B0F956B-21CA-4FE1-8A76-0EE0EACDF6DF,ds-fabric-004,Supply Chain KPIs,ws-ops-001,Failed,2026-06-28T15:42:12Z,2026-06-28T15:44:01Z,"{""errorCode"":""ModelRefreshFailed_CredentialsNotSpecified""}"
+E020E4BC-C8F0-4B03-925E-FB2870A7180D,ds-fabric-003,HR Headcount,ws-hr-001,Failed,2026-06-30T11:05:29Z,2026-06-30T11:05:46Z,"{""errorCode"":""ModelRefreshFailed_CredentialsNotSpecified""}"
+FD32ED5A-F7B5-4A21-BAC1-37D234E5B8E2,ds-fabric-002,Sales Pipeline,ws-sales-001,Failed,2026-06-30T04:56:40Z,2026-06-30T04:57:35Z,"{""errorCode"":""ModelRefreshFailed_CredentialsNotSpecified""}"
+9E34E13B-8643-40FA-9F1D-1BAEFA1BF61E,ds-fabric-002,Sales Pipeline,ws-sales-001,Failed,2026-06-28T09:11:30Z,2026-06-28T09:11:39Z,"{""errorCode"":""ModelRefreshFailed_CredentialsNotSpecified""}"
+F3CFD174-6AEF-407B-800D-DC995F939159,ds-fabric-006,Risk & Compliance,ws-risk-001,Failed,2026-06-28T14:34:35Z,2026-06-28T14:34:51Z,"{""errorCode"":""ModelRefreshFailed_CredentialsNotSpecified""}"
+D61F464D-F4F6-4FBA-B6E7-5E75D04DCD42,ds-fabric-002,Sales Pipeline,ws-sales-001,Failed,2026-06-30T09:40:35Z,2026-06-30T09:40:53Z,"{""errorCode"":""ModelRefreshFailed_CredentialsNotSpecified""}"
+22CA0A15-A342-4C19-B402-68693A51309D,ds-fabric-003,HR Headcount,ws-hr-001,Failed,2026-06-28T17:36:10Z,2026-06-28T17:37:11Z,"{""errorCode"":""ModelRefreshFailed_CredentialsNotSpecified""}"
+70CA5D0D-C7BD-4922-82DA-2A4F12FC8B1A,ds-fabric-003,HR Headcount,ws-hr-001,Failed,2026-06-29T17:31:35Z,2026-06-29T17:32:48Z,"{""errorCode"":""ModelRefreshFailed_CredentialsNotSpecified""}"
+BA7FF558-6D6B-49C8-8BDF-6352E6D7EBE8,ds-fabric-003,HR Headcount,ws-hr-001,Failed,2026-06-28T03:17:56Z,2026-06-28T03:18:01Z,"{""errorCode"":""ModelRefreshFailed_CredentialsNotSpecified""}"
+F2A154DF-BC65-4BA4-BB59-E19E4036E1B5,ds-fabric-004,Supply Chain KPIs,ws-ops-001,Failed,2026-06-30T00:44:01Z,2026-06-30T00:44:13Z,"{""errorCode"":""ModelRefreshFailed_CredentialsNotSpecified""}"
+00529D7E-592A-4B6B-A681-A68C267D47F8,ds-fabric-006,Risk & Compliance,ws-risk-001,Completed,2026-06-28T16:15:13Z,2026-06-28T16:15:31Z,
+7FEF9ADC-3DD1-4B65-A8C4-D80F52C4B4EF,ds-fabric-005,Exec Dashboard,ws-exec-001,Completed,2026-06-28T16:56:30Z,2026-06-28T16:57:36Z,
+EE2C6F82-ECBB-42A7-82BA-47F18425EB4F,ds-fabric-003,HR Headcount,ws-hr-001,Completed,2026-06-30T13:42:45Z,2026-06-30T13:43:30Z,
+BA13D551-6592-41F5-B6A4-6080521D95E9,ds-fabric-001,Finance Actuals v2,ws-finance-001,Completed,2026-06-29T18:02:29Z,2026-06-29T18:02:54Z,
+2FBF27FC-5211-4016-A56A-9AB1565B54CF,ds-fabric-001,Finance Actuals v2,ws-finance-001,Completed,2026-06-29T22:17:20Z,2026-06-29T22:19:09Z,
+2D25BC82-B745-4060-A021-395C17FBAEFB,ds-fabric-004,Supply Chain KPIs,ws-ops-001,Completed,2026-06-28T17:57:31Z,2026-06-28T17:59:08Z,
+C2B354BD-74A3-4A5C-A0C7-8DBE3AE35F93,ds-fabric-004,Supply Chain KPIs,ws-ops-001,Completed,2026-06-29T14:31:44Z,2026-06-29T14:32:17Z,
+644016F4-1426-4129-9E3D-1660E67EA927,ds-fabric-005,Exec Dashboard,ws-exec-001,Completed,2026-06-28T11:07:45Z,2026-06-28T11:08:34Z,
+2FFA9C9A-0A5B-431C-9C59-06A2B570816D,ds-fabric-001,Finance Actuals v2,ws-finance-001,Completed,2026-06-30T19:39:17Z,2026-06-30T19:40:04Z,
+DBCC24DC-129E-4E15-B091-989A908B539C,ds-fabric-002,Sales Pipeline,ws-sales-001,Completed,2026-06-30T23:12:52Z,2026-06-30T23:14:31Z,
+ORPHAN-B2755AE4-8D1A-4446-8D23-03DB115CD6D1,ds-fabric-005,Orphan Model 1,ws-orphan-001,Failed,2026-06-28T00:00:00Z,2026-06-28T00:05:00Z,"{""errorCode"":""DMTS_MonikerWithUnboundDataSources""}"
+ORPHAN-BC8F562E-0D73-4E0B-B58A-E60BCF5E2CE9,ds-fabric-002,Orphan Model 2,ws-orphan-001,Failed,2026-06-28T01:00:00Z,2026-06-28T01:05:00Z,"{""errorCode"":""DMTS_MonikerWithUnboundDataSources""}"
+ORPHAN-64C34D7F-DF85-407C-90D2-E13AF7F484EC,ds-fabric-001,Orphan Model 3,ws-orphan-001,Failed,2026-06-28T02:00:00Z,2026-06-28T02:05:00Z,"{""errorCode"":""DMTS_MonikerWithUnboundDataSources""}"
+ORPHAN-9FA0368E-084D-448E-BE06-A820954A7A8D,ds-fabric-003,Orphan Model 4,ws-orphan-001,Failed,2026-06-28T03:00:00Z,2026-06-28T03:05:00Z,"{""errorCode"":""DMTS_MonikerWithUnboundDataSources""}"
+ORPHAN-3414AE8E-203A-4133-A58C-9A1DE14762AC,ds-fabric-004,Orphan Model 5,ws-orphan-001,Failed,2026-06-28T04:00:00Z,2026-06-28T04:05:00Z,"{""errorCode"":""DMTS_MonikerWithUnboundDataSources""}"
