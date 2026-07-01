@@ -1,4 +1,4 @@
-# Starter Tests — two-tier verification
+# Starter Tests — two-tier + simulation verification
 
 Closes the verification gap without a live gateway or Fabric. Both tiers exercise
 the **shared** bronze logic in `../notebooks/gateway_bronze_lib.py` (single source
@@ -6,6 +6,7 @@ of truth), against synthetic logs that embed the exact edge cases that break the
 official Microsoft PBIT template.
 
 ## Files
+
 - `generate_synthetic_logs.py` — writes QueryExecution / QueryStart / SystemCounter
   CSVs with: comma-in-ErrorMessage, escaped quotes, a mid-schema NEW column,
   base64 **and** direct-JSON EvaluationContext, and NULL values.
@@ -14,12 +15,22 @@ official Microsoft PBIT template.
 - `test_parser_spark.py` — **Tier 2 (PySpark).** Runs the real native-Spark path
   (`read_gateway_csv` + casts + UDF-free `add_artifact_identity`) — the exact code
   the Fabric notebook runs.
+- `simulate_tenant.py` — **[NET-NEW] [Simulated]** Correlated multi-source simulator.
+  Generates 200 query events over 3 simulated days where IDs line up across:
+  gateway QueryStartReport, QueryExecutionReport, a mock PowerBIDatasetsWorkspace
+  table, SystemCounter, MashupProcesses, NetworkMetrics, and RefreshHistory.
+  Produces `sim_out/` directory.  ~85% of gateway events intentionally get a
+  Workspace Monitoring row (realistic partial-match); ~15% simulate non-Fabric
+  workloads.
+- `validate_pipeline_sim.py` — **[NET-NEW] [Simulated]** Spark validation.
+  Runs the REAL library code end-to-end and ASSERTs outcomes for all 5 pain points.
+  Prints a per-pain PASS/FAIL summary and exits 0/1.
 
 ## Run
 
 ```bash
-# generate data first
-python generate_synthetic_logs.py
+# generate correlated sim data
+python simulate_tenant.py sim_out/
 
 # Tier 1 — portable (no Spark needed)
 python test_parser.py
@@ -27,10 +38,17 @@ python test_parser.py
 # Tier 2 — PySpark (needs pyspark + Java 11/17; NOT Java 21+/25 with Spark 3.5)
 export JAVA_HOME=/path/to/jdk-17
 python test_parser_spark.py
+
+# Tier 3 — Simulator + Join Proof [Simulated]
+export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+export TMPDIR=/dev/shm/spark_tmp   # or any writable tmpdir
+mkdir -p $TMPDIR
+python validate_pipeline_sim.py
 ```
 
 ## Verified results (this repo, Spark 3.5.1 + JDK 17)
 
+### Tier 1 & 2 (existing)
 Both tiers **PASS**:
 - Tier 1: 8/8 — schema-adaptive parse, mid-schema column → `_extra_cols`,
   comma/quoted ErrorMessage intact, base64+direct-JSON context → artifactId,
@@ -38,12 +56,35 @@ Both tiers **PASS**:
 - Tier 2: 6/6 — native Spark CSV read, comma rows intact, new column survived,
   numeric rename + boolean cast, EvaluationContext (both encodings) → `artifact_id`.
 
+### Tier 3 — Simulator + Join Proof [Simulated — not tenant-verified]
+
+All 6 checks **PASS**:
+
+| Check | Result |
+|-------|--------|
+| Bronze ingest (read_gateway_csv + cast) | PASS |
+| **Pain #3 — Identity Join (RequestId==OperationId → ExecutingUser+ItemName)** | **PASS** |
+| Pain #3b — EvaluationContext → artifact_id (both encodings) | PASS |
+| **Pain #2 — Triage Join (failed QE + refresh-history + OS-event)** | **PASS** |
+| Pain #5 — gold_mashup_health (runaway detection) | PASS |
+| Gold — Fleet rollup + load-skew (3-node) | PASS |
+
+**Measured identity-join match-rate: 87.50%** (175/200 events matched;
+25 intentional non-Fabric gaps = 12.5%).
+
+OVERALL RESULT: **PASS** (exit 0)
+
 ## Environment notes
+
 - **Java:** Spark 3.5 supports JDK 8/11/17. JDK 21+/25 fails with
   `getSubject is not supported`. Use JDK 17.
+- **Python 3.14 + PySpark 3.5.1:** cloudpickle has a known stack overflow
+  with lambdas (8 MB C-stack limit).  `validate_pipeline_sim.py` uses
+  `F.array_compact` instead of `F.filter(arr, lambda x: ...)` and reads all
+  test data from CSV files (no `createDataFrame`). See `SIMULATION.md`.
 - **No Python UDFs:** identity extraction uses native Spark SQL (`unbase64`,
-  `decode`, `get_json_object`) — faster than a UDF and avoids cloudpickle issues
-  on newer Python (e.g. 3.14).
-- These tests validate parsing/transform logic. They do **not** validate the
-  identity JOIN to Workspace Monitoring or Activator rules — those need a live
-  tenant (see `research/phase5_validation.md`).
+  `decode`, `get_json_object`) — faster than a UDF and avoids cloudpickle issues.
+- These tests validate parsing/transform logic + join structure.
+  They do **not** validate the identity JOIN to a live Workspace Monitoring
+  Eventhouse or Activator rules — those need a live tenant
+  (see `research/phase5_validation.md` and `SIMULATION.md`).
