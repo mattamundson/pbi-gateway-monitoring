@@ -142,7 +142,8 @@ catch {
 try {
     if (Test-Path $SpoolPath) {
         $result.SpoolPathExists = $true
-        $spoolItems = Get-ChildItem -Path $SpoolPath -Recurse -File -ErrorAction SilentlyContinue
+        # Array-wrap: empty dir -> $null -> $null.Count throws under StrictMode Latest.
+        $spoolItems = @(Get-ChildItem -Path $SpoolPath -Recurse -File -ErrorAction SilentlyContinue)
         $spoolSizeBytes = ($spoolItems | Measure-Object -Property Length -Sum).Sum
         $result.SpoolDirSizeBytes = if ($null -ne $spoolSizeBytes) { $spoolSizeBytes } else { 0 }
         Write-Verbose "Spool directory size: $([Math]::Round($result.SpoolDirSizeBytes/1MB,2)) MB ($($spoolItems.Count) files)"

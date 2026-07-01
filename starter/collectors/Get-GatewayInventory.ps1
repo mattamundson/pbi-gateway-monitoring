@@ -37,6 +37,12 @@
 # =============================================================================
 
 [CmdletBinding()]
+# Justification: Connect-DataGatewayServiceAccount -ClientSecret requires a
+# [SecureString], and the SP secret arrives as plaintext from a Key Vault-fetched
+# file at runtime. There is no encrypted-at-rest string the cmdlet accepts here
+# without a machine-bound DPAPI blob (which breaks portability across gateway
+# nodes). The plaintext lives only transiently in memory for the connect call.
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidUsingConvertToSecureStringWithPlainText', '')]
 param(
     [Parameter(Mandatory = $false)]
     [string]$ConfigPath = "$PSScriptRoot\..\config\config.json",
@@ -97,20 +103,20 @@ Import-Module DataGateway -ErrorAction Stop
 # ---------------------------------------------------------------------------
 try {
     if (-not [string]::IsNullOrWhiteSpace($ClientSecretPath) -and (Test-Path $ClientSecretPath)) {
+        # Read the SP client secret from file and connect via service principal.
         $clientSecretRaw = Get-Content $ClientSecretPath -Raw
         $clientSecretSS  = $clientSecretRaw.Trim() | ConvertTo-SecureString -AsPlainText -Force
+
+        Connect-DataGatewayServiceAccount -TenantId $TenantId -ApplicationId $ApplicationId `
+            -ClientSecret $clientSecretSS -ErrorAction Stop
+        Write-Verbose "Authenticated via service principal"
     }
     else {
+        # No secret file: fall back to interactive/device-code auth.
+        # [Assumption] Not suitable for scheduled tasks — SP path is required for automation.
         Write-Warning "No client secret file found. Attempting interactive auth (not suitable for scheduled tasks)."
-        # [Assumption] Falls back to device code flow — not suitable for automation
         Connect-DataGatewayServiceAccount -ErrorAction Stop
-        goto skipSpConnect
     }
-
-    $credential = New-Object System.Management.Automation.PSCredential($ApplicationId, $clientSecretSS)
-    Connect-DataGatewayServiceAccount -TenantId $TenantId -ApplicationId $ApplicationId `
-        -ClientSecret $clientSecretSS -ErrorAction Stop
-    Write-Verbose "Authenticated via service principal"
 }
 catch {
     Write-Warning "DataGateway SP authentication failed: $_"
@@ -134,7 +140,8 @@ $collectionErrors = @()
 
 try {
     Write-Verbose "Enumerating all gateway clusters (Scope: Organization)..."
-    $clusters = Get-DataGatewayCluster -Scope Organization -ErrorAction Stop
+    # Array-wrap so .Count is valid whether the cmdlet returns 0, 1, or many.
+    $clusters = @(Get-DataGatewayCluster -Scope Organization -ErrorAction Stop)
 
     Write-Verbose "Found $($clusters.Count) gateway cluster(s)"
 

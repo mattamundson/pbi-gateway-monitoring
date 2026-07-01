@@ -110,8 +110,11 @@ try {
 
     # Note: Get-WinEvent -FilterHashtable does not support ProviderName in all
     # PS versions. We filter by provider post-query for compatibility.
-    $appEvents = Get-WinEvent -FilterHashtable $appFilter -ErrorAction Stop |
-        Where-Object { $_.ProviderName -match "gateway|PBIEgw|OnPremises" }
+    # Array-wrap the pipeline: under Set-StrictMode -Version Latest, a pipeline
+    # that emits nothing assigns $null, and $null.Count THROWS. @(...) forces an
+    # array so .Count is always valid (0 when empty).
+    $appEvents = @(Get-WinEvent -FilterHashtable $appFilter -ErrorAction Stop |
+        Where-Object { $_.ProviderName -match "gateway|PBIEgw|OnPremises" })
 
     foreach ($evt in $appEvents) {
         $allEvents += @{
@@ -156,8 +159,9 @@ try {
     }
 
     # Note: Get-WinEvent -FilterHashtable with Id array syntax requires PS 5.1+
-    $sysEvents = Get-WinEvent -FilterHashtable $scmFilter -ErrorAction Stop |
-        Where-Object { $_.Message -match $GatewayServiceName -or $_.Message -match "gateway" }
+    # Array-wrap (see note above): empty pipeline -> $null -> $null.Count throws.
+    $sysEvents = @(Get-WinEvent -FilterHashtable $scmFilter -ErrorAction Stop |
+        Where-Object { $_.Message -match $GatewayServiceName -or $_.Message -match "gateway" })
 
     foreach ($evt in $sysEvents) {
         $allEvents += @{

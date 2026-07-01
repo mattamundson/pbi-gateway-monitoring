@@ -125,9 +125,11 @@ $logPatterns = @(
 
 $newFiles = @()
 foreach ($pattern in $logPatterns) {
-    $files = Get-ChildItem -Path $LogRootPath -Filter $pattern -Recurse -ErrorAction SilentlyContinue |
+    # Array-wrap: an empty pipeline assigns $null, and `$newFiles += $null`
+    # would append a phantom null element (inflating .Count) under StrictMode.
+    $files = @(Get-ChildItem -Path $LogRootPath -Filter $pattern -Recurse -ErrorAction SilentlyContinue |
         Where-Object { $_.LastWriteTimeUtc -gt $lastProcessedUtc } |
-        Sort-Object LastWriteTimeUtc
+        Sort-Object LastWriteTimeUtc)
     $newFiles += $files
 }
 
