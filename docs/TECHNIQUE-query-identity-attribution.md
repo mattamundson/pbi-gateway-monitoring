@@ -4,6 +4,8 @@
 
 > **Status:** The join key described here is **verified against Microsoft's published documentation** (desk-verified 2026-07-01), not yet against a live tenant. If you run it in production, please [file a pilot report](../.github/ISSUE_TEMPLATE/pilot-report.yml) — the match rate you observe is the one number this writeup can't give you.
 
+> **Ready-to-post versions:** a LinkedIn-length post ([`publish/linkedin-post.md`](publish/linkedin-post.md)) and a Fabric Community forum post ([`publish/fabric-community-post.md`](publish/fabric-community-post.md)) adapt this write-up for those channels.
+
 ---
 
 ## The problem every gateway operator hits
