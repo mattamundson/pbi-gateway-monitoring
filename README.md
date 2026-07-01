@@ -8,6 +8,10 @@ Anyone with a Fabric + Azure tenant-admin role can fork this repo and stand up g
 
 ---
 
+> **New here / ready to test it? Start with the hand-holding pilot guide:** [`docs/PILOT-GUIDE-START-HERE.md`](docs/PILOT-GUIDE-START-HERE.md) — a plain-English, step-by-step walkthrough to validate the tool's flagship capability in ~30 minutes.
+
+> **Full session provenance:** [`conversation/CONVERSATION_HISTORY.md`](conversation/CONVERSATION_HISTORY.md) captures the complete design/build transcript behind every artifact.
+
 ## Why this exists
 
 Two capabilities every gateway operator wants, that **no existing tool provides**, are the reason to build:
