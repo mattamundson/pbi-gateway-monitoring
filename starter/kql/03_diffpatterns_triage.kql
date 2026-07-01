@@ -1,0 +1,69 @@
+// =============================================================================
+// 03_diffpatterns_triage.kql
+// Label: [NET-NEW]  |  v2 intelligence layer (auto root-cause attribution)
+//
+// During a failure spike, auto-surface WHAT CHANGED: which combination of
+// gateway host x error code x data source x query type accounts for the anomaly,
+// versus a baseline window. This is automated multi-dimensional drill-down --
+// the "top offender" card the unified-triage view needs, with zero ML training.
+//
+// Native KQL plugin, [Feasible-now] in Fabric Eventhouse.
+// Source: https://learn.microsoft.com/en-us/kusto/query/anomaly-diagnosis?view=microsoft-fabric
+//
+// [Unverified] table/column names per project schema; confirm in Phase 5.
+// =============================================================================
+
+// ---- diffpatterns: spike window vs baseline window ---------------------------
+// Set these from the Activator alert payload (alert_start/alert_end) or a manual
+// investigation window.
+let alert_start = ago(1h);
+let alert_end   = now();
+let baseline_start = ago(2h);       // equal-length window immediately before
+let baseline_end   = ago(1h);
+let spike =
+    bronze_query_execution
+    | where QueryExecutionEndTimeUTC between (alert_start .. alert_end)
+    | where not(Success)
+    | extend AB = "spike";
+let baseline =
+    bronze_query_execution
+    | where QueryExecutionEndTimeUTC between (baseline_start .. baseline_end)
+    | where not(Success)
+    | extend AB = "baseline";
+spike
+| union baseline
+| evaluate diffpatterns(
+    AB, "spike", "baseline",
+    "~",                       // no weight column
+    Columns = dynamic(["GatewayObjectId", "DataSource", "QueryType", "ErrorMessage"])
+  )
+// Result: ranked differential patterns, e.g.
+//   "GW02 + OracleDB + Refresh + MashupCrash = 78% of spike vs 12% baseline"
+
+// ---- autocluster: dominant patterns WITHIN the spike (no baseline) -----------
+// bronze_query_execution
+// | where QueryExecutionEndTimeUTC between (alert_start .. alert_end) and not(Success)
+// | evaluate autocluster(0.6, "~", "~",
+//     dynamic(["GatewayObjectId","DataSource","QueryType","ErrorMessage"]))
+
+// ---- Deterministic causal bucketing (network vs gateway vs source) -----------
+// Joins the multi-signal streams the tool already collects to label a likely
+// root-cause class per failed query. Fast, transparent, good for ~80% of cases.
+//
+// bronze_query_execution
+// | where not(Success) and QueryExecutionEndTimeUTC > ago(1h)
+// | join kind=leftouter (
+//     bronze_network_metrics
+//     | summarize AvgRttMs = avg(LatencyMs_PBIRelay) by GatewayHostName, bin(CollectedAtUTC, 5m)
+//   ) on $left.GatewayObjectId == $right.GatewayHostName
+// | join kind=leftouter (
+//     bronze_system_counter
+//     | summarize CpuPct = avg(SystemCPUPercent) by GatewayObjectId, bin(CounterTimeUTC, 5m)
+//   ) on GatewayObjectId
+// | extend RootCauseClass = case(
+//     AvgRttMs > 200,                         "network",
+//     CpuPct > 90,                            "gateway_cpu",
+//     ErrorMessage has "Spool",               "gateway_spool",
+//     ErrorMessage has_any ("timeout","login","credential"), "source_or_cred",
+//     "unclassified")
+// | summarize Failures = count() by RootCauseClass

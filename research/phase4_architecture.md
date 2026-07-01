@@ -1,4 +1,7 @@
 # Phase 4 Architecture & Build Spec
+
+> **UPDATE (Phase 6 finding — supersedes 'fuzzy attribution' language below):** Query→identity attribution is NOT architecturally impossible. The gateway `RequestId` equals `XmlaRequestId`/`OperationId` in Fabric Workspace Monitoring, so a KQL join yields exact `ExecutingUser` + `DatasetId` + DAX for Fabric semantic-model workloads (see [`phase6_northstar.md`](./phase6_northstar.md) and [`starter/kql/01_identity_join.kql`](../starter/kql/01_identity_join.kql)). The 'best-effort/fuzzy' notes below remain accurate ONLY for the no-Workspace-Monitoring fallback and for per-DirectQuery UserId / Dataflow Gen1 / Paginated Reports, which stay [Blocked-by-platform].
+
 ## Gateway Monitor: Fabric-Native On-Premises Data Gateway Observability Stack
 
 **Date:** 2026-06-30  

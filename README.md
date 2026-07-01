@@ -1,75 +1,85 @@
-# Power BI / Fabric Gateway Performance Monitoring Kit
+# pbi-gateway-monitoring
 
-An end-to-end toolkit for monitoring **On-Premises Data Gateway** performance in Power BI / Microsoft Fabric — built on Microsoft's maintained **Fabric Platform Monitoring (FPM)** solution accelerator for collection, with an optional custom **ADLS → Fabric Lakehouse (PySpark/Delta) → DirectLake** analytics layer for retention and bespoke analysis.
+An open-source, Fabric-native monitoring tool for the **Power BI / Microsoft Fabric On-Premises Data Gateway** — plus the full evidence-bound research that designed it.
 
-> **Not an official Microsoft product.** This kit orchestrates and documents the use of the community FPM solution accelerator and standard Microsoft APIs. No official support; validate in a non-production environment first.
+Anyone with a Fabric + Azure tenant-admin role can fork this repo and stand up gateway observability that goes beyond what any existing tool (including Microsoft's Fabric Platform Monitoring) offers today.
 
----
-
-## What's in here
-
-```
-.
-├── README.md                              ← you are here (start + sequence)
-├── docs/
-│   ├── gateway-monitoring-runbook.md      ← the full architecture & build runbook (Part A custom build + Part B hybrid)
-│   └── FPM-Phase0-Deployment-Reference.md ← cited, step-by-step FPM deployment reference (prereqs, tenant settings, scripts, gotchas)
-└── scripts/
-    ├── Deploy-FpmGatewayNode.ps1          ← per-node deployer (folder layout, script sync, modules, setup, Task Scheduler import w/ SID+path rewrite)
-    └── Test-FpmGatewayNode.ps1            ← per-node health validator (tasks, log freshness, config, gateway process) + fleet sweep
-```
-
-## Recommended sequence
-
-1. **Read the decision first.** Open `docs/gateway-monitoring-runbook.md` → **Part B → B.0 (the gate)**. Confirm you have **Fabric F8+ capacity** (F16 recommended) and can provision a **service principal + Entra security group + Azure Key Vault**. If not, use **Part A** (pure-custom ADLS/PySpark build) instead.
-
-2. **Stand up FPM (Phase 0).** Follow `docs/FPM-Phase0-Deployment-Reference.md`:
-   - Prerequisites (SP, security group, Key Vault, RBAC, capacity).
-   - Fabric tenant settings (note the **renamed** "Service principals can call Fabric public APIs").
-   - Gateway **Admin** role for the SP.
-   - Run the **Setup notebook** then the **Gateway Config notebook** → download `config.json`.
-
-3. **Deploy to each gateway node.** On every node (PowerShell 7, elevated):
-   ```powershell
-   # dry run first — inspects rewritten Task Scheduler XML without registering tasks
-   .\scripts\Deploy-FpmGatewayNode.ps1 -ConfigSourcePath .\config.json -WhatIfTasks
-
-   # commit
-   .\scripts\Deploy-FpmGatewayNode.ps1 -ConfigSourcePath .\config.json -RunAsUser "DOMAIN\svc-gwmon"
-   ```
-   The SP secret is **machine-bound** — run the deployer on every node; do not copy a populated config.
-
-4. **Validate.** On each node, or as a fleet sweep:
-   ```powershell
-   .\scripts\Test-FpmGatewayNode.ps1                       # single node, colorized table + exit code
-   .\scripts\Test-FpmGatewayNode.ps1 -JsonOut .\health.json # machine-readable
-
-   # whole cluster from one console:
-   Invoke-Command -ComputerName GW01,GW02,GW03 -FilePath .\scripts\Test-FpmGatewayNode.ps1 |
-       Select Computer,GatewayId,Overall,Pass,Warn,Fail | Format-Table
-   ```
-   Green = heartbeat online within ~1 min, Queries page populating after a gateway job, System Counters within ~10 min.
-
-5. **(Optional) Custom analytics — Part B of the runbook.** Shortcut FPM's Eventhouse/Lakehouse gateway tables into your own Fabric Lakehouse and run the PySpark medallion (silver/gold) + DirectLake model for long-term retention and bespoke decomposition (spool vs source-read, baseline-vs-outlier, capacity overlay). **Do not customize FPM items in place** — its updates may revert changes; build in your own lakehouse and shortcut in.
-
-## Key caveats (read before you trust it)
-
-- **VNet gateways are NOT supported** — on-prem data gateway only (scripts need local log-file access).
-- **Network blind spot.** Gateway logs do not capture bandwidth/latency — the most common real bottleneck. Add OS-level NIC/disk/CPU telemetry separately (runbook Part A, Phase 10).
-- **Live bug (June 2026):** `Get-DataGatewayInfo.ps1` can 401 via SP; fix merged — pull latest FPM `main` and ensure the SP has gateway Admin role ([GitHub issue #321](https://github.com/microsoft/fabric-toolbox/issues/321)).
-- **Scripts not parse-tested on Windows here** — validate with `-WhatIfTasks` (deployer) on one node before cluster-wide rollout. Structure was statically checked; no live `pwsh` run was performed.
-
-## Sources
-
-- Fabric Platform Monitoring (maintained successor): https://github.com/microsoft/fabric-toolbox/tree/main/monitoring/fabric-platform-monitoring
-- Microsoft Learn — Monitor & optimize gateway performance: https://learn.microsoft.com/en-us/data-integration/gateway/service-gateway-performance
-- RuiRomano/pbigtwmonitor (deprecated predecessor): https://github.com/RuiRomano/pbigtwmonitor
-- FUAM (tenant ops monitoring, complementary): https://github.com/microsoft/fabric-toolbox/tree/main/monitoring/fabric-unified-admin-monitoring
+> **Status:** Reference implementation. All code is `[Unverified]` against a live gateway until the Phase 5 pilot is run. It compiles and its pure-Python logic is unit-tested; treat it as a well-grounded starting point, not production-certified.
 
 ---
 
-*Generated as a working kit. Treat the PowerShell as a starting point — review and test in your environment before production use.*
+## Why this exists
+
+Two capabilities every gateway operator wants, that **no existing tool provides**, are the reason to build:
+
+1. **Query → identity attribution** — know *which dataset and which user* caused a slow/failed gateway query. Long believed impossible; **it isn't** (see below).
+2. **Per-query network cost** — the #1 real bottleneck, invisible to gateway diagnostics; recoverable via Windows ETW.
+
+Both are breakable **without modifying Microsoft's gateway**, grounded in primary sources.
+
+---
+
+## Repository map
+
+```
+├── README.md                      ← this file
+├── docs/                          ← operational deployment kit (FPM path)
+│   ├── gateway-monitoring-runbook.md
+│   └── FPM-Phase0-Deployment-Reference.md
+├── scripts/                       ← FPM node deploy + validate + lint
+│   ├── Deploy-FpmGatewayNode.ps1
+│   ├── Test-FpmGatewayNode.ps1
+│   └── lint.ps1
+├── research/                      ← the full design pipeline (evidence-bound)
+│   ├── pipeline_critique.md       ← methodology critique that reshaped the plan
+│   ├── phase0_scope.md            ← scope, signal map, build-vs-fork gate
+│   ├── phase1_2_tools.md          ← top-10 tools + best-of-breed shopping list
+│   ├── phase3_painpoints.md       ← top-10 operator pain points (two-pass mined)
+│   ├── phase4_dossier.md          ← decision dossier + What-NOT-to-build
+│   ├── phase4_architecture.md     ← full build spec + traceability + Known Unknowns
+│   ├── phase5_validation.md       ← live-env pilot runbook (U1–U13 + acceptance tests)
+│   ├── phase6_northstar.md        ← state-of-the-art evolution (v1→v6)
+│   ├── frontier_instrumentation.md← OTel/ETW/identity-join deep dive
+│   └── frontier_intelligence.md   ← AIOps: anomaly/forecast/Data Agent/self-healing
+└── starter/                       ← the build-new tool scaffold
+    ├── collectors/                ← 5 PowerShell collectors (logs, network, event log, disk, inventory)
+    ├── notebooks/                 ← PySpark medallion (schema-adaptive bronze → silver → gold)
+    ├── kql/                       ← v2 ceiling-breakers (identity join, anomaly/forecast, diffpatterns)
+    ├── semantic-model/measures.dax
+    ├── alerting/activator-rules.md
+    └── config/                    ← config + credential model
+```
+
+---
+
+## The two ceiling-breakers (start here — highest value)
+
+### 1. Identity attribution — `starter/kql/01_identity_join.kql`
+The gateway `RequestId` is byte-identical to `XmlaRequestId`/`OperationId` in Fabric **Workspace Monitoring**. A KQL join returns `ExecutingUser`, `DatasetId`, `ItemName`, and DAX text — the fields the gateway CSV lacks. `[Feasible-now]`, no gateway changes.
+Sources: [MS semantic model operations](https://learn.microsoft.com/en-us/fabric/enterprise/powerbi/semantic-model-operations), [Fabric CAT/Chris Webb](https://blog.crossjoin.co.uk/2024/09/01/finding-power-bi-semantic-model-refresh-operations-in-gateway-logs/).
+Residual `[Blocked-by-platform]`: per-DirectQuery UserId, Dataflow Gen1, Paginated Reports.
+
+### 2. Predictive intelligence — `starter/kql/02_anomaly_forecast.kql`
+`series_decompose_anomalies` + `series_decompose_forecast` turn static thresholds into "this gateway saturates in ~2h." `starter/kql/03_diffpatterns_triage.kql` auto-attributes failure spikes to their top-offender dimensions. All native KQL, `[Feasible-now]`.
+
+---
+
+## Deploy order
+
+1. Read `research/phase6_northstar.md` §7 (the 3 immediate actions) and `research/phase4_architecture.md`.
+2. Stand up a Fabric Lakehouse + Eventhouse; deploy `starter/collectors/*.ps1` to each gateway node (see `starter/config/credentials.md`).
+3. Run `starter/notebooks/01→02→03` (bronze→silver→gold).
+4. **Enable Workspace Monitoring**, then run `starter/kql/01_identity_join.kql` — this is the flagship capability.
+5. Add `starter/kql/02`/`03` queries + `starter/alerting/activator-rules.md`.
+6. Execute `research/phase5_validation.md` end-to-end to graduate from reference to production.
+
+*(The `docs/` + `scripts/` kit is the alternative/complementary path for teams adopting Microsoft's FPM directly.)*
+
+---
+
+## Honesty charter
+
+This repo labels every claim: `[Feasible-now]` / `[Feasible-with-effort]` / `[Experimental]` / `[Blocked-by-platform]` / `[Unverified]`, and every code file as `[STUB]` / `[ADAPTED-FROM-*]` / `[NET-NEW]`. It does **not** claim: full autonomy, eBPF-on-Windows, exact per-DirectQuery user attribution, or per-OPDG CU billing. What it can't do yet, it says so.
 
 ## License
-
 MIT — see [LICENSE](LICENSE).

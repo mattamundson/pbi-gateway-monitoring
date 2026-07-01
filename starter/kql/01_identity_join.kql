@@ -1,0 +1,94 @@
+// =============================================================================
+// 01_identity_join.kql
+// Label: [NET-NEW]  |  v2 ceiling-breaker
+//
+// BREAKS CEILING 1 (query -> identity attribution) -- the limitation previously
+// believed permanent. The gateway QueryStart log's RequestId is byte-identical
+// to XmlaRequestId / OperationId in Fabric Workspace Monitoring's Eventhouse
+// table PowerBIDatasetsWorkspace. Joining on it yields ExecutingUser (UPN),
+// ItemId (DatasetId), ItemName, DAX text, and AS-engine CPU/duration -- the
+// exact fields the gateway CSV lacks.
+//
+// Sources:
+//   https://learn.microsoft.com/en-us/fabric/enterprise/powerbi/semantic-model-operations
+//   https://blog.crossjoin.co.uk/2024/09/01/finding-power-bi-semantic-model-refresh-operations-in-gateway-logs/
+//   https://learn.microsoft.com/en-my/fabric/fundamentals/workspace-monitoring-overview
+//
+// PREREQUISITE: Workspace Monitoring enabled on the workspace(s) hosting the
+//   semantic models that refresh through this gateway. (Mutually exclusive with
+//   Log Analytics on the same workspace -- if you use Log Analytics instead,
+//   join on the XmlaRequestId column there.)
+//
+// [Unverified] Exact column names of PowerBIDatasetsWorkspace and the gateway
+//   bronze table are from docs + community analysis; confirm against your tenant
+//   in Phase 5 (validation item U-IDENTITY below). If a column name differs,
+//   only the projection changes -- the join key (OperationId == RequestId) holds.
+//
+// [Blocked-by-platform] Per-DirectQuery UserId and Dataflow Gen1 / Paginated
+//   Reports are NOT covered by this join. It resolves the common, high-value
+//   case: Fabric semantic model refresh + query attribution.
+// =============================================================================
+
+// Assumes gateway QueryStart/QueryExecution have been landed into the same
+// Eventhouse (or are reachable via a OneLake shortcut / externaldata).
+// Here we reference them as KQL tables bronze_query_start / bronze_query_execution.
+
+//
+// ---- Core join: attach identity to every gateway query -----------------------
+//
+let lookback = 24h;
+let gw =
+    bronze_query_execution
+    | where QueryExecutionEndTimeUTC > ago(lookback)
+    | project RequestId, GatewayObjectId, DataSource, QueryType,
+              QueryExecutionDuration, SpoolingTotalDataSize, Success, ErrorMessage,
+              QueryExecutionEndTimeUTC;
+PowerBIDatasetsWorkspace
+| where Timestamp > ago(lookback)
+| where OperationName in ("QueryEnd", "ExecutionMetrics", "RefreshEnd")
+| project Timestamp, OperationId, ExecutingUser, ItemId, ItemName,
+          WorkspaceId, CapacityId, CpuTimeMs, DurationMs,
+          EventText   // DAX/XMLA text when configured
+| join kind=inner gw on $left.OperationId == $right.RequestId
+| project
+    QueryExecutionEndTimeUTC,
+    GatewayObjectId,
+    ExecutingUser,                 // <-- WHO (breaks the ceiling)
+    ItemName, ItemId,              // <-- WHICH dataset
+    WorkspaceId, CapacityId,
+    DataSource, QueryType,
+    GatewayDurationMs = QueryExecutionDuration,
+    EngineCpuMs = CpuTimeMs,
+    EngineDurationMs = DurationMs,
+    SpooledBytes = SpoolingTotalDataSize,
+    Success, ErrorMessage,
+    RequestId = OperationId,
+    DaxText = EventText
+| order by QueryExecutionEndTimeUTC desc
+
+//
+// ---- Fallback (no Workspace Monitoring): EvaluationContext datasetId ----------
+// The gateway QueryStart log's EvaluationContext already carries datasetId for
+// Fabric Semantic Model / Dataflow Gen2 / Power Platform workloads. Use this when
+// Workspace Monitoring is unavailable. Gives dataset (not user).
+// Source: https://learn.microsoft.com/en-us/data-integration/gateway/service-gateway-performance
+//
+// bronze_query_start
+// | where QueryStartTimeUTC > ago(24h) and isnotempty(EvaluationContext)
+// | extend ctx = parse_json(EvaluationContext)
+// | project RequestId, QueryTrackingId,
+//           DatasetId = tostring(ctx.artifactId),
+//           ArtifactKind = tostring(ctx.artifactKind),
+//           QueryStartTimeUTC
+
+//
+// ---- Rollups this unlocks ----------------------------------------------------
+//
+// Top offending users by gateway load:
+// <core join above> | summarize TotalGwMs=sum(GatewayDurationMs), Queries=count() by ExecutingUser | top 20 by TotalGwMs
+//
+// Top datasets by spool pressure:
+// <core join above> | summarize SpooledGB=sum(SpooledBytes)/1073741824.0 by ItemName | top 20 by SpooledGB
+//
+// Failed queries WITH owner (the thing operators have wanted for years):
+// <core join above> | where not(Success) | project QueryExecutionEndTimeUTC, ExecutingUser, ItemName, DataSource, ErrorMessage

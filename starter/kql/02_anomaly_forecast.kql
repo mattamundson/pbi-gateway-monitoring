@@ -1,0 +1,71 @@
+// =============================================================================
+// 02_anomaly_forecast.kql
+// Label: [NET-NEW]  |  v2 intelligence layer (Detect + Predict)
+//
+// Replaces static CPU/spool/duration thresholds with seasonality-aware anomaly
+// detection and forward forecasting -- moving the tool from "gateway went
+// offline" to "this gateway will saturate in ~2 hours."
+//
+// All functions are native KQL, no external dependencies, [Feasible-now] in
+// Fabric Eventhouse.
+// Sources:
+//   https://learn.microsoft.com/en-us/kusto/query/anomaly-detection?view=microsoft-fabric
+//   https://learn.microsoft.com/en-us/kusto/query/time-series-analysis?view=microsoft-fabric
+//
+// [Unverified] Column/table names (bronze_system_counter, SystemCPUPercent,
+//   CounterTimeUTC, etc.) per the project schema; confirm in Phase 5.
+// =============================================================================
+
+// ---- 1. Per-gateway CPU anomalies (seasonal, last 7 days, 5-min grain) -------
+bronze_system_counter
+| make-series CpuPct = avg(SystemCPUPercent) default=0
+    on CounterTimeUTC from ago(7d) to now() step 5m
+    by GatewayObjectId
+| extend (Anomalies, AnomalyScore, Baseline) =
+    series_decompose_anomalies(CpuPct, 1.5, -1, 'linefit')
+| mv-expand CounterTimeUTC to typeof(datetime),
+            CpuPct to typeof(double),
+            Anomalies to typeof(int),
+            AnomalyScore to typeof(double),
+            Baseline to typeof(double)
+| where Anomalies != 0 and AnomalyScore > 2.5
+| project GatewayObjectId, CounterTimeUTC, CpuPct, Baseline, AnomalyScore
+| order by AnomalyScore desc
+
+// ---- 2. Spool-disk exhaustion FORECAST (trend, non-seasonal) -----------------
+// Forecast free space 24 steps (2h at 5-min grain) ahead; flag if the lowest
+// forecast crosses a danger floor. Feed the flagged rows to Activator.
+//
+// let danger_floor_gb = 10.0;
+// bronze_disk_spool
+// | make-series FreeGB = avg(FreeSpaceBytes)/1073741824.0 default=0
+//     on CollectedAtUTC from ago(3d) to now() step 5m
+//     by GatewayHostName
+// | extend Forecast = series_decompose_forecast(FreeGB, 24)
+// | extend MinForecastGB = series_stats_dynamic(Forecast).min
+// | where MinForecastGB < danger_floor_gb
+// | project GatewayHostName, MinForecastGB, Forecast
+
+// ---- 3. Query-duration distribution drift (per data source) ------------------
+// Detect when a datasource's p95 duration shifts -- early warning of a source or
+// network regression before it becomes a failure.
+//
+// bronze_query_execution
+// | make-series P95 = percentile(QueryExecutionDuration, 95) default=0
+//     on QueryExecutionEndTimeUTC from ago(14d) to now() step 1h
+//     by DataSource
+// | extend (Anom, Score, Base) = series_decompose_anomalies(P95, 2.0, -1, 'linefit')
+// | mv-expand QueryExecutionEndTimeUTC to typeof(datetime), P95 to typeof(double),
+//             Anom to typeof(int), Score to typeof(double)
+// | where Anom > 0
+// | project DataSource, QueryExecutionEndTimeUTC, P95, Score
+
+// ---- 4. Cluster load-skew score (fleet health) -------------------------------
+// Coefficient of variation of query load across nodes in a cluster.
+// High CV = one node is hot; the cluster is not balancing.
+//
+// bronze_query_execution
+// | where QueryExecutionEndTimeUTC > ago(1h)
+// | summarize NodeQueries = count() by GatewayObjectId
+// | summarize LoadSkewCV = stdev(NodeQueries) / avg(NodeQueries), Nodes = count()
+// | extend SkewAlert = LoadSkewCV > 0.5   // tune threshold
