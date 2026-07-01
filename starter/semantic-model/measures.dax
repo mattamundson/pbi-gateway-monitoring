@@ -1,0 +1,346 @@
+// =============================================================================
+// measures.dax
+// Label: [NET-NEW]
+//
+// Pain points addressed:
+//   #1 — No real-time alerting (Heartbeat Age measure drives Activator)
+//   #2 — Opaque refresh failures (Error Rate, Triage measures)
+//   #3 — Zero query attribution (Attribution Confidence measure)
+//   #6 — Fleet view (Load Skew, Cluster rollup)
+//   #7 — Network blind spot (Network Utilization %)
+//   #9 — Disk spooler (Spool Throughput)
+//
+// Semantic model: DirectLake over Gold Delta tables in OneLake
+// Table names match 03_gold_aggregate.py output:
+//   - gold_gateway_health
+//   - gold_query_performance
+//   - gold_cluster_load
+//   - gold_dim_gateway
+//   - silver_triage (for triage distribution)
+//   - silver_identity_attribution (for attribution confidence)
+//
+// [Unverified] DAX syntax is standard Power BI DAX but has NOT been validated
+//              against a live DirectLake semantic model over Delta tables.
+//              DirectLake has known differences from import mode in some
+//              time-intelligence and filter context behaviors.
+//              All measures require Phase 5 pilot validation.
+//
+// [Assumption] Table and column names in DAX match exactly the Delta table
+//              column names written by the gold notebook.
+//
+// DirectLake notes:
+//   - TREATAS, USERELATIONSHIP work in DirectLake with known caveats
+//   - RANKX, TOPN work but may be slower over DirectLake than import
+//   - Time-intelligence functions (DATESYTD, etc.) require a Date table
+//     and mark-as-date-table configuration — not shown here
+//
+// Source reference for gateway log column names:
+//   https://learn.microsoft.com/en-us/data-integration/gateway/service-gateway-performance
+// =============================================================================
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SECTION 1: Gateway Health + Heartbeat (Pain #1)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Heartbeat Age (minutes) — PRIMARY Activator trigger for gateway-offline alert
+// Returns the age in minutes of the most recent heartbeat for the selected node(s).
+// When this exceeds the configured threshold (default 10 min), the offline alert fires.
+// [Unverified] NOW() behavior in DirectLake context (may be query-time or cached)
+[Heartbeat Age (minutes)] :=
+VAR LastHeartbeat =
+    MAX ( gold_gateway_health[last_heartbeat_utc] )
+VAR AgeMinutes =
+    DATEDIFF ( LastHeartbeat, NOW (), MINUTE )
+RETURN
+    IF ( ISBLANK ( LastHeartbeat ), BLANK (), AgeMinutes )
+
+
+// Gateway Status (text) — Live/Offline/Unknown label for visuals
+[Gateway Status] :=
+VAR Age = [Heartbeat Age (minutes)]
+RETURN
+    SWITCH (
+        TRUE (),
+        ISBLANK ( Age ),   "Unknown",
+        Age > 10,          "OFFLINE",
+        Age > 5,           "Degraded",
+        "Live"
+    )
+
+
+// Nodes Offline — count of nodes where heartbeat_age_minutes > threshold
+// [Assumption] threshold from config; hardcoded to 10 here for reference
+[Nodes Offline] :=
+CALCULATE (
+    COUNTROWS ( gold_gateway_health ),
+    gold_gateway_health[heartbeat_age_minutes] > 10
+)
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SECTION 2: Query Duration (Pains #1, #2)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Avg Query Duration (ms) — simple average from gold_query_performance
+[Avg Query Duration (ms)] :=
+AVERAGEX (
+    gold_query_performance,
+    gold_query_performance[duration_avg_ms]
+)
+
+
+// P95 Query Duration (ms)
+// PERCENTILE.INC requires import mode; in DirectLake use PERCENTILEX.INC
+// [Unverified] PERCENTILEX.INC over DirectLake column may fall back to
+//              engine-computed approximation — validate in Phase 5
+[P95 Query Duration (ms)] :=
+PERCENTILEX.INC (
+    gold_query_performance,
+    gold_query_performance[duration_p95_ms],
+    0.95
+)
+
+
+// Max Query Duration (ms)
+[Max Query Duration (ms)] :=
+MAX ( gold_query_performance[duration_max_ms] )
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SECTION 3: Error Rate (Pains #1, #2)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Gateway Error Rate % — total errors / total queries across selection
+[Gateway Error Rate %] :=
+VAR TotalErrors  = SUMX ( gold_query_performance, gold_query_performance[error_count] )
+VAR TotalQueries = SUMX ( gold_query_performance, gold_query_performance[query_count] )
+RETURN
+    DIVIDE ( TotalErrors, TotalQueries, 0 ) * 100
+
+
+// Error Rate 5-min (from gateway health snapshot) — for sparkline / alerting
+[Error Rate 5min %] :=
+CALCULATE (
+    AVERAGE ( gold_gateway_health[error_rate_pct] ),
+    gold_gateway_health[_partition_date] = TODAY ()
+)
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SECTION 4: Gateway CPU and Memory (Pain #5)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Avg Gateway CPU % (Normalized by core count)
+// [Assumption] gold_dim_gateway has a CoreCount column (added via manual config
+//              or PerfMon collection — not yet implemented; falls back to raw %)
+// [Unverified] CoreCount may not be available in v1; this measure degrades
+//              gracefully to raw GatewayCPUPercent if CoreCount is absent
+[Avg Gateway CPU %] :=
+VAR RawCPU = AVERAGE ( gold_gateway_health[cpu_pct_avg] )
+RETURN
+    RawCPU
+// TODO (Phase 5 / v2): add normalization
+// VAR CoreCount = RELATED ( gold_dim_gateway[CoreCount] )
+// RETURN DIVIDE ( RawCPU, MAX ( CoreCount, 1 ) )
+
+
+// Avg Gateway Memory (MB)
+// GatewayMEMKb from SystemCounter log — convert to MB
+[Avg Gateway Mem (MB)] :=
+DIVIDE ( AVERAGE ( gold_gateway_health[mem_kb_avg] ), 1024, 0 )
+
+
+// System vs Gateway CPU Gap — if SystemCPUPercent >> GatewayCPUPercent,
+// another process is consuming the host (could be Mashup.Container)
+[System CPU - Gateway CPU Gap %] :=
+AVERAGE ( gold_gateway_health[system_cpu_avg] ) - AVERAGE ( gold_gateway_health[cpu_pct_avg] )
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SECTION 5: Spool / Disk Health (Pain #9)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Spool Throughput (MB/s)
+// SpoolingTotalDataSize(bytes) / SpoolingDiskWritingDuration(ms) → MB/s
+// [Assumption] Uses gold_query_performance aggregated values
+[Spool Throughput (MB/s)] :=
+VAR TotalBytes = SUMX ( gold_query_performance, gold_query_performance[spool_total_bytes_sum] )
+VAR TotalWriteMs = SUMX ( gold_query_performance, gold_query_performance[spool_writing_ms_avg] * gold_query_performance[query_count] )
+RETURN
+    DIVIDE (
+        DIVIDE ( TotalBytes, 1048576 ),    -- bytes to MB
+        DIVIDE ( TotalWriteMs, 1000 ),     -- ms to seconds
+        0
+    )
+
+
+// Spool Free Space % — from gold_gateway_health (sourced from Collect-DiskSpool.ps1)
+[Spool Free Space %] :=
+MIN ( gold_gateway_health[spool_free_pct] )
+
+
+// Spool Alert Flag — returns "LOW" or "OK" for conditional formatting
+[Spool Disk Status] :=
+VAR FreePct = [Spool Free Space %]
+RETURN
+    SWITCH (
+        TRUE (),
+        ISBLANK ( FreePct ),    "Unknown",
+        FreePct <= 5,           "CRITICAL",
+        FreePct <= 15,          "LOW",
+        "OK"
+    )
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SECTION 6: Fleet / Load Skew (Pain #6)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Cluster Load Skew Score (CV)
+// Coefficient of Variation of per-node query counts.
+// 0 = perfectly balanced; >0.5 = imbalanced; >0.8 = severely skewed.
+// Source: 03_gold_aggregate.py build_gold_cluster_load()
+[Cluster Load Skew Score] :=
+AVERAGE ( gold_cluster_load[queries_per_node_cv] )
+
+
+// Hottest Node Query % — what % of cluster queries go to the busiest node
+[Hottest Node Query %] :=
+AVERAGE ( gold_cluster_load[hottest_node_query_pct] )
+
+
+// Node Count — distinct gateway nodes in selection
+[Node Count] :=
+DISTINCTCOUNT ( gold_dim_gateway[GatewayObjectId] )
+
+
+// Cluster Count
+[Cluster Count] :=
+DISTINCTCOUNT ( gold_dim_gateway[GatewayClusterId] )
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SECTION 7: Network Metrics (Pain #7, Differentiator #4)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Network Utilization % — average NIC utilization across selected nodes
+// Sourced from Collect-NetworkMetrics.ps1 → bronze_network_metrics → gold_gateway_health
+[Network Utilization %] :=
+AVERAGE ( gold_gateway_health[network_utilization_pct_avg] )
+
+
+// Network Latency P95 (ms) — P95 latency to PBI relay endpoint
+[Network Latency P95 (ms)] :=
+MAX ( gold_gateway_health[latency_ms_p95] )
+
+
+// Network Saturation Flag — for conditional formatting
+[Network Status] :=
+VAR UtilPct = [Network Utilization %]
+RETURN
+    SWITCH (
+        TRUE (),
+        ISBLANK ( UtilPct ),    "Unknown",
+        UtilPct >= 80,          "SATURATED",
+        UtilPct >= 60,          "HIGH",
+        "OK"
+    )
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SECTION 8: Identity Attribution (Pain #3, Differentiator #3)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Attribution Confidence Distribution — % of queries with each confidence level
+// IMPORTANT: these measures must always display with the disclaimer label:
+//   "Best-effort only. Not reliable for Paginated Reports, Dataflow Gen1, or DirectQuery."
+
+[Attribution % Evaluation Context] :=
+VAR EvalContextCount =
+    CALCULATE (
+        COUNTROWS ( silver_identity_attribution ),
+        silver_identity_attribution[attribution_confidence] = "EVALUATION_CONTEXT"
+    )
+VAR TotalCount = COUNTROWS ( silver_identity_attribution )
+RETURN
+    DIVIDE ( EvalContextCount, TotalCount, 0 ) * 100
+
+
+[Attribution % Fuzzy Time Window] :=
+VAR FuzzyCount =
+    CALCULATE (
+        COUNTROWS ( silver_identity_attribution ),
+        silver_identity_attribution[attribution_confidence] = "FUZZY_TIME_WINDOW"
+    )
+VAR TotalCount = COUNTROWS ( silver_identity_attribution )
+RETURN
+    DIVIDE ( FuzzyCount, TotalCount, 0 ) * 100
+
+
+[Attribution % Unattributed] :=
+VAR UnattribCount =
+    CALCULATE (
+        COUNTROWS ( silver_identity_attribution ),
+        silver_identity_attribution[attribution_confidence] = "UNATTRIBUTED"
+    )
+VAR TotalCount = COUNTROWS ( silver_identity_attribution )
+RETURN
+    DIVIDE ( UnattribCount, TotalCount, 0 ) * 100
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SECTION 9: Triage / Failure Analysis (Pain #2)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Triage Coverage % — what % of failures have refresh history correlation
+[Triage Coverage %] :=
+VAR TriagedCount =
+    CALCULATE (
+        COUNTROWS ( silver_triage ),
+        silver_triage[triage_confidence] IN { "EXACT_REQUESTID", "TIME_WINDOW" }
+    )
+VAR TotalFailed = COUNTROWS ( silver_triage )
+RETURN
+    DIVIDE ( TriagedCount, TotalFailed, 0 ) * 100
+
+
+// OS Event Count — failures with a correlated Windows Event Log entry
+[Failures With OS Event] :=
+CALCULATE (
+    COUNTROWS ( silver_triage ),
+    silver_triage[failure_layer_os_event] = TRUE ()
+)
+
+
+// Failure Layer Distribution (text) — for matrix visual
+[Failure Layer] :=
+SELECTEDVALUE ( silver_triage[failure_layer], "Multiple" )
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SECTION 10: KPI Summary Measures
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Total Queries (period)
+[Total Queries] :=
+SUMX ( gold_query_performance, gold_query_performance[query_count] )
+
+
+// Total Errors (period)
+[Total Errors] :=
+SUMX ( gold_query_performance, gold_query_performance[error_count] )
+
+
+// Total Data Spooled (GB)
+[Total Data Spooled (GB)] :=
+DIVIDE (
+    SUMX ( gold_query_performance, gold_query_performance[spool_total_bytes_sum] ),
+    1073741824,   -- bytes to GB
+    0
+)
+
+
+// Spooled Query % — what fraction of queries required disk spooling
+[Spooled Query %] :=
+AVERAGEX ( gold_query_performance, gold_query_performance[spooled_pct] )

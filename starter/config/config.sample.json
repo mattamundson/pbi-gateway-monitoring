@@ -1,0 +1,79 @@
+{
+  "_comment": "Gateway Monitor configuration sample. Copy to config.json and fill in your values. NEVER commit config.json with real secrets to git.",
+  "_version": "1.0",
+  "_label": "[NET-NEW] Configuration stub — no real secrets here",
+
+  "tenantId": "<your-azure-tenant-id>",
+  "applicationId": "<your-service-principal-application-client-id>",
+
+  "keyVault": {
+    "vaultUri": "https://<your-key-vault-name>.vault.azure.net/",
+    "spClientSecretSecretName": "gateway-monitor-sp-secret",
+    "_comment": "The SP client secret is stored in Key Vault. Collectors fetch it at runtime via Get-AzKeyVaultSecret. Never put the secret value here."
+  },
+
+  "fabric": {
+    "workspaceName": "<your-fabric-workspace-name>",
+    "workspaceId": "<your-fabric-workspace-id>",
+    "lakehouseName": "<your-lakehouse-name>",
+    "lakehousePath": "abfss://<workspace-id>@onelake.dfs.fabric.microsoft.com/<lakehouse-id>.Lakehouse",
+    "_comment": "workspaceId and lakehouse path are GUIDs from the Fabric workspace URL"
+  },
+
+  "gateway": {
+    "logPath": "C:\\Users\\PBIEgwService\\AppData\\Local\\Microsoft\\On-premises data gateway\\Report",
+    "_logPathComment": "Default path for PBIEgwService service account. Change if your gateway runs under a different service account.",
+    "spoolPath": "C:\\Users\\PBIEgwService\\AppData\\Local\\Microsoft\\On-premises data gateway\\Spooler",
+    "_spoolPathComment": "[Assumption] Spool path — validate on Phase 5 pilot with Get-DataGatewayInfo (if SP 401 resolved)",
+    "outputPath": "C:\\GatewayMonitor\\output",
+    "_outputPathComment": "Local staging directory on gateway host where collectors write JSON before upload"
+  },
+
+  "scheduling": {
+    "bronzeCollectionIntervalMinutes": 5,
+    "silverGoldRefreshIntervalMinutes": 15,
+    "_comment": "Used to document cadence; actual scheduling via Windows Task Scheduler and Fabric Data Pipeline"
+  },
+
+  "alerting": {
+    "gatewayOfflineThresholdMinutes": 10,
+    "_offlineComment": "Alert fires when no heartbeat received for this many minutes (default 10 = 2 missed 5-min intervals)",
+    "spoolWarnThresholdPct": 15.0,
+    "_spoolWarnComment": "Spool disk free-space warning threshold (%)",
+    "spoolErrorThresholdPct": 5.0,
+    "_spoolErrorComment": "Spool disk free-space critical/error threshold (%)",
+    "credentialDriftConsecutiveIntervals": 3,
+    "_credDriftComment": "Number of consecutive intervals datasource must be in Unknown/Error before alerting",
+    "errorRateThresholdPct": 25.0,
+    "_errorRateComment": "Gateway query error rate threshold (%) for error-rate-spike alert",
+    "networkSaturationThresholdPct": 80.0,
+    "_networkComment": "NIC utilization threshold (%) for network-saturation alert (v2, requires Collect-NetworkMetrics.ps1)",
+    "notificationEmails": ["admin@your-org.com"],
+    "teamsWebhookUrl": "",
+    "_teamsComment": "Optional: Teams webhook URL for alert notifications. Leave empty to disable."
+  },
+
+  "networkMetrics": {
+    "latencyProbeTarget": "msftncsi.com",
+    "_latencyComment": "[Assumption] ICMP probe target as proxy for PBI relay latency. Validate target with your network team.",
+    "sampleIntervalSeconds": 10,
+    "sampleCount": 3
+  },
+
+  "fpmBridge": {
+    "enabled": false,
+    "eventhouseDeltaPath": "",
+    "_comment": "If true, 01_bronze_ingest.py reads FPM Eventhouse tables exposed as Delta via Eventhouse OneLake availability. Set enabled=true and provide the Delta path only if you have FPM deployed. Reference: https://learn.microsoft.com/en-us/fabric/real-time-intelligence/event-house-onelake-availability"
+  },
+
+  "features": {
+    "collectNetworkMetrics": false,
+    "_networkComment": "Enable Collect-NetworkMetrics.ps1 (v2 feature — requires NIC counter access)",
+    "collectEventLog": true,
+    "collectDiskSpool": true,
+    "collectRefreshHistory": false,
+    "_refreshHistoryComment": "Enable REST refresh history collection (v2 feature — requires Admin API access to dataset list)",
+    "collectActivityEvents": false,
+    "_activityEventsComment": "Enable Power BI Activity Events collection for identity attribution (v3 feature)"
+  }
+}
