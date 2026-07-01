@@ -53,20 +53,31 @@
 # =============================================================================
 
 # ── Fabric notebook: set these as notebook parameters or pipeline variables ──
-LAKEHOUSE_PATH = "abfss://<workspace>@onelake.dfs.fabric.microsoft.com/<lakehouse>.Lakehouse"
-LANDING_PATH   = f"{LAKEHOUSE_PATH}/Files/bronze_landing"   # Where PS scripts drop JSON
-BRONZE_PATH    = f"{LAKEHOUSE_PATH}/Tables"                  # Delta tables destination
-USE_FPM_BRIDGE = False   # Set True if you have FPM Eventhouse with OneLake availability
+LAKEHOUSE_PATH = (
+    "abfss://<workspace>@onelake.dfs.fabric.microsoft.com/<lakehouse>.Lakehouse"
+)
+LANDING_PATH = f"{LAKEHOUSE_PATH}/Files/bronze_landing"  # Where PS scripts drop JSON
+BRONZE_PATH = f"{LAKEHOUSE_PATH}/Tables"  # Delta tables destination
+USE_FPM_BRIDGE = False  # Set True if you have FPM Eventhouse with OneLake availability
 
 # ── FPM bridge config (only used if USE_FPM_BRIDGE = True) ──
-FPM_EVENTHOUSE_DELTA_PATH = ""   # Path to FPM Eventhouse Delta tables (OneLake availability)
+FPM_EVENTHOUSE_DELTA_PATH = (
+    ""  # Path to FPM Eventhouse Delta tables (OneLake availability)
+)
 
 # ── Configuration ──────────────────────────────────────────────────────────
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 from pyspark.sql.types import (
-    StructType, StructField, StringType, LongType, DoubleType,
-    TimestampType, BooleanType, DateType, MapType
+    StructType,
+    StructField,
+    StringType,
+    LongType,
+    DoubleType,
+    TimestampType,
+    BooleanType,
+    DateType,
+    MapType,
 )
 from delta.tables import DeltaTable
 import json
@@ -78,7 +89,9 @@ from datetime import datetime, timezone
 
 spark = SparkSession.builder.getOrCreate()
 spark.conf.set("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension")
-spark.conf.set("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog")
+spark.conf.set(
+    "spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog"
+)
 
 # ── KNOWN COLUMN SCHEMA — sourced from MS docs, not invented ───────────────
 # Source: https://learn.microsoft.com/en-us/data-integration/gateway/service-gateway-performance
@@ -88,47 +101,57 @@ spark.conf.set("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.ca
 
 QUERY_EXECUTION_KNOWN_COLS = {
     # CSV column name (as written by gateway) -> Delta column name, PySpark type
-    "GatewayObjectId":                             ("GatewayObjectId",                    StringType()),
-    "RequestId":                                   ("RequestId",                           StringType()),
-    "DataSource":                                  ("DataSource",                          StringType()),
-    "QueryTrackingId":                             ("QueryTrackingId",                     StringType()),
-    "QueryExecutionEndTimeUTC":                    ("QueryExecutionEndTimeUTC",             TimestampType()),
-    "QueryExecutionDuration(ms)":                  ("QueryExecutionDuration",               LongType()),
-    "QueryType":                                   ("QueryType",                           StringType()),
-    "DataProcessingEndTimeUTC":                    ("DataProcessingEndTimeUTC",             TimestampType()),
-    "DataProcessingDuration(ms)":                  ("DataProcessingDuration",               LongType()),
-    "Success":                                     ("Success",                             BooleanType()),
-    "ErrorMessage":                                ("ErrorMessage",                        StringType()),
-    "SpoolingDiskWritingDuration(ms)":             ("SpoolingDiskWritingDuration",          LongType()),
-    "SpoolingDiskReadingDuration(ms)":             ("SpoolingDiskReadingDuration",          LongType()),
-    "SpoolingTotalDataSize(bytes)":                ("SpoolingTotalDataSize",                LongType()),
-    "DataReadingAndSerializationDuration(ms)":     ("DataReadingAndSerializationDuration",  LongType()),
-    "DiskRead(byte/sec)":                          ("DiskRead",                            DoubleType()),
-    "DiskWrite(byte/sec)":                         ("DiskWrite",                           DoubleType()),
+    "GatewayObjectId": ("GatewayObjectId", StringType()),
+    "RequestId": ("RequestId", StringType()),
+    "DataSource": ("DataSource", StringType()),
+    "QueryTrackingId": ("QueryTrackingId", StringType()),
+    "QueryExecutionEndTimeUTC": ("QueryExecutionEndTimeUTC", TimestampType()),
+    "QueryExecutionDuration(ms)": ("QueryExecutionDuration", LongType()),
+    "QueryType": ("QueryType", StringType()),
+    "DataProcessingEndTimeUTC": ("DataProcessingEndTimeUTC", TimestampType()),
+    "DataProcessingDuration(ms)": ("DataProcessingDuration", LongType()),
+    "Success": ("Success", BooleanType()),
+    "ErrorMessage": ("ErrorMessage", StringType()),
+    "SpoolingDiskWritingDuration(ms)": ("SpoolingDiskWritingDuration", LongType()),
+    "SpoolingDiskReadingDuration(ms)": ("SpoolingDiskReadingDuration", LongType()),
+    "SpoolingTotalDataSize(bytes)": ("SpoolingTotalDataSize", LongType()),
+    "DataReadingAndSerializationDuration(ms)": (
+        "DataReadingAndSerializationDuration",
+        LongType(),
+    ),
+    "DiskRead(byte/sec)": ("DiskRead", DoubleType()),
+    "DiskWrite(byte/sec)": ("DiskWrite", DoubleType()),
 }
 
 QUERY_START_KNOWN_COLS = {
-    "GatewayObjectId":      ("GatewayObjectId",    StringType()),
-    "RequestId":            ("RequestId",           StringType()),
-    "QueryTrackingId":      ("QueryTrackingId",     StringType()),
-    "QueryStartTimeUTC":    ("QueryStartTimeUTC",   TimestampType()),
-    "QueryType":            ("QueryType",           StringType()),
-    "DataSource":           ("DataSource",          StringType()),
+    "GatewayObjectId": ("GatewayObjectId", StringType()),
+    "RequestId": ("RequestId", StringType()),
+    "QueryTrackingId": ("QueryTrackingId", StringType()),
+    "QueryStartTimeUTC": ("QueryStartTimeUTC", TimestampType()),
+    "QueryType": ("QueryType", StringType()),
+    "DataSource": ("DataSource", StringType()),
     # EvaluationContext is a JSON blob (artifactId etc.) — keep as string, parse below
-    "EvaluationContext":    ("EvaluationContext",   StringType()),
+    "EvaluationContext": ("EvaluationContext", StringType()),
 }
 
 SYSTEM_COUNTER_KNOWN_COLS = {
-    "GatewayObjectId":         ("GatewayObjectId",      StringType()),
-    "CounterTimeUTC":          ("CounterTimeUTC",        TimestampType()),
-    "SystemCPUPercent":        ("SystemCPUPercent",      DoubleType()),
-    "SystemMEMUsedPercent":    ("SystemMEMUsedPercent",  DoubleType()),
-    "GatewayCPUPercent":       ("GatewayCPUPercent",     DoubleType()),
-    "GatewayMEMKb":            ("GatewayMEMKb",          LongType()),
+    "GatewayObjectId": ("GatewayObjectId", StringType()),
+    "CounterTimeUTC": ("CounterTimeUTC", TimestampType()),
+    "SystemCPUPercent": ("SystemCPUPercent", DoubleType()),
+    "SystemMEMUsedPercent": ("SystemMEMUsedPercent", DoubleType()),
+    "GatewayCPUPercent": ("GatewayCPUPercent", DoubleType()),
+    "GatewayMEMKb": ("GatewayMEMKb", LongType()),
 }
 
 
-def parse_csv_schema_adaptive(raw_csv: str, known_cols: dict, source_file: str, log_type: str, host: str, collected_at: str):
+def parse_csv_schema_adaptive(
+    raw_csv: str,
+    known_cols: dict,
+    source_file: str,
+    log_type: str,
+    host: str,
+    collected_at: str,
+):
     """
     Parse a raw CSV string using column-NAME-based matching (not positional).
     This is DIFFERENTIATOR #5: schema-adaptive parsing.
@@ -163,12 +186,12 @@ def parse_csv_schema_adaptive(raw_csv: str, known_cols: dict, source_file: str, 
         all_rows = [ln.split(",") for ln in raw_csv.strip().splitlines()]
 
     if len(all_rows) < 2:
-        return []   # Empty or header-only file
+        return []  # Empty or header-only file
 
     headers = [h.strip().strip('"') for h in all_rows[0]]
 
     # Build a mapping: csv_header_index -> (delta_col_name, type_obj) or None
-    col_map = {}   # index -> (delta_name, type) for known cols
+    col_map = {}  # index -> (delta_name, type) for known cols
     for i, h in enumerate(headers):
         if h in known_cols:
             col_map[i] = known_cols[h]
@@ -204,11 +227,11 @@ def parse_csv_schema_adaptive(raw_csv: str, known_cols: dict, source_file: str, 
             if delta_name not in row:
                 row[delta_name] = None
 
-        row["_extra_cols"]    = extra_cols if extra_cols else {}
-        row["_source_file"]   = source_file
-        row["_log_type"]      = log_type
-        row["_gateway_host"]  = host
-        row["_ingested_at"]   = collected_at
+        row["_extra_cols"] = extra_cols if extra_cols else {}
+        row["_source_file"] = source_file
+        row["_log_type"] = log_type
+        row["_gateway_host"] = host
+        row["_ingested_at"] = collected_at
 
         records.append(row)
 
@@ -217,11 +240,15 @@ def parse_csv_schema_adaptive(raw_csv: str, known_cols: dict, source_file: str, 
 
 def _cast_value(val: str, col_type):
     """Best-effort type casting. Returns None on failure (never raises)."""
-    if val is None or val.strip() == "" or val.strip().lower() in ("null", "nan", "none"):
+    if (
+        val is None
+        or val.strip() == ""
+        or val.strip().lower() in ("null", "nan", "none")
+    ):
         return None
     try:
         if isinstance(col_type, LongType):
-            return int(float(val))   # float() first handles "0.0" strings
+            return int(float(val))  # float() first handles "0.0" strings
         elif isinstance(col_type, DoubleType):
             return float(val)
         elif isinstance(col_type, BooleanType):
@@ -233,7 +260,7 @@ def _cast_value(val: str, col_type):
         else:
             return val
     except (ValueError, TypeError):
-        return None   # Do not raise — return null for unparseable values
+        return None  # Do not raise — return null for unparseable values
 
 
 def parse_evaluation_context(df):
@@ -251,6 +278,7 @@ def parse_evaluation_context(df):
     NOT populated for: Dataflow Gen1, Paginated Reports, or Power BI
     datasets on shared capacity. These rows will have null artifact_id.
     """
+
     # FIX (Phase 5 hardening): EvaluationContext may be EITHER direct JSON OR
     # base64-encoded JSON (3Cloud community analysis indicates base64; MS docs
     # confirm the field but not its encoding). The previous version called
@@ -270,7 +298,9 @@ def parse_evaluation_context(df):
             return s
         # 2) Try base64 -> JSON
         try:
-            decoded = base64.b64decode(s, validate=True).decode("utf-8", errors="strict")
+            decoded = base64.b64decode(s, validate=True).decode(
+                "utf-8", errors="strict"
+            )
             if decoded.strip().startswith("{"):
                 return decoded
         except (binascii.Error, ValueError, UnicodeDecodeError):
@@ -286,14 +316,14 @@ def parse_evaluation_context(df):
         "artifact_id",
         F.when(
             F.col("_eval_context_json").isNotNull(),
-            F.get_json_object(F.col("_eval_context_json"), "$.artifactId")
-        ).otherwise(F.lit(None).cast(StringType()))
+            F.get_json_object(F.col("_eval_context_json"), "$.artifactId"),
+        ).otherwise(F.lit(None).cast(StringType())),
     ).withColumn(
         "artifact_type",
         F.when(
             F.col("_eval_context_json").isNotNull(),
-            F.get_json_object(F.col("_eval_context_json"), "$.artifactKind")
-        ).otherwise(F.lit(None).cast(StringType()))
+            F.get_json_object(F.col("_eval_context_json"), "$.artifactKind"),
+        ).otherwise(F.lit(None).cast(StringType())),
     )
     # [Phase 5] Confirm the actual JSON key names ($.artifactId / $.artifactKind).
     # MS docs confirm the field carries artifactId for Fabric workloads; exact
@@ -307,6 +337,7 @@ def add_partition_date(df, ts_col: str):
 
 
 # ── MAIN INGEST LOGIC ────────────────────────────────────────────────────────
+
 
 def ingest_gateway_logs():
     """
@@ -331,31 +362,51 @@ def ingest_gateway_logs():
     print(f"[INFO] Found {len(rows)} staged file records")
 
     # Separate by log type
-    qe_records  = []   # QueryExecution
-    qs_records  = []   # QueryStart
-    sc_records  = []   # SystemCounter
-    agg_records = []   # QueryAggregation (simplified for now)
+    qe_records = []  # QueryExecution
+    qs_records = []  # QueryStart
+    sc_records = []  # SystemCounter
+    agg_records = []  # QueryAggregation (simplified for now)
 
     for row in rows:
-        raw_csv     = row["RawCsvContent"]
-        log_type    = row["LogType"]
+        raw_csv = row["RawCsvContent"]
+        log_type = row["LogType"]
         source_file = row["SourceFileName"]
-        host        = row["GatewayHostName"]
-        collected   = row["CollectedAtUtc"]
+        host = row["GatewayHostName"]
+        collected = row["CollectedAtUtc"]
 
         if log_type == "QueryExecution":
-            parsed = parse_csv_schema_adaptive(raw_csv, QUERY_EXECUTION_KNOWN_COLS, source_file, log_type, host, collected)
+            parsed = parse_csv_schema_adaptive(
+                raw_csv,
+                QUERY_EXECUTION_KNOWN_COLS,
+                source_file,
+                log_type,
+                host,
+                collected,
+            )
             qe_records.extend(parsed)
         elif log_type == "QueryStart":
-            parsed = parse_csv_schema_adaptive(raw_csv, QUERY_START_KNOWN_COLS, source_file, log_type, host, collected)
+            parsed = parse_csv_schema_adaptive(
+                raw_csv, QUERY_START_KNOWN_COLS, source_file, log_type, host, collected
+            )
             qs_records.extend(parsed)
         elif log_type == "SystemCounter":
-            parsed = parse_csv_schema_adaptive(raw_csv, SYSTEM_COUNTER_KNOWN_COLS, source_file, log_type, host, collected)
+            parsed = parse_csv_schema_adaptive(
+                raw_csv,
+                SYSTEM_COUNTER_KNOWN_COLS,
+                source_file,
+                log_type,
+                host,
+                collected,
+            )
             sc_records.extend(parsed)
         elif log_type == "QueryAggregation":
-            agg_records.extend([{"_raw": raw_csv, "_source_file": source_file, "_host": host}])
+            agg_records.extend(
+                [{"_raw": raw_csv, "_source_file": source_file, "_host": host}]
+            )
 
-    print(f"[INFO] Parsed: QE={len(qe_records)}, QS={len(qs_records)}, SC={len(sc_records)}, Agg={len(agg_records)}")
+    print(
+        f"[INFO] Parsed: QE={len(qe_records)}, QS={len(qs_records)}, SC={len(sc_records)}, Agg={len(agg_records)}"
+    )
 
     # ── Write QueryExecution Bronze Delta ──────────────────────────────────
     if qe_records:
@@ -366,7 +417,9 @@ def ingest_gateway_logs():
                 qe_df = qe_df.withColumn(ts_col, F.to_timestamp(F.col(ts_col)))
         qe_df = add_partition_date(qe_df, "QueryExecutionEndTimeUTC")
 
-        _write_bronze_delta(qe_df, "bronze_query_execution", partition_cols=["_partition_date"])
+        _write_bronze_delta(
+            qe_df, "bronze_query_execution", partition_cols=["_partition_date"]
+        )
         # Emit schema warning if any expected columns were missing
         _emit_schema_warnings(qe_records, QUERY_EXECUTION_KNOWN_COLS, "QueryExecution")
 
@@ -374,18 +427,26 @@ def ingest_gateway_logs():
     if qs_records:
         qs_df = spark.createDataFrame(qs_records)
         if "QueryStartTimeUTC" in qs_df.columns:
-            qs_df = qs_df.withColumn("QueryStartTimeUTC", F.to_timestamp(F.col("QueryStartTimeUTC")))
+            qs_df = qs_df.withColumn(
+                "QueryStartTimeUTC", F.to_timestamp(F.col("QueryStartTimeUTC"))
+            )
         qs_df = parse_evaluation_context(qs_df)
         qs_df = add_partition_date(qs_df, "QueryStartTimeUTC")
-        _write_bronze_delta(qs_df, "bronze_query_start", partition_cols=["_partition_date"])
+        _write_bronze_delta(
+            qs_df, "bronze_query_start", partition_cols=["_partition_date"]
+        )
 
     # ── Write SystemCounter Bronze Delta ───────────────────────────────────
     if sc_records:
         sc_df = spark.createDataFrame(sc_records)
         if "CounterTimeUTC" in sc_df.columns:
-            sc_df = sc_df.withColumn("CounterTimeUTC", F.to_timestamp(F.col("CounterTimeUTC")))
+            sc_df = sc_df.withColumn(
+                "CounterTimeUTC", F.to_timestamp(F.col("CounterTimeUTC"))
+            )
         sc_df = add_partition_date(sc_df, "CounterTimeUTC")
-        _write_bronze_delta(sc_df, "bronze_system_counter", partition_cols=["_partition_date"])
+        _write_bronze_delta(
+            sc_df, "bronze_system_counter", partition_cols=["_partition_date"]
+        )
 
 
 def _write_bronze_delta(df, table_name: str, partition_cols: list):
@@ -396,12 +457,11 @@ def _write_bronze_delta(df, table_name: str, partition_cols: list):
     """
     table_path = f"{BRONZE_PATH}/{table_name}"
     (
-        df.write
-          .format("delta")
-          .mode("append")
-          .option("mergeSchema", "true")   # Allow new columns without error
-          .partitionBy(*partition_cols)
-          .save(table_path)
+        df.write.format("delta")
+        .mode("append")
+        .option("mergeSchema", "true")  # Allow new columns without error
+        .partitionBy(*partition_cols)
+        .save(table_path)
     )
     count = df.count()
     print(f"[INFO] Wrote {count} rows to {table_name} (path: {table_path})")
@@ -416,13 +476,25 @@ def _emit_schema_warnings(records: list, known_cols: dict, log_type: str):
     """
     if not records:
         return
-    all_cols = set(records[0].keys()) - {"_extra_cols", "_source_file", "_log_type", "_gateway_host", "_ingested_at"}
+    all_cols = set(records[0].keys()) - {
+        "_extra_cols",
+        "_source_file",
+        "_log_type",
+        "_gateway_host",
+        "_ingested_at",
+    }
     expected_delta_names = {v[0] for v in known_cols.values()}
     missing = expected_delta_names - all_cols
     if missing:
-        print(f"[SCHEMA_WARN] {log_type}: Expected columns not found in logs: {missing}")
-        print(f"[SCHEMA_WARN] These may have been renamed/removed in current gateway version.")
-        print(f"[SCHEMA_WARN] Validate against: https://learn.microsoft.com/en-us/data-integration/gateway/service-gateway-performance")
+        print(
+            f"[SCHEMA_WARN] {log_type}: Expected columns not found in logs: {missing}"
+        )
+        print(
+            f"[SCHEMA_WARN] These may have been renamed/removed in current gateway version."
+        )
+        print(
+            f"[SCHEMA_WARN] Validate against: https://learn.microsoft.com/en-us/data-integration/gateway/service-gateway-performance"
+        )
         # TODO (Phase 5): write schema_warn rows to a bronze_schema_warnings Delta table
         # for monitoring in the report and Activator alerting
 
@@ -444,17 +516,26 @@ def ingest_network_metrics():
             F.col("LatencyProbe"),
         )
         .select(
-            "CollectedAtUTC", "GatewayHostName",
+            "CollectedAtUTC",
+            "GatewayHostName",
             F.col("nic.NicName").alias("NicName"),
-            F.col("nic.BytesTotalPerSec_avg").cast(DoubleType()).alias("BytesTotalPerSec"),
-            F.col("nic.CurrentBandwidthBps").cast(DoubleType()).alias("CurrentBandwidthBps"),
+            F.col("nic.BytesTotalPerSec_avg")
+            .cast(DoubleType())
+            .alias("BytesTotalPerSec"),
+            F.col("nic.CurrentBandwidthBps")
+            .cast(DoubleType())
+            .alias("CurrentBandwidthBps"),
             F.col("nic.UtilizationPct").cast(DoubleType()).alias("UtilizationPct"),
-            F.col("LatencyProbe.LatencyMs_avg").cast(DoubleType()).alias("LatencyMs_PBIRelay"),
+            F.col("LatencyProbe.LatencyMs_avg")
+            .cast(DoubleType())
+            .alias("LatencyMs_PBIRelay"),
             F.col("LatencyProbe.TargetHost").alias("LatencyProbeTarget"),
         )
         .withColumn("_partition_date", F.to_date(F.col("CollectedAtUTC")))
     )
-    _write_bronze_delta(df_exploded, "bronze_network_metrics", partition_cols=["_partition_date"])
+    _write_bronze_delta(
+        df_exploded, "bronze_network_metrics", partition_cols=["_partition_date"]
+    )
 
 
 def ingest_event_log():
@@ -472,7 +553,8 @@ def ingest_event_log():
             F.explode_outer(F.col("Events")).alias("evt"),
         )
         .select(
-            "_ingested_at", "GatewayHostName",
+            "_ingested_at",
+            "GatewayHostName",
             F.col("evt.TimeCreated").cast(TimestampType()).alias("TimeCreated"),
             F.col("evt.EventId").cast("int").alias("EventId"),
             F.col("evt.LevelDisplayName").alias("LevelDisplayName"),
@@ -483,7 +565,9 @@ def ingest_event_log():
         )
         .withColumn("_partition_date", F.to_date(F.col("TimeCreated")))
     )
-    _write_bronze_delta(df_exploded, "bronze_event_log", partition_cols=["_partition_date"])
+    _write_bronze_delta(
+        df_exploded, "bronze_event_log", partition_cols=["_partition_date"]
+    )
 
 
 def ingest_disk_spool():
@@ -494,22 +578,21 @@ def ingest_disk_spool():
         print(f"[WARN] No disk spool files: {e}")
         return
 
-    df_clean = (
-        df.select(
-            F.col("CollectedAtUtc").cast(TimestampType()).alias("CollectedAtUTC"),
-            F.col("GatewayHostName"),
-            F.col("DiskInfo.DriveLetter").alias("SpoolDriveLetter"),
-            F.col("DiskInfo.FreeSpaceBytes").cast(LongType()).alias("FreeSpaceBytes"),
-            F.col("DiskInfo.TotalSpaceBytes").cast(LongType()).alias("TotalSpaceBytes"),
-            F.col("DiskInfo.FreeSpacePct").cast(DoubleType()).alias("FreeSpacePct"),
-            F.col("SpoolDirSizeBytes").cast(LongType()).alias("SpoolDirSizeBytes"),
-            F.col("AlertLevel"),
-            F.col("AlertMessage"),
-            F.col("StreamBeforeRequestCompletes_Warning").cast(BooleanType()),
-        )
-        .withColumn("_partition_date", F.to_date(F.col("CollectedAtUTC")))
+    df_clean = df.select(
+        F.col("CollectedAtUtc").cast(TimestampType()).alias("CollectedAtUTC"),
+        F.col("GatewayHostName"),
+        F.col("DiskInfo.DriveLetter").alias("SpoolDriveLetter"),
+        F.col("DiskInfo.FreeSpaceBytes").cast(LongType()).alias("FreeSpaceBytes"),
+        F.col("DiskInfo.TotalSpaceBytes").cast(LongType()).alias("TotalSpaceBytes"),
+        F.col("DiskInfo.FreeSpacePct").cast(DoubleType()).alias("FreeSpacePct"),
+        F.col("SpoolDirSizeBytes").cast(LongType()).alias("SpoolDirSizeBytes"),
+        F.col("AlertLevel"),
+        F.col("AlertMessage"),
+        F.col("StreamBeforeRequestCompletes_Warning").cast(BooleanType()),
+    ).withColumn("_partition_date", F.to_date(F.col("CollectedAtUTC")))
+    _write_bronze_delta(
+        df_clean, "bronze_disk_spool", partition_cols=["_partition_date"]
     )
-    _write_bronze_delta(df_clean, "bronze_disk_spool", partition_cols=["_partition_date"])
 
 
 def ingest_gateway_inventory():
@@ -538,7 +621,50 @@ def ingest_gateway_inventory():
         )
         .withColumn("_partition_date", F.to_date(F.col("CollectedAtUTC")))
     )
-    _write_bronze_delta(df_inv, "bronze_gateway_inventory", partition_cols=["_partition_date"])
+    _write_bronze_delta(
+        df_inv, "bronze_gateway_inventory", partition_cols=["_partition_date"]
+    )
+
+
+def ingest_refresh_history():
+    """Ingest Power BI Service refresh history JSON from Collect-RefreshHistory.ps1.
+
+    Produces bronze_refresh_history — the Service-side leg of the Differentiator #2
+    triage join (02_silver_correlate reads exactly these columns). Without this the
+    silver triage falls back to gateway-log + event-log only and cannot reconcile
+    against the refresh error the operator actually sees.
+    """
+    try:
+        df = spark.read.json(f"{LANDING_PATH}/refresh_history_*.json")
+    except Exception as e:
+        print(f"[WARN] No refresh history files: {e}")
+        return
+
+    df_exploded = (
+        df.select(
+            F.col("CollectedAtUtc").cast(TimestampType()).alias("_ingested_at"),
+            F.explode_outer(F.col("RefreshRecords")).alias("r"),
+        )
+        .select(
+            "_ingested_at",
+            # RequestId: the join key back to the gateway log RequestId.
+            F.col("r.RequestId").alias("RequestId"),
+            F.col("r.DatasetId").alias("DatasetId"),
+            F.col("r.DatasetName").alias("DatasetName"),
+            F.col("r.WorkspaceId").alias("WorkspaceId"),
+            F.col("r.RefreshType").alias("RefreshType"),
+            F.col("r.Status").alias("Status"),
+            F.col("r.StartTime").cast(TimestampType()).alias("StartTime"),
+            F.col("r.EndTime").cast(TimestampType()).alias("EndTime"),
+            F.col("r.ServiceExceptionJson").alias("ServiceExceptionJson"),
+        )
+        # Drop rows with no RequestId — they cannot join to a gateway query.
+        .filter(F.col("RequestId").isNotNull())
+        .withColumn("_partition_date", F.to_date(F.col("EndTime")))
+    )
+    _write_bronze_delta(
+        df_exploded, "bronze_refresh_history", partition_cols=["_partition_date"]
+    )
 
 
 # ── OPTIONAL FPM BRIDGE ───────────────────────────────────────────────────────
@@ -559,17 +685,22 @@ def ingest_fpm_bridge():
     # Tables to bridge: GatewaysHeartbeat, GatewayReports-Raw, SystemCounters, QueryConnections
     # Map FPM column names -> our bronze schema column names
     # Key difference: FPM uses Eventhouse ingestion time column "_timestamp"; our schema uses QueryExecutionEndTimeUTC
-    print("[STUB] FPM bridge: column mapping not yet implemented. See phase4_architecture.md §1.2")
+    print(
+        "[STUB] FPM bridge: column mapping not yet implemented. See phase4_architecture.md §1.2"
+    )
 
 
 # ── ENTRY POINT ──────────────────────────────────────────────────────────────
-if __name__ == "__main__" or True:   # True: runs in Fabric notebook context
-    print(f"=== 01_bronze_ingest.py starting at {datetime.now(timezone.utc).isoformat()} ===")
+if __name__ == "__main__" or True:  # True: runs in Fabric notebook context
+    print(
+        f"=== 01_bronze_ingest.py starting at {datetime.now(timezone.utc).isoformat()} ==="
+    )
     ingest_gateway_logs()
     ingest_network_metrics()
     ingest_event_log()
     ingest_disk_spool()
     ingest_gateway_inventory()
+    ingest_refresh_history()
     if USE_FPM_BRIDGE:
         ingest_fpm_bridge()
     print("=== 01_bronze_ingest.py complete ===")
