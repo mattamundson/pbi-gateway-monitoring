@@ -1,0 +1,72 @@
+{
+  "_comment": "Concrete Fabric Activator rule definitions for the gateway monitor. Label: [NET-NEW] / [Unverified]. The Activator rule DSL/config surface is not fully public; these are reference definitions to be recreated in the Activator UI and CONFIRMED in-tenant (Phase 5 item U6). Field names are illustrative of intent, not a guaranteed import format.",
+  "_source": "https://learn.microsoft.com/en-us/fabric/real-time-intelligence/data-activator/activator-introduction",
+  "_guardrails": "Circuit breaker: if the same remediation fires >3x in 30 min for the same gateway, suppress + escalate to human. Destructive actions require Tier-2 human-in-loop approval (Teams Adaptive Card).",
+  "rules": [
+    {
+      "name": "gateway-offline",
+      "tier": 1,
+      "pain": "#1 real-time offline alerting",
+      "source_object": "GatewayHeartbeat (Eventstream/Eventhouse)",
+      "condition": "heartbeat_age_minutes > 3",
+      "grouping": "per GatewayObjectId",
+      "transition": "fires on state change to offline (stateful, not every poll)",
+      "action": { "type": "notify", "channels": ["Teams", "email"], "message": "Gateway {GatewayObjectId} offline: no heartbeat for {heartbeat_age_minutes}m. Affected datasets: {blast_radius}." },
+      "autonomous": true
+    },
+    {
+      "name": "spool-disk-forecast-low",
+      "tier": 1,
+      "pain": "#9 disk spooler surprises",
+      "source_object": "series_decompose_forecast output (see kql/02_anomaly_forecast.kql)",
+      "condition": "min_forecast_free_gb < 10",
+      "grouping": "per GatewayHostName",
+      "transition": "fires when 2h forecast crosses floor (proactive, before exhaustion)",
+      "action": { "type": "notify", "channels": ["Teams"], "message": "Gateway {GatewayHostName} spool disk forecast to hit {min_forecast_free_gb}GB within 2h." },
+      "autonomous": true
+    },
+    {
+      "name": "spool-disk-critical-remediate",
+      "tier": 2,
+      "pain": "#9 disk spooler surprises (remediation)",
+      "source_object": "bronze_disk_spool",
+      "condition": "FreeSpacePct < 5",
+      "action": {
+        "type": "user_data_function",
+        "udf": "clear_spool_or_restart",
+        "params": { "gatewayHost": "{GatewayHostName}", "action": "clear_spool" },
+        "approval": "Teams Adaptive Card (Approve/Deny), 15-min timeout -> defer + ticket"
+      },
+      "autonomous": false,
+      "circuit_breaker": "max 3 fires / 30 min / host"
+    },
+    {
+      "name": "credential-drift",
+      "tier": 1,
+      "pain": "#10 credential state drift",
+      "source_object": "datasource status (Get-GatewayInventory / REST datasource status)",
+      "condition": "datasource_status != 'Online'",
+      "action": { "type": "notify", "channels": ["Teams"], "message": "Datasource {datasourceName} on {GatewayObjectId} status={datasource_status}. Likely credential/OAuth expiry." },
+      "autonomous": true
+    },
+    {
+      "name": "error-rate-spike",
+      "tier": 1,
+      "pain": "#2 unified failure triage",
+      "source_object": "bronze_query_execution",
+      "condition": "failure_rate_5m > 0.25 AND query_count_5m > 10",
+      "action": { "type": "run_notebook", "notebook": "llm_alert_enrichment", "note": "Enrich with diffpatterns top-offender + LLM RCA hypothesis (v4), then notify." },
+      "autonomous": true
+    },
+    {
+      "name": "cpu-anomaly",
+      "tier": 1,
+      "pain": "#5 mashup CPU/memory bloat",
+      "source_object": "series_decompose_anomalies output (kql/02)",
+      "condition": "anomaly_score > 2.5",
+      "grouping": "per GatewayObjectId",
+      "action": { "type": "notify", "channels": ["Teams"], "message": "Gateway {GatewayObjectId} CPU anomaly (score {anomaly_score}) vs seasonal baseline." },
+      "autonomous": true
+    }
+  ]
+}

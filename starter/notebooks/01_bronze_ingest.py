@@ -12,12 +12,22 @@
 #   positional), which means adding a new column to a gateway log file does
 #   NOT cause DataFormat.Error.
 #
+# PRIMARY PATH (v2, verified): native Spark distributed CSV via the shared module
+#   gateway_bronze_lib.read_gateway_csv() -- PERMISSIVE mode, _corrupt_record
+#   capture, RFC-4180 quoting, mergeSchema. This scales (parses on executors, not
+#   the driver) and is column-NAME based, so mid-schema column additions do NOT
+#   cause the DataFormat.Error that breaks the Microsoft PBIT template (pain #4).
+#   The identity extraction (add_artifact_identity) is UDF-FREE native Spark SQL.
+#   Both tiers of starter/tests/ exercise this exact code and PASS against a real
+#   Spark engine (see tests/README.md).
+#
 # Schema-adaptivity design:
-#   - Known columns are mapped by name using a whitelist dict
-#   - Unknown columns are collected into a MAP column _extra_cols
-#   - Missing expected columns get a null value (not a pipeline failure)
-#   - The DataFormat.Error that breaks the Microsoft PBIT template is caused
-#     by positional CSV parsing; we never rely on column position.
+#   - Known columns are mapped/renamed by name (never by position)
+#   - Unknown/new columns flow through via mergeSchema on write
+#   - Malformed rows captured in _corrupt_record instead of failing the job
+#
+# The driver-side Python parser below is retained as a documented FALLBACK for
+# non-standard dialects and as the portable (Spark-free) test target.
 #
 # Adapted from:
 #   FPM log schema mappings:
