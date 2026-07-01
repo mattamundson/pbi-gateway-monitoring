@@ -11,7 +11,14 @@
       "condition": "heartbeat_age_minutes > 3",
       "grouping": "per GatewayObjectId",
       "transition": "fires on state change to offline (stateful, not every poll)",
-      "action": { "type": "notify", "channels": ["Teams", "email"], "message": "Gateway {GatewayObjectId} offline: no heartbeat for {heartbeat_age_minutes}m. Affected datasets: {blast_radius}." },
+      "action": {
+        "type": "notify",
+        "channels": [
+          "Teams",
+          "email"
+        ],
+        "message": "Gateway {GatewayObjectId} offline: no heartbeat for {heartbeat_age_minutes}m. Affected datasets: {blast_radius}."
+      },
       "autonomous": true
     },
     {
@@ -22,7 +29,13 @@
       "condition": "min_forecast_free_gb < 10",
       "grouping": "per GatewayHostName",
       "transition": "fires when 2h forecast crosses floor (proactive, before exhaustion)",
-      "action": { "type": "notify", "channels": ["Teams"], "message": "Gateway {GatewayHostName} spool disk forecast to hit {min_forecast_free_gb}GB within 2h." },
+      "action": {
+        "type": "notify",
+        "channels": [
+          "Teams"
+        ],
+        "message": "Gateway {GatewayHostName} spool disk forecast to hit {min_forecast_free_gb}GB within 2h."
+      },
       "autonomous": true
     },
     {
@@ -34,7 +47,10 @@
       "action": {
         "type": "user_data_function",
         "udf": "clear_spool_or_restart",
-        "params": { "gatewayHost": "{GatewayHostName}", "action": "clear_spool" },
+        "params": {
+          "gatewayHost": "{GatewayHostName}",
+          "action": "clear_spool"
+        },
         "approval": "Teams Adaptive Card (Approve/Deny), 15-min timeout -> defer + ticket"
       },
       "autonomous": false,
@@ -46,7 +62,13 @@
       "pain": "#10 credential state drift",
       "source_object": "datasource status (Get-GatewayInventory / REST datasource status)",
       "condition": "datasource_status != 'Online'",
-      "action": { "type": "notify", "channels": ["Teams"], "message": "Datasource {datasourceName} on {GatewayObjectId} status={datasource_status}. Likely credential/OAuth expiry." },
+      "action": {
+        "type": "notify",
+        "channels": [
+          "Teams"
+        ],
+        "message": "Datasource {datasourceName} on {GatewayObjectId} status={datasource_status}. Likely credential/OAuth expiry."
+      },
       "autonomous": true
     },
     {
@@ -55,7 +77,11 @@
       "pain": "#2 unified failure triage",
       "source_object": "bronze_query_execution",
       "condition": "failure_rate_5m > 0.25 AND query_count_5m > 10",
-      "action": { "type": "run_notebook", "notebook": "llm_alert_enrichment", "note": "Enrich with diffpatterns top-offender + LLM RCA hypothesis (v4), then notify." },
+      "action": {
+        "type": "run_notebook",
+        "notebook": "llm_alert_enrichment",
+        "note": "Enrich with diffpatterns top-offender + LLM RCA hypothesis (v4), then notify."
+      },
       "autonomous": true
     },
     {
@@ -65,8 +91,32 @@
       "source_object": "series_decompose_anomalies output (kql/02)",
       "condition": "anomaly_score > 2.5",
       "grouping": "per GatewayObjectId",
-      "action": { "type": "notify", "channels": ["Teams"], "message": "Gateway {GatewayObjectId} CPU anomaly (score {anomaly_score}) vs seasonal baseline." },
+      "action": {
+        "type": "notify",
+        "channels": [
+          "Teams"
+        ],
+        "message": "Gateway {GatewayObjectId} CPU anomaly (score {anomaly_score}) vs seasonal baseline."
+      },
       "autonomous": true
+    },
+    {
+      "name": "mashup-container-runaway",
+      "tier": 1,
+      "pain": "#5 mashup memory/CPU bloat, per-process visibility",
+      "source_object": "gold_mashup_health",
+      "condition": "peak_working_set_mb > 6000  // MB; tune per host RAM",
+      "grouping": "per GatewayObjectId / HostName",
+      "transition": "fires when a mashup container's working set crosses the runaway threshold",
+      "action": {
+        "type": "notify",
+        "channels": [
+          "Teams"
+        ],
+        "message": "Runaway mashup container on {HostName} ({GatewayObjectId}): peak {peak_working_set_mb}MB across {distinct_processes} processes."
+      },
+      "autonomous": true,
+      "circuit_breaker": "max 3 fires / 30 min / host"
     }
   ]
 }

@@ -337,6 +337,27 @@ print(f"  gold_query_performance  : {gold_count:>6} hour-buckets  [PASS]")
 print()
 print("  measures.dax column deps: ALL PRESENT  [PASS]")
 print()
+# ---------------------------------------------------------------------------
+# STEP 6 — MASHUP PROCESSES (PAIN #5): per-process memory/CPU + runaway detection
+# ---------------------------------------------------------------------------
+print("\nSTEP 6  GOLD — mashup process health (pain #5, per-process visibility)")
+mashup_json = SYNTH_DIR / "MashupProcesses_synthetic.json"
+try:
+    if mashup_json.exists():
+        bronze_mashup = gbl.read_mashup_processes(spark, str(mashup_json))
+        mrows = bronze_mashup.count()
+        print(f"[PASS] bronze_mashup_processes: {mrows} process samples")
+        gold_mashup = gbl.gold_mashup_health(bronze_mashup)
+        runaways = gold_mashup.filter(F.col("runaway_container") == True).count()
+        print(f"[PASS] gold_mashup_health computed for {gold_mashup.count()} gateway(s)")
+        print(f"       runaway containers detected: {runaways} (pain #5 signal working)")
+        gold_mashup.select("GatewayObjectId","peak_working_set_mb","avg_working_set_mb",
+                           "distinct_processes","runaway_container").show(5, truncate=False)
+    else:
+        print("[SKIP] no MashupProcesses_synthetic.json (regenerate synthetic data)")
+except Exception as _e:
+    print(f"[FAIL] mashup step: {_e}")
+
 print(textwrap.dedent("""
   [Unverified — requires Fabric tenant pilot]
   The following were NOT exercised by this local smoke test:
@@ -345,6 +366,7 @@ print(textwrap.dedent("""
     - silver_triage 3-way join (requires bronze_refresh_history fixture)
     - silver_identity_attribution fuzzy join (requires Activity Events fixture)
     - silver_network_correlated time-window join (requires network_metrics fixture)
+    - Collect-MashupProcesses on a REAL gateway host (process names vary by version)
     - gold_cluster_load CV computation (requires multi-node inventory fixture)
     - Fabric Activator rule evaluation
     - FPM Eventhouse bridge

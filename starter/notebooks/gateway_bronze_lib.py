@@ -165,3 +165,34 @@ def parse_csv_rows(raw_csv, known_cols):
         rec["_extra_cols"] = extra
         out.append(rec)
     return out
+
+
+# ---- Mashup process telemetry (PAIN #5) --------------------------------------
+# Reads newline-delimited JSON emitted by collectors/Collect-MashupProcesses.ps1
+# and aggregates per-process memory/CPU so operators can see WHICH mashup
+# container is bloating — the visibility no existing tool provides. [NET-NEW]
+def read_mashup_processes(spark, path):
+    """Read NDJSON mashup-process samples into a typed DataFrame."""
+    df = spark.read.option("multiLine", False).json(path)
+    for c, t in [("WorkingSetMB", "double"), ("PrivateBytesMB", "double"),
+                 ("CpuPercent", "double"), ("ThreadCount", "int"),
+                 ("HandleCount", "int"), ("ProcessId", "long"), ("LogicalCores", "int")]:
+        if c in df.columns:
+            df = df.withColumn(c, F.col(c).cast(t))
+    if "CollectedAtUtc" in df.columns:
+        df = df.withColumn("CollectedAtUtc", F.to_timestamp("CollectedAtUtc"))
+    return df
+
+
+def gold_mashup_health(df, runaway_working_set_mb=6000.0):
+    """Per-gateway mashup rollup: peak/avg working set, container count, and a
+    runaway flag when any container's working set exceeds the threshold."""
+    agg = (df.groupBy("GatewayObjectId", "HostName")
+             .agg(F.max("WorkingSetMB").alias("peak_working_set_mb"),
+                  F.avg("WorkingSetMB").alias("avg_working_set_mb"),
+                  F.max("CpuPercent").alias("peak_cpu_pct"),
+                  F.countDistinct("ProcessId").alias("distinct_processes"),
+                  F.sum(F.when(F.col("IsMashupContainer") == True, 1).otherwise(0)).alias("mashup_samples"))
+             .withColumn("runaway_container",
+                         F.col("peak_working_set_mb") > F.lit(runaway_working_set_mb)))
+    return agg

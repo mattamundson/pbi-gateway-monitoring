@@ -344,3 +344,17 @@ DIVIDE (
 // Spooled Query % — what fraction of queries required disk spooling
 [Spooled Query %] :=
 AVERAGEX ( gold_query_performance, gold_query_performance[spooled_pct] )
+
+// ---- Mashup process health (PAIN #5) [NET-NEW] ----
+// Peak working set across mashup containers per gateway; drives the "runaway" alert.
+Peak Mashup Working Set (MB) =
+    MAX ( gold_mashup_health[peak_working_set_mb] )
+
+Runaway Mashup Containers =
+    CALCULATE (
+        COUNTROWS ( gold_mashup_health ),
+        gold_mashup_health[runaway_container] = TRUE ()
+    )
+
+Avg Mashup Working Set (MB) =
+    AVERAGE ( gold_mashup_health[avg_working_set_mb] )

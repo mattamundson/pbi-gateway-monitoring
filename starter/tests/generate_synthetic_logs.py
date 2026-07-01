@@ -111,6 +111,34 @@ def gen_system_counter(n=30):
                     round(random.uniform(1,80),1), random.randint(500_000, 8_000_000)])
     return buf.getvalue()
 
+def gen_mashup_processes(n=40):
+    """Per-process mashup/gateway samples as newline-delimited JSON (pain #5).
+    Mimics Collect-MashupProcesses.ps1 output. Includes a runaway container."""
+    import json as _json
+    lines = []
+    for i in range(n):
+        is_mashup = random.random() > 0.3
+        # inject an occasional runaway container (high working set)
+        runaway = is_mashup and random.random() < 0.15
+        ws = random.randint(6000, 14000) if runaway else random.randint(150, 3000)
+        rec = {
+            "CollectedAtUtc": _utc(i),
+            "GatewayObjectId": f"gw-{random.randint(1,3):03d}",
+            "HostName": f"GWHOST{random.randint(1,3)}",
+            "ProcessId": 1000 + i,
+            "ProcessName": "Microsoft.Mashup.Container.NetFX45" if is_mashup else "Microsoft.PowerBI.EnterpriseGateway",
+            "IsMashupContainer": is_mashup,
+            "WorkingSetMB": float(ws),
+            "PrivateBytesMB": float(ws + random.randint(50, 500)),
+            "CpuPercent": round(random.uniform(0, 95), 2),
+            "ThreadCount": random.randint(10, 120),
+            "HandleCount": random.randint(200, 3000),
+            "LogicalCores": 8,
+        }
+        lines.append(_json.dumps(rec))
+    return "\n".join(lines) + "\n"
+
+
 def main():
     out = sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(__file__), "synthetic_out")
     os.makedirs(out, exist_ok=True)
@@ -118,6 +146,7 @@ def main():
         "QueryExecutionReport_synthetic.csv": gen_query_execution(),
         "QueryStartReport_synthetic.csv": gen_query_start(),
         "SystemCounterReport_synthetic.csv": gen_system_counter(),
+        "MashupProcesses_synthetic.json": gen_mashup_processes(),
     }
     for name, content in files.items():
         with open(os.path.join(out, name), "w", newline="", encoding="utf-8") as f:
