@@ -22,8 +22,17 @@ import binascii
 import csv
 import io
 
-from pyspark.sql import functions as F
-from pyspark.sql.types import StringType
+# The Spark functions below need pyspark; the pure-Python helpers (parse_csv_rows,
+# normalize_eval_context_py, cast_error_columns) do NOT. Guard the import so this
+# module stays importable — and therefore the single source of truth for the
+# Spark-free unit tests — on a host without pyspark installed. The Spark functions
+# raise clearly if called without pyspark; they are simply never called Spark-free.
+try:
+    from pyspark.sql import functions as F
+    from pyspark.sql.types import StringType
+except ImportError:  # Spark-free host (e.g. the portable test runner / CI Tier 1)
+    F = None
+    StringType = None
 
 # ---- canonical CSV-header -> normalized Delta column name --------------------
 QUERY_EXECUTION_RENAME = {
@@ -38,8 +47,12 @@ QUERY_EXECUTION_RENAME = {
 }
 
 QE_NUMERIC_LONG = [
-    "QueryExecutionDuration", "DataProcessingDuration", "SpoolingDiskWritingDuration",
-    "SpoolingDiskReadingDuration", "SpoolingTotalDataSize", "DataReadingAndSerializationDuration",
+    "QueryExecutionDuration",
+    "DataProcessingDuration",
+    "SpoolingDiskWritingDuration",
+    "SpoolingDiskReadingDuration",
+    "SpoolingTotalDataSize",
+    "DataReadingAndSerializationDuration",
 ]
 QE_NUMERIC_DOUBLE = ["DiskRead", "DiskWrite"]
 QE_TIMESTAMPS = ["QueryExecutionEndTimeUTC", "DataProcessingEndTimeUTC"]
@@ -56,8 +69,7 @@ def read_gateway_csv(spark, path, rename_map=None):
     - inferSchema=False: read as strings, cast explicitly downstream (safe)
     """
     df = (
-        spark.read
-        .option("header", True)
+        spark.read.option("header", True)
         .option("inferSchema", False)
         .option("multiLine", True)
         .option("quote", '"')
@@ -74,7 +86,33 @@ def read_gateway_csv(spark, path, rename_map=None):
 
 
 def cast_query_execution(df):
-    """Explicit, null-safe casts. Unparseable -> null (never raises)."""
+    """Explicit, null-safe casts. Unparseable -> null (never raises).
+
+    U14: a raw value that is present but unparseable (e.g. "N/A" in a (ms) column)
+    would otherwise be *silently* coerced to null, masking a data-quality problem.
+    We keep the null-on-failure cast (so the job never fails) but ALSO surface every
+    such drop in an additive `_cast_errors` array column listing the offending
+    column names, so silent losses are visible. Existing cast values are unchanged;
+    this only ADDS the error column (low blast radius). The detection rule is
+    mirrored Spark-free in `cast_error_columns()` below and unit-tested there.
+    """
+    err_cols = []
+    # Pass 1: detect cast failures from the ORIGINAL raw strings (before overwriting).
+    for c, target in [(x, "long") for x in QE_NUMERIC_LONG] + [
+        (x, "double") for x in QE_NUMERIC_DOUBLE
+    ]:
+        if c in df.columns:
+            raw = F.trim(F.col(c).cast("string"))
+            marker = f"_casterr_{c}"
+            df = df.withColumn(
+                marker,
+                F.when(
+                    raw.isNotNull() & (raw != "") & F.col(c).cast(target).isNull(),
+                    F.lit(c),
+                ),
+            )
+            err_cols.append(marker)
+    # Pass 2: apply the casts.
     for c in QE_NUMERIC_LONG:
         if c in df.columns:
             df = df.withColumn(c, F.col(c).cast("long"))
@@ -85,8 +123,58 @@ def cast_query_execution(df):
         if c in df.columns:
             df = df.withColumn(c, F.to_timestamp(F.col(c)))
     if "Success" in df.columns:
-        df = df.withColumn("Success", F.lower(F.col("Success")).isin("true", "1", "yes"))
+        df = df.withColumn(
+            "Success", F.lower(F.col("Success")).isin("true", "1", "yes")
+        )
+    # Fold the per-column markers into one array<string>, dropping the null (no-error) slots.
+    if err_cols:
+        arr = F.array(*[F.col(x) for x in err_cols])
+        df = df.withColumn("_cast_errors", F.filter(arr, lambda x: x.isNotNull()))
+        df = df.drop(*err_cols)
+    else:
+        df = df.withColumn("_cast_errors", F.array().cast("array<string>"))
     return df
+
+
+# ---- Portable (Spark-free) mirror of the cast-error detection (U14) ----------
+def _cast_present(v):
+    return v is not None and str(v).strip() != ""
+
+
+def _parses_long(v):
+    try:
+        int(str(v).strip())
+        return True
+    except (ValueError, TypeError):
+        return False
+
+
+def _parses_double(v):
+    try:
+        float(str(v).strip())
+        return True
+    except (ValueError, TypeError):
+        return False
+
+
+def cast_error_columns(row, long_cols=None, double_cols=None):
+    """Spark-free mirror of the numeric cast in `cast_query_execution`.
+
+    Returns the list of column names whose raw value is present (non-empty) but
+    would NOT parse to its target numeric type — i.e. a silent cast-to-null that
+    should be surfaced (U14) rather than masked. Used by the Spark-free regression
+    test so the detection rule is verifiable without a Spark session.
+    """
+    long_cols = QE_NUMERIC_LONG if long_cols is None else long_cols
+    double_cols = QE_NUMERIC_DOUBLE if double_cols is None else double_cols
+    errs = []
+    for c in long_cols:
+        if _cast_present(row.get(c)) and not _parses_long(row.get(c)):
+            errs.append(c)
+    for c in double_cols:
+        if _cast_present(row.get(c)) and not _parses_double(row.get(c)):
+            errs.append(c)
+    return errs
 
 
 # ---- EvaluationContext normalizer (direct-JSON OR base64) --------------------
@@ -103,14 +191,15 @@ def add_artifact_identity(df, ctx_col="EvaluationContext"):
     decoded_b64 = F.decode(F.unbase64(trimmed), "UTF-8")
     normalized = (
         F.when(trimmed.isNull() | (trimmed == ""), F.lit(None).cast(StringType()))
-         .when(trimmed.startswith("{"), trimmed)                        # already JSON
-         .when(F.trim(decoded_b64).startswith("{"), decoded_b64)        # base64 JSON
-         .otherwise(F.lit(None).cast(StringType()))                    # unknown -> null
+        .when(trimmed.startswith("{"), trimmed)  # already JSON
+        .when(F.trim(decoded_b64).startswith("{"), decoded_b64)  # base64 JSON
+        .otherwise(F.lit(None).cast(StringType()))  # unknown -> null
     )
     df = df.withColumn("_eval_context_json", normalized)
-    df = (
-        df.withColumn("artifact_id", F.get_json_object("_eval_context_json", "$.artifactId"))
-          .withColumn("artifact_kind", F.get_json_object("_eval_context_json", "$.artifactKind"))
+    df = df.withColumn(
+        "artifact_id", F.get_json_object("_eval_context_json", "$.artifactId")
+    ).withColumn(
+        "artifact_kind", F.get_json_object("_eval_context_json", "$.artifactKind")
     )
     return df
 
