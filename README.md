@@ -60,6 +60,7 @@ Network visibility is a third real gap — no gateway-diagnostics tool surfaces 
 
 ### 1. Identity attribution — `starter/kql/01_identity_join.kql`
 The gateway `RequestId` is byte-identical to `XmlaRequestId`/`OperationId` in Fabric **Workspace Monitoring**. A KQL join returns `ExecutingUser`, `DatasetId`, `ItemName`, and DAX text — the fields the gateway CSV lacks. `[Feasible-now]`, no gateway changes.
+📄 **Standalone write-up of this technique (shareable):** [`docs/TECHNIQUE-query-identity-attribution.md`](docs/TECHNIQUE-query-identity-attribution.md).
 Sources: [MS semantic model operations](https://learn.microsoft.com/en-us/fabric/enterprise/powerbi/semantic-model-operations), [Fabric CAT/Chris Webb](https://blog.crossjoin.co.uk/2024/09/01/finding-power-bi-semantic-model-refresh-operations-in-gateway-logs/).
 **Desk-verified 2026-07-01** against current MS Learn docs: the exact schema and the `OperationId == XmlaRequestId` join key are stated verbatim in Microsoft's own reference page (not community inference). Still needs a live-tenant run (Phase 5) before this is `[Verified]` rather than desk-verified.
 Residual `[Blocked-by-platform]`: Dataflow Gen1, Paginated Reports. Per-DirectQuery coverage is an **open question**, not confirmed-blocked — Chris Webb's post suggests the same join may cover DirectQuery too; Phase 5 should test this explicitly rather than assume the conservative scope.
