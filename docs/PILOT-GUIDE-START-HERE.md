@@ -197,3 +197,27 @@ When you reply, even a short message helps enormously, e.g.:
 
 From that alone I can turn most of the `[Unverified]` labels into verified ones and
 build v3 on solid ground.
+
+---
+
+## After the pilot — going from "proven" to "deployed"
+
+This guide only validates the **flagship capability** (the identity join). Once
+Task 1 succeeds, the full end-to-end deployment path is:
+
+1. **Deploy order** — follow the 6-step sequence in the [repo README](../README.md#deploy-order)
+   (stand up Lakehouse + Eventhouse → deploy `starter/collectors/*.ps1` →
+   run `starter/notebooks/01→02→03` → enable Workspace Monitoring → add KQL +
+   Activator rules).
+2. **Graduate reference → production** — work through
+   [`research/phase5_validation.md`](../research/phase5_validation.md): the U1–U16
+   confirmation matrix (every `[Unverified]`/`[Assumption]` with a test and a
+   fix) and the per-differentiator acceptance tests. Completing it is the
+   documented go/no-go gate for production.
+3. **Record what you found** — capture the results in a new `docs/VALIDATED.md`
+   (gateway version, EvaluationContext encoding, attribution match-rate,
+   DirectLake eligibility) so the next person forking this repo inherits
+   verified facts instead of `[Unverified]` labels.
+
+If you're deciding between building this tool from scratch vs. adopting Microsoft's
+FPM first, read [`docs/DEPLOYMENT-DECISION.md`](DEPLOYMENT-DECISION.md) before step 1.

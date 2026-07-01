@@ -1,0 +1,78 @@
+name: "Pilot report (live-environment validation)"
+description: "Ran any part of this kit against a real Fabric tenant + gateway? Report what you saw — especially the identity-join match rate. This is the single most valuable contribution."
+title: "[Pilot] <one-line summary of what you validated>"
+labels: ["pilot-report", "validation"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for piloting! You don't need to run everything — **Task 1 (the identity join) alone is hugely valuable.**
+        Fill in only what you tested; leave the rest blank. See `docs/PILOT-GUIDE-START-HERE.md` and
+        `research/phase5_validation.md` (the U1–U16 matrix) for context.
+
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Gateway version, Fabric capacity SKU, gateway mode (standard/VNet), node count.
+      placeholder: "e.g. Gateway 3000.x, Fabric F16, standard mode, 3-node cluster"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: identity-join-result
+    attributes:
+      label: "FLAGSHIP — Identity join (RequestId == OperationId): did it match?"
+      description: "The core claim. Did `starter/kql/01_identity_join.kql` return ExecutingUser + ItemName for gateway queries?"
+      options:
+        - "Matched — returned user + dataset as expected"
+        - "Partially matched — some queries attributed, others not"
+        - "Did NOT match — join returned nothing / wrong values"
+        - "Didn't test this"
+    validations:
+      required: true
+
+  - type: input
+    id: match-rate
+    attributes:
+      label: "Attribution match rate (U11) — the one number we can't get without you"
+      description: "Of gateway queries in a known window, what % got an ExecutingUser via the join?"
+      placeholder: "e.g. ~85% of refresh queries, ~0% of DirectQuery"
+
+  - type: dropdown
+    id: directquery
+    attributes:
+      label: "Open question: does the join cover DirectQuery-through-gateway?"
+      description: "Chris Webb's post implies yes; the repo scopes it conservatively. Ground truth?"
+      options:
+        - "Yes — DirectQuery queries were attributed too"
+        - "No — DirectQuery queries were NOT attributed"
+        - "Didn't test DirectQuery"
+    validations:
+      required: false
+
+  - type: textarea
+    id: evaluation-context
+    attributes:
+      label: "EvaluationContext encoding (U1/U2)"
+      description: "Did the QueryStart `EvaluationContext` start with `{` (direct JSON) or was it base64? Did `artifactId` come through non-null?"
+      placeholder: "e.g. direct JSON, artifactId populated for Fabric semantic models"
+
+  - type: textarea
+    id: schema-corrections
+    attributes:
+      label: "Any schema / column-name corrections"
+      description: "Did any PowerBIDatasetsWorkspace or gateway-log column name differ from what the KQL/notebooks assume? List them so we can fix the [Unverified] labels."
+      placeholder: "e.g. gateway log used `QueryExecutionDuration(ms)` exactly as expected; no changes"
+
+  - type: textarea
+    id: notebooks
+    attributes:
+      label: "Notebooks / collectors run (optional)"
+      description: "Did 01→02→03 run end to end in Fabric? Any runtime errors? Did you hit the code-quality items U14–U16 (silent casts, join fan-out, hardcoded service-account paths)?"
+
+  - type: textarea
+    id: anything-else
+    attributes:
+      label: "Anything else"
+      description: "Coverage gaps, surprises, cmdlet/API corrections, or a link to a fuller write-up."

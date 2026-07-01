@@ -1,5 +1,0 @@
-# This folder is intentional full-provenance context. Override the repo-root
-# ignore rules (e.g. *.log) so ALL session artifacts are preserved here.
-!*
-!*.log
-!*.json

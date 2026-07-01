@@ -39,3 +39,25 @@ desktop.ini
 # --- Build / packaging ---
 *.zip
 *.tar.gz
+
+# --- AI-assistant session artifacts / local tool config (NEVER commit) ---
+# These leak account PII, org identity, and the paths of unrelated local projects.
+.claude.json
+.claude/
+.cursor/
+conversation/raw_session_context/
+
+# --- Office binary exports (markdown is the source of truth; do not commit .docx) ---
+*.docx
+
+# --- Browser/OS "copy" duplicates, e.g. "runbook (1).md" ---
+* (1).*
+* (2).*
+* (3).*
+* (4).*
+
+# --- Python test artifacts ---
+__pycache__/
+*.pyc
+.pytest_cache/
+starter/tests/synthetic_out/

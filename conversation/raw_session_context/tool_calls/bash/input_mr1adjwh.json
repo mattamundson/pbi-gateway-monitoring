@@ -1,8 +1,0 @@
-{
-  "user_description": "Fetching Power BI Sentinel, Carlo Consulting, and FPM content",
-  "command": "python -m pplx_sdk.exec << 'PY'\nsave_and_print(pplx_sdk.content.fetch_many([\n    \"https://www.powerbisentinel.com\",\n    \"https://www.powerbisentinel.com/whats-new/\",\n    \"https://marketplace.microsoft.com/en-us/product/saas/carloconsultingllc1611096483318.fabric_monitor_02?tab=overview\",\n    \"https://www.devladlog.com/articles/power-bi/2025-07-13-data-gateway-operations-security-and-optimization-playbook-2025/\",\n    \"https://github.com/microsoft/fabric-toolbox\",\n], cache_enabled=False))\nPY\n",
-  "background": false,
-  "api_credentials": [
-    "pplx-sdk"
-  ]
-}

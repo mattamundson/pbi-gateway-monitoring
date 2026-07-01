@@ -13,7 +13,7 @@ This repo contains **two complementary deployment stories**. Pick one (or combin
 | **Storage** | Eventhouse / KQL (FPM-native) | OneLake Delta medallion (+ Eventhouse for KQL intelligence) |
 | **Effort to first value** | Low (~hours) — FPM Jumpstart deploys in minutes; scripts automate node setup | Medium (~days) — you run the medallion + wire the model |
 | **Maintained by** | Microsoft (FPM core) + you (the deploy scripts) | You (fork owner) |
-| **Ceiling-breakers (identity join, ETW network)** | Add them on top via `starter/kql/` against FPM's Eventhouse | Built into the design |
+| **Ceiling-breakers (identity join, predictive KQL)** | Add them on top via `starter/kql/` against FPM's Eventhouse | Built into the design |
 | **Best when** | You want gateway observability fast and are happy on FPM's KQL stack | You want Delta/OneLake control, custom analytics, and the differentiators as first-class |
 
 ---
@@ -23,7 +23,7 @@ This repo contains **two complementary deployment stories**. Pick one (or combin
 ```
 START
   │
-  ├─ Do you need the identity-join + network-cost ceiling-breakers as core?
+  ├─ Do you need the identity-join + predictive-KQL ceiling-breakers as core?
   │     │
   │     ├─ NO, I just need solid gateway observability quickly
   │     │      └─► PATH A (Adopt FPM). Use docs/ + scripts/.
@@ -62,7 +62,7 @@ This gets Microsoft-maintained collection + your differentiating intelligence, w
 
 ## What each path does NOT give you
 
-- **Path A alone:** no identity join, no per-query network cost, no Delta-native custom analytics (until you add `starter/kql/` + collectors).
+- **Path A alone:** no identity join, no predictive/anomaly KQL, no host-level network correlation, no Delta-native custom analytics (until you add `starter/kql/` + collectors).
 - **Path B alone:** you own collector maintenance; more setup effort than FPM Jumpstart.
 - **Neither, in v1:** VNet gateway monitoring (descoped — see `research/phase0_scope.md` §4), per-DirectQuery UserId, Dataflow Gen1 / Paginated Report attribution ([Blocked-by-platform]).
 

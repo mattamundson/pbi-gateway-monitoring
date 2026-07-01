@@ -1,7 +1,0 @@
-{
-  "user_description": "Reading the 2025 gateway tuning thread",
-  "url": "https://www.reddit.com/r/PowerBI/comments/1m8sh1i/power_bi_gateway_tuning_slow_uploadsend_speed/",
-  "force_fetch": false,
-  "prompt": "Extract the practical diagnosis and tuning steps for slow gateway upload/send speed: how they isolated the bottleneck (network, latency, disk, CPU), what config/model changes worked (parallelism, DLL settings, views vs tables), and the measured results.",
-  "max_length": 40000
-}
