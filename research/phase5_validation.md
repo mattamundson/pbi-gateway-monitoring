@@ -62,6 +62,17 @@ Every load-bearing unknown, how to test it, and what to do if it's wrong. **This
 > - **U14 — FIXED & VERIFIED (Spark-free logic).** `cast_query_execution` now adds an additive `_cast_errors` array column listing columns whose present-but-unparseable raw value cast to null (existing values unchanged). Detection rule mirrored Spark-free in `gateway_bronze_lib.cast_error_columns()` and covered by 6 assertions in `starter/tests/test_parser.py` Test group 3 (all pass). The Spark wiring itself is compile-checked; confirm in-Fabric during the pilot.
 > - **U15 — FIXED, COMPILE-CHECKED ONLY.** Both time-window joins in `02_silver_correlate.py` now `row_number()`-dedup to the nearest-timestamp match per `RequestId` (structurally guarantees output ≤ input). This is **not execution-verified** — Spark column-resolution/window semantics run only in a session; marked `[Fabric-verify-pending]` inline. Validate row-counts during the pilot.
 
+### #2 refresh-triage join key — desk-verification split (2026-07-01)
+
+The new `Collect-RefreshHistory.ps1` (the missing Service-side leg of the #2 triage join) depends on the Power BI **REST refresh-history** record's `requestId` matching the gateway log `RequestId`. Desk verification against primary sources found this is **two links, not one**, and only one is confirmed:
+
+| Link | State | Source |
+|---|---|---|
+| AS engine `XmlaRequestId` == gateway log `RequestId` column | **[Desk-Verified 2026-07-01]** | MS Learn `service-gateway-onprem-tshoot`; Chris Webb (crossjoin.co.uk). This is the same engine→gateway chain the identity join (#3 / U11) already rests on. |
+| REST refresh-history `requestId` (the field this collector emits) == that `XmlaRequestId` | **[Unverified]** | REST reference (`datasets/get-refresh-history`) documents `requestId` only as *"The identifier of the refresh request. Provide this identifier in all service requests."* — no documented equivalence to `XmlaRequestId`/gateway `RequestId`. |
+
+**Phase-5 test (add alongside U11):** over a known window, measure the match rate of REST refresh-history `requestId` → gateway-log `RequestId` for gateway-served refreshes. If the REST field does **not** match, the fix is to source the linkage from Log Analytics/Workspace Monitoring `XmlaRequestId` (the verified chain) instead of the REST field. Report the match rate honestly; never present the #2 join as exact until this specific link is measured.
+
 ---
 
 ## 3. Per-differentiator acceptance tests

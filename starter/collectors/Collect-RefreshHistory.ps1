@@ -14,9 +14,17 @@
 # collector produces `bronze_refresh_history` so the 3-way join is whole.
 #
 # Join key: the Power BI refresh record's `requestId` is intended to match the
-# gateway log `RequestId` (same linkage the identity join relies on). [Unverified]
-# that they byte-match for gateway-served refreshes — confirm the match rate in
-# Phase 5 exactly as for the identity join (this is the same open question).
+# gateway log `RequestId` (same linkage the identity join relies on).
+#   [Desk-Verified 2026-07-01] The ENGINE-level chain is confirmed by primary
+#     source: the AS engine `XmlaRequestId` equals the gateway log `RequestId`
+#     column (MS Learn "service-gateway-onprem-tshoot"; Chris Webb, crossjoin.co.uk).
+#   [Unverified] The REST refresh-history object's `requestId` (this collector's
+#     field) is documented only as "the identifier of the refresh request" — it is
+#     NOT documented to byte-match `XmlaRequestId`/gateway `RequestId`. Confirm the
+#     match rate in Phase 5 exactly as for the identity join (this is the remaining
+#     open question; it is the REST-field link, not the engine chain, that's unproven).
+#   Refs: learn.microsoft.com/en-us/power-bi/connect-data/service-gateway-onprem-tshoot
+#         blog.crossjoin.co.uk (XmlaRequestId ↔ gateway RequestId)
 #
 # Auth: service principal, SAME model as Get-GatewayInventory.ps1 (tenantId +
 # applicationId from config.json, client secret from a Key Vault-fetched file).
