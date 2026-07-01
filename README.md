@@ -15,9 +15,11 @@ Anyone with a Fabric + Azure tenant-admin role can fork this repo and stand up g
 Two capabilities every gateway operator wants, that **no existing tool provides**, are the reason to build:
 
 1. **Query → identity attribution** — know *which dataset and which user* caused a slow/failed gateway query. Long believed impossible; **it isn't** (see below).
-2. **Per-query network cost** — the #1 real bottleneck, invisible to gateway diagnostics; recoverable via Windows ETW.
+2. **Predictive intelligence** — turn static thresholds into forecasted saturation and auto-attributed failure spikes, natively in KQL.
 
 Both are breakable **without modifying Microsoft's gateway**, grounded in primary sources.
+
+Network visibility is a third real gap — no gateway-diagnostics tool surfaces it at all. v1 ships host-level NIC throughput + latency, time-window correlated to query activity (`starter/collectors/Collect-NetworkMetrics.ps1`). This is genuine signal, but it is **not** per-query attribution: a specific byte cannot be pinned to a specific query without kernel-level tracing. True per-query network cost needs Windows ETW (`Microsoft-Windows-TCPIP`/`Kernel-Network` providers) — that's a researched, `[Feasible-with-effort]` v2 roadmap item (see [`research/frontier_instrumentation.md`](research/frontier_instrumentation.md)), not something this repo ships today.
 
 ---
 
@@ -59,7 +61,8 @@ Both are breakable **without modifying Microsoft's gateway**, grounded in primar
 ### 1. Identity attribution — `starter/kql/01_identity_join.kql`
 The gateway `RequestId` is byte-identical to `XmlaRequestId`/`OperationId` in Fabric **Workspace Monitoring**. A KQL join returns `ExecutingUser`, `DatasetId`, `ItemName`, and DAX text — the fields the gateway CSV lacks. `[Feasible-now]`, no gateway changes.
 Sources: [MS semantic model operations](https://learn.microsoft.com/en-us/fabric/enterprise/powerbi/semantic-model-operations), [Fabric CAT/Chris Webb](https://blog.crossjoin.co.uk/2024/09/01/finding-power-bi-semantic-model-refresh-operations-in-gateway-logs/).
-Residual `[Blocked-by-platform]`: per-DirectQuery UserId, Dataflow Gen1, Paginated Reports.
+**Desk-verified 2026-07-01** against current MS Learn docs: the exact schema and the `OperationId == XmlaRequestId` join key are stated verbatim in Microsoft's own reference page (not community inference). Still needs a live-tenant run (Phase 5) before this is `[Verified]` rather than desk-verified.
+Residual `[Blocked-by-platform]`: Dataflow Gen1, Paginated Reports. Per-DirectQuery coverage is an **open question**, not confirmed-blocked — Chris Webb's post suggests the same join may cover DirectQuery too; Phase 5 should test this explicitly rather than assume the conservative scope.
 
 ### 2. Predictive intelligence — `starter/kql/02_anomaly_forecast.kql`
 `series_decompose_anomalies` + `series_decompose_forecast` turn static thresholds into "this gateway saturates in ~2h." `starter/kql/03_diffpatterns_triage.kql` auto-attributes failure spikes to their top-offender dimensions. All native KQL, `[Feasible-now]`.

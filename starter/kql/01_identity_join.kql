@@ -19,14 +19,33 @@
 //   Log Analytics on the same workspace -- if you use Log Analytics instead,
 //   join on the XmlaRequestId column there.)
 //
-// [Unverified] Exact column names of PowerBIDatasetsWorkspace and the gateway
-//   bronze table are from docs + community analysis; confirm against your tenant
-//   in Phase 5 (validation item U-IDENTITY below). If a column name differs,
-//   only the projection changes -- the join key (OperationId == RequestId) holds.
+// [Desk-verified 2026-07-01] Column names of PowerBIDatasetsWorkspace confirmed
+//   verbatim against current MS Learn docs (the semantic-model-operations page
+//   above, content dated 2025-11-20 / updated 2026-02-17): OperationId,
+//   ExecutingUser, ItemId, ItemName, WorkspaceId, CapacityId, CpuTimeMs,
+//   DurationMs, EventText all present exactly as used here. The join key is
+//   OFFICIALLY documented, not inferred -- the docs state verbatim: "OperationId
+//   ... Same as XmlaRequestId". The other half of the chain (XmlaRequestId in
+//   Log Analytics == RequestId in the gateway log) is independently corroborated
+//   by the Chris Webb / Fabric CAT post above, which quotes matching the two
+//   values directly. This is desk-verification against primary sources, not a
+//   live-tenant test -- schema can still drift by tenant/preview rollout.
+//   Phase 5 (research/phase5_validation.md, item U11 -- "RequestId attribution
+//   fuzziness") is still required before calling this [Verified].
 //
-// [Blocked-by-platform] Per-DirectQuery UserId and Dataflow Gen1 / Paginated
-//   Reports are NOT covered by this join. It resolves the common, high-value
-//   case: Fabric semantic model refresh + query attribution.
+// [Open question for Phase 5 -- do not widen the claim without testing] The
+//   Chris Webb post states the XmlaRequestId join also covers DirectQuery
+//   ("all the events associated with a DAX query ... will all have the same
+//   XmlaRequestId"), which is in tension with this file's own
+//   [Blocked-by-platform] scoping below (his example may not be gateway-routed
+//   DirectQuery specifically -- unconfirmed either way). Have Phase 5 test
+//   DirectQuery-through-gateway explicitly rather than assuming the
+//   conservative scope is correct.
+//
+// [Blocked-by-platform] Dataflow Gen1 / Paginated Reports are NOT covered by
+//   this join regardless. It resolves the common, high-value case: Fabric
+//   semantic model refresh + query attribution (and possibly DirectQuery --
+//   see open question above).
 // =============================================================================
 
 // Assumes gateway QueryStart/QueryExecution have been landed into the same
