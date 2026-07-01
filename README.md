@@ -12,6 +12,8 @@ Anyone with a Fabric + Azure tenant-admin role can fork this repo and stand up g
 
 > **Readiness update:** The full medallion (bronze→silver→gold) now runs end-to-end on real Spark+Delta against synthetic data via `starter/deploy/run_local_smoke.py` — all stages PASS. A one-click deploy notebook (`starter/deploy/Deploy_GatewayMonitor.ipynb`) and a PBIP report skeleton (`starter/report/`) are included. See `PRODUCTIZATION.md` for the honest gap-to-market plan — **deployable-in-shape, pending one tenant pilot**.
 
+> **Ready to test it? Run the 30-min pilot:** [`QUICKSTART.md`](QUICKSTART.md) (condensed) or [`docs/PILOT-GUIDE-START-HERE.md`](docs/PILOT-GUIDE-START-HERE.md) (full).
+
 ## Why this exists
 
 Two capabilities every gateway operator wants, that **no existing tool we surveyed provides** (see the 10-tool teardown in [`research/phase1_2_tools.md`](research/phase1_2_tools.md)), are the reason to build:
