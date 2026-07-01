@@ -15,7 +15,7 @@ personal/environment context).
 2. Found and fixed the bugs that verification surfaced (6 real defects).
 3. Closed the U14–U16 code-quality items from `phase5_validation.md`.
 4. Mapped the tool against all 10 researched pain points and found two holes.
-5. Wired up the missing refresh-history leg (pain #2) and declared #5 a non-goal.
+5. Wired up the missing refresh-history leg (pain #2). (Note: #5 was declared a non-goal here but was BUILT + locally proven later the same day — see the coverage table and PAIN-POINT-COVERAGE.md.)
 
 Prior work (the SWOT, the security scrub of git history, and the desk-verification
 of the identity join against Microsoft docs) predates this log.
@@ -79,9 +79,9 @@ Tiers: ✅ proven · 📄 desk-verified · 🔵 designed/compile-checked (pilot-
 | 10 | Credential / datasource drift | 🔵 designed, shakiest | relies on `Get-DataGatewayClusterDatasource`, itself `[Unverified]` |
 | 2 | Opaque refresh triage | 🔵 **now wired** | Service-side leg (`Collect-RefreshHistory` → `bronze_refresh_history`) added this session; was previously half-built |
 | 8 | Manual / brittle setup | ⚠️ partial | config-driven (U16 crash fixed) but no auto-discovery; full stack is arguably more setup than the PBIT |
-| 5 | Mashup per-process memory | ❌ **non-goal** | host-level aggregate only; per-PID→dataset is `[Feasible-with-effort]` v2, now explicitly declared uncovered |
+| 5 | Mashup per-process memory | ✅ **built + locally proven** (superseded the earlier non-goal call) | `Collect-MashupProcesses.ps1` + `gold_mashup_health`; per-PID working set/CPU + runaway detection, proven on real Spark via smoke-test STEP 6. Per-PID→dataset correlation remains v2. |
 
-**Bottom line:** design-level ~8/10 addressed, #2 now wired, #5 declared out of scope.
+**Bottom line:** design-level ~9/10 addressed, #2 now wired, #5 **subsequently BUILT + locally proven** (the v2 candidate below was implemented same-day; supersedes the earlier non-goal note).
 Verified-level ~4 stand on proven ground today (#4 fully; #3 desk-verified; #7/#9
 collectors run). The alerting/fleet/identity/triage layers are exactly what the
 Phase 5 pilot exists to confirm.
