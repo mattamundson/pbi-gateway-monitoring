@@ -46,18 +46,20 @@ from datetime import datetime, timezone, timedelta
 spark = SparkSession.builder.getOrCreate()
 
 # ── Configuration ─────────────────────────────────────────────────────────
-LAKEHOUSE_PATH = "abfss://<workspace>@onelake.dfs.fabric.microsoft.com/<lakehouse>.Lakehouse"
-BRONZE_PATH    = f"{LAKEHOUSE_PATH}/Tables"
-SILVER_PATH    = f"{LAKEHOUSE_PATH}/Tables"
+LAKEHOUSE_PATH = (
+    "abfss://<workspace>@onelake.dfs.fabric.microsoft.com/<lakehouse>.Lakehouse"
+)
+BRONZE_PATH = f"{LAKEHOUSE_PATH}/Tables"
+SILVER_PATH = f"{LAKEHOUSE_PATH}/Tables"
 
 # Time-window thresholds (seconds) for fuzzy joins — adjust based on Phase 5 observations
-TRIAGE_TIME_WINDOW_SECS         = 30    # QE ↔ RefreshHistory time window
-EVENT_LOG_TIME_WINDOW_SECS      = 120   # QE ↔ EventLog time window
-ATTRIBUTION_TIME_WINDOW_SECS    = 60    # QS ↔ Activity Events time window
+TRIAGE_TIME_WINDOW_SECS = 30  # QE ↔ RefreshHistory time window
+EVENT_LOG_TIME_WINDOW_SECS = 120  # QE ↔ EventLog time window
+ATTRIBUTION_TIME_WINDOW_SECS = 60  # QS ↔ Activity Events time window
 
 # Incremental: only process records newer than this watermark
 # In production: read from a watermark Delta table; simplified here
-PROCESS_SINCE_DAYS = 1   # Process last N days; adjust for full backfill
+PROCESS_SINCE_DAYS = 1  # Process last N days; adjust for full backfill
 
 
 def read_bronze(table_name: str):
@@ -72,10 +74,7 @@ def read_bronze(table_name: str):
 def write_silver(df, table_name: str, partition_cols=None):
     path = f"{SILVER_PATH}/{table_name}"
     writer = (
-        df.write
-          .format("delta")
-          .mode("overwrite")
-          .option("overwriteSchema", "true")
+        df.write.format("delta").mode("overwrite").option("overwriteSchema", "true")
     )
     if partition_cols:
         writer = writer.partitionBy(*partition_cols)
@@ -102,8 +101,7 @@ def build_silver_query_execution():
         F.col("QueryExecutionEndTimeUTC").desc()
     )
     qe_dedup = (
-        qe_df
-        .withColumn("_rn", F.row_number().over(window_qe))
+        qe_df.withColumn("_rn", F.row_number().over(window_qe))
         .filter(F.col("_rn") == 1)
         .drop("_rn")
     )
@@ -120,20 +118,22 @@ def build_silver_query_execution():
 
         silver_qe = qe_dedup.join(qs_select, on="RequestId", how="left")
     else:
-        silver_qe = qe_dedup.withColumn("QueryStartTimeUTC", F.lit(None).cast(TimestampType()))
+        silver_qe = qe_dedup.withColumn(
+            "QueryStartTimeUTC", F.lit(None).cast(TimestampType())
+        )
         silver_qe = silver_qe.withColumn("artifact_id", F.lit(None).cast(StringType()))
-        silver_qe = silver_qe.withColumn("artifact_type", F.lit(None).cast(StringType()))
+        silver_qe = silver_qe.withColumn(
+            "artifact_type", F.lit(None).cast(StringType())
+        )
 
     # Computed columns
     silver_qe = silver_qe.withColumn(
-        "is_spooled",
-        F.col("SpoolingTotalDataSize") > 0
-    ).withColumn(
-        "_partition_date",
-        F.to_date(F.col("QueryExecutionEndTimeUTC"))
-    )
+        "is_spooled", F.col("SpoolingTotalDataSize") > 0
+    ).withColumn("_partition_date", F.to_date(F.col("QueryExecutionEndTimeUTC")))
 
-    write_silver(silver_qe, "silver_query_execution", partition_cols=["_partition_date"])
+    write_silver(
+        silver_qe, "silver_query_execution", partition_cols=["_partition_date"]
+    )
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -157,8 +157,8 @@ def build_silver_triage():
     print("[silver_triage] Building...")
 
     silver_qe = read_bronze("silver_query_execution")
-    rh_df     = read_bronze("bronze_refresh_history")
-    el_df     = read_bronze("bronze_event_log")
+    rh_df = read_bronze("bronze_refresh_history")
+    el_df = read_bronze("bronze_event_log")
 
     if silver_qe is None:
         print("[WARN] silver_query_execution not found; skipping triage")
@@ -172,8 +172,13 @@ def build_silver_triage():
         return
 
     triage_base = failed_qe.select(
-        "RequestId", "GatewayObjectId", "DataSource", "QueryType",
-        "QueryExecutionEndTimeUTC", "ErrorMessage", "artifact_id",
+        "RequestId",
+        "GatewayObjectId",
+        "DataSource",
+        "QueryType",
+        "QueryExecutionEndTimeUTC",
+        "ErrorMessage",
+        "artifact_id",
         F.col("SpoolingTotalDataSize").alias("SpoolBytes"),
     ).withColumnRenamed("QueryExecutionEndTimeUTC", "qe_end_time")
 
@@ -181,22 +186,31 @@ def build_silver_triage():
     rh_base = None
     if rh_df is not None:
         rh_base = rh_df.select(
-            "RequestId", "DatasetId", "WorkspaceId", "Status",
-            "StartTime", "EndTime", "ServiceExceptionJson"
+            "RequestId",
+            "DatasetId",
+            "WorkspaceId",
+            "Status",
+            "StartTime",
+            "EndTime",
+            "ServiceExceptionJson",
         ).withColumnRenamed("RequestId", "rh_RequestId")
 
-        exact_join = triage_base.join(
-            rh_base,
-            triage_base["RequestId"] == rh_base["rh_RequestId"],
-            how="inner"
-        ).withColumn("triage_confidence", F.lit("EXACT_REQUESTID")) \
-         .withColumn("failure_layer_refresh", F.lit(True)) \
-         .drop("rh_RequestId")
+        exact_join = (
+            triage_base.join(
+                rh_base,
+                triage_base["RequestId"] == rh_base["rh_RequestId"],
+                how="inner",
+            )
+            .withColumn("triage_confidence", F.lit("EXACT_REQUESTID"))
+            .withColumn("failure_layer_refresh", F.lit(True))
+            .drop("rh_RequestId")
+        )
 
         # ── Level 2: Time-window join for rows without exact match ──────────
         unmatched_qe = triage_base.join(
             rh_base.withColumnRenamed("rh_RequestId", "RequestId"),
-            on="RequestId", how="left_anti"
+            on="RequestId",
+            how="left_anti",
         )
 
         # Time window join: |qe_end_time - rh EndTime| ≤ TRIAGE_TIME_WINDOW_SECS
@@ -205,33 +219,80 @@ def build_silver_triage():
         rh_with_ts = rh_base.withColumn(
             "rh_end_ts", F.col("EndTime").cast(TimestampType())
         )
-        tw_join = unmatched_qe.alias("qe").join(
-            rh_with_ts.alias("rh"),
-            F.abs(
-                F.unix_timestamp("qe.qe_end_time") - F.unix_timestamp("rh.rh_end_ts")
-            ) <= TRIAGE_TIME_WINDOW_SECS,
-            how="left"
-        ).withColumn(
-            "triage_confidence",
-            F.when(F.col("rh.DatasetId").isNotNull(), F.lit("TIME_WINDOW"))
-             .otherwise(F.lit("GATEWAY_ONLY"))
-        ).select(
-            "qe.RequestId", "qe.GatewayObjectId", "qe.DataSource", "qe.QueryType",
-            "qe.qe_end_time", "qe.ErrorMessage", "qe.artifact_id", "qe.SpoolBytes",
-            "rh.DatasetId", "rh.WorkspaceId", "rh.Status",
-            "rh.StartTime", "rh.EndTime", "rh.ServiceExceptionJson",
-            "triage_confidence",
-        ).withColumn("failure_layer_refresh", F.col("DatasetId").isNotNull())
+        # U15: this non-equi window join can match ONE gateway query to MANY refresh
+        # rows that fall inside ±TRIAGE_TIME_WINDOW_SECS, duplicating the query and
+        # inflating failure counts. Keep only the nearest-in-time refresh per query
+        # (row_number over RequestId, ordered by |Δt|) so one query maps to <=1
+        # refresh record. A query with no match keeps its single all-null row
+        # (gap = null -> nulls_last -> rank 1) and stays GATEWAY_ONLY. The window
+        # dedup structurally guarantees output row-count <= input, closing the fan-out.
+        # [Fabric-verify-pending: compile-checked here; window semantics run in Spark.]
+        tw_join = (
+            unmatched_qe.alias("qe")
+            .join(
+                rh_with_ts.alias("rh"),
+                F.abs(
+                    F.unix_timestamp("qe.qe_end_time")
+                    - F.unix_timestamp("rh.rh_end_ts")
+                )
+                <= TRIAGE_TIME_WINDOW_SECS,
+                how="left",
+            )
+            .withColumn(
+                "_tw_gap",
+                F.abs(
+                    F.unix_timestamp("qe.qe_end_time")
+                    - F.unix_timestamp("rh.rh_end_ts")
+                ),
+            )
+            .withColumn(
+                "_tw_rank",
+                F.row_number().over(
+                    Window.partitionBy(F.col("qe.RequestId")).orderBy(
+                        F.col("_tw_gap").asc_nulls_last()
+                    )
+                ),
+            )
+            .filter(F.col("_tw_rank") == 1)
+            .drop("_tw_rank", "_tw_gap")
+            .withColumn(
+                "triage_confidence",
+                F.when(
+                    F.col("rh.DatasetId").isNotNull(), F.lit("TIME_WINDOW")
+                ).otherwise(F.lit("GATEWAY_ONLY")),
+            )
+            .select(
+                "qe.RequestId",
+                "qe.GatewayObjectId",
+                "qe.DataSource",
+                "qe.QueryType",
+                "qe.qe_end_time",
+                "qe.ErrorMessage",
+                "qe.artifact_id",
+                "qe.SpoolBytes",
+                "rh.DatasetId",
+                "rh.WorkspaceId",
+                "rh.Status",
+                "rh.StartTime",
+                "rh.EndTime",
+                "rh.ServiceExceptionJson",
+                "triage_confidence",
+            )
+            .withColumn("failure_layer_refresh", F.col("DatasetId").isNotNull())
+        )
 
         refresh_triage = exact_join.unionByName(tw_join, allowMissingColumns=True)
     else:
         # No refresh history available — QE failures only
-        refresh_triage = triage_base.withColumn("triage_confidence", F.lit("GATEWAY_ONLY")) \
-                                     .withColumn("failure_layer_refresh", F.lit(False))
+        refresh_triage = triage_base.withColumn(
+            "triage_confidence", F.lit("GATEWAY_ONLY")
+        ).withColumn("failure_layer_refresh", F.lit(False))
 
     # ── Level 3: EventLog join on hostname + time window ───────────────────
     if el_df is not None:
-        el_errors = el_df.filter(F.col("LevelDisplayName").isin(["Error", "Warning"])).select(
+        el_errors = el_df.filter(
+            F.col("LevelDisplayName").isin(["Error", "Warning"])
+        ).select(
             F.col("TimeCreated").alias("evt_time"),
             F.col("EventId"),
             F.col("LevelDisplayName").alias("evt_level"),
@@ -242,34 +303,43 @@ def build_silver_triage():
 
         # Left join: event log ±EVENT_LOG_TIME_WINDOW_SECS around qe_end_time
         # [BEST-EFFORT] Host-level only; no GatewayObjectId correlation
-        triage_with_events = refresh_triage.alias("tr").join(
-            el_errors.alias("el"),
-            F.abs(
-                F.unix_timestamp("tr.qe_end_time") - F.unix_timestamp("el.evt_time")
-            ) <= EVENT_LOG_TIME_WINDOW_SECS,
-            how="left"
-        ).withColumn(
-            "failure_layer_os_event",
-            F.col("el.EventId").isNotNull()
-        ).select(
-            "tr.*",
-            "el.evt_time", "el.EventId", "el.evt_level", "el.evt_message", "el.EventSource",
-            "failure_layer_os_event",
+        triage_with_events = (
+            refresh_triage.alias("tr")
+            .join(
+                el_errors.alias("el"),
+                F.abs(
+                    F.unix_timestamp("tr.qe_end_time") - F.unix_timestamp("el.evt_time")
+                )
+                <= EVENT_LOG_TIME_WINDOW_SECS,
+                how="left",
+            )
+            .withColumn("failure_layer_os_event", F.col("el.EventId").isNotNull())
+            .select(
+                "tr.*",
+                "el.evt_time",
+                "el.EventId",
+                "el.evt_level",
+                "el.evt_message",
+                "el.EventSource",
+                "failure_layer_os_event",
+            )
         )
     else:
-        triage_with_events = refresh_triage.withColumn("failure_layer_os_event", F.lit(False))
-        triage_with_events = triage_with_events.withColumn("evt_message", F.lit(None).cast(StringType()))
+        triage_with_events = refresh_triage.withColumn(
+            "failure_layer_os_event", F.lit(False)
+        )
+        triage_with_events = triage_with_events.withColumn(
+            "evt_message", F.lit(None).cast(StringType())
+        )
 
     # Derive failure_layer summary
     triage_final = triage_with_events.withColumn(
         "failure_layer",
         F.when(F.col("failure_layer_os_event"), F.lit("OS_SERVICE_EVENT"))
-         .when(F.col("failure_layer_refresh") == True, F.lit("SERVICE_REFRESH_ERROR"))
-         .when(F.col("ErrorMessage").isNotNull(), F.lit("GATEWAY_LOG_ERROR"))
-         .otherwise(F.lit("UNKNOWN"))
-    ).withColumn(
-        "_partition_date", F.to_date(F.col("qe_end_time"))
-    )
+        .when(F.col("failure_layer_refresh") == True, F.lit("SERVICE_REFRESH_ERROR"))
+        .when(F.col("ErrorMessage").isNotNull(), F.lit("GATEWAY_LOG_ERROR"))
+        .otherwise(F.lit("UNKNOWN")),
+    ).withColumn("_partition_date", F.to_date(F.col("qe_end_time")))
 
     write_silver(triage_final, "silver_triage", partition_cols=["_partition_date"])
 
@@ -311,18 +381,27 @@ def build_silver_identity_attribution():
 
     # Method 1: EvaluationContext attribution (most reliable)
     qe_with_artifact = silver_qe.select(
-        "RequestId", "GatewayObjectId", "QueryStartTimeUTC",
-        "QueryExecutionEndTimeUTC", "DataSource", "QueryType",
-        "QueryExecutionDuration", "Success", "artifact_id", "artifact_type",
+        "RequestId",
+        "GatewayObjectId",
+        "QueryStartTimeUTC",
+        "QueryExecutionEndTimeUTC",
+        "DataSource",
+        "QueryType",
+        "QueryExecutionDuration",
+        "Success",
+        "artifact_id",
+        "artifact_type",
     )
 
-    eval_context_attr = qe_with_artifact.filter(
-        F.col("artifact_id").isNotNull()
-    ).withColumn(
-        "attribution_confidence", F.lit("EVALUATION_CONTEXT")
-    ).withColumn(
-        "attribution_method_note",
-        F.lit("Fabric workload: artifactId from QueryStart.EvaluationContext (reliable for Fabric workloads only)")
+    eval_context_attr = (
+        qe_with_artifact.filter(F.col("artifact_id").isNotNull())
+        .withColumn("attribution_confidence", F.lit("EVALUATION_CONTEXT"))
+        .withColumn(
+            "attribution_method_note",
+            F.lit(
+                "Fabric workload: artifactId from QueryStart.EvaluationContext (reliable for Fabric workloads only)"
+            ),
+        )
     )
 
     # Method 2: Activity Events time-window join (FUZZY)
@@ -333,9 +412,7 @@ def build_silver_identity_attribution():
     # then join here on RequestId and ±ATTRIBUTION_TIME_WINDOW_SECS.
     # For now, emit a placeholder column showing the join would happen here.
 
-    unattributed = qe_with_artifact.filter(
-        F.col("artifact_id").isNull()
-    )
+    unattributed = qe_with_artifact.filter(F.col("artifact_id").isNull())
 
     # TODO (Phase 5 / v3): join unattributed against bronze_activity_events
     # activity_df = read_bronze("bronze_activity_events")
@@ -358,24 +435,26 @@ def build_silver_identity_attribution():
             "May be Dataflow Gen1, Paginated Report, or DirectQuery session. "
             "Activity Events join not yet implemented (v3). "
             "See: https://learn.microsoft.com/en-us/data-integration/gateway/service-gateway-performance"
-        )
+        ),
     )
 
     # Union with strong label comment
-    attribution = eval_context_attr.unionByName(
-        unattributed_with_label, allowMissingColumns=True
-    ).withColumn(
-        "_attribution_disclaimer",
-        F.lit(
-            "BEST-EFFORT ONLY. Do not use for compliance, billing, or security audit. "
-            "Paginated Reports and Dataflow Gen1 are excluded by design. "
-            "DirectQuery sessions are not correlated."
+    attribution = (
+        eval_context_attr.unionByName(unattributed_with_label, allowMissingColumns=True)
+        .withColumn(
+            "_attribution_disclaimer",
+            F.lit(
+                "BEST-EFFORT ONLY. Do not use for compliance, billing, or security audit. "
+                "Paginated Reports and Dataflow Gen1 are excluded by design. "
+                "DirectQuery sessions are not correlated."
+            ),
         )
-    ).withColumn(
-        "_partition_date", F.to_date(F.col("QueryExecutionEndTimeUTC"))
+        .withColumn("_partition_date", F.to_date(F.col("QueryExecutionEndTimeUTC")))
     )
 
-    write_silver(attribution, "silver_identity_attribution", partition_cols=["_partition_date"])
+    write_silver(
+        attribution, "silver_identity_attribution", partition_cols=["_partition_date"]
+    )
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -388,10 +467,12 @@ def build_silver_network_correlated():
     print("[silver_network_correlated] Building...")
 
     silver_qe = read_bronze("silver_query_execution")
-    net_df    = read_bronze("bronze_network_metrics")
+    net_df = read_bronze("bronze_network_metrics")
 
     if silver_qe is None or net_df is None:
-        print("[WARN] Missing silver_query_execution or bronze_network_metrics; skipping")
+        print(
+            "[WARN] Missing silver_query_execution or bronze_network_metrics; skipping"
+        )
         return
 
     # Use the NIC with highest bandwidth utilization at each collection time
@@ -404,44 +485,89 @@ def build_silver_network_correlated():
     )
 
     # Time-window join: NIC sample within ±5 minutes of query execution end
-    NET_WINDOW_SECS = 300   # 5 minutes
+    NET_WINDOW_SECS = 300  # 5 minutes
 
-    correlated = silver_qe.alias("qe").join(
-        net_agg.alias("net"),
-        (F.col("qe._gateway_host") == F.col("net.GatewayHostName")) &
-        (F.abs(
-            F.unix_timestamp("qe.QueryExecutionEndTimeUTC") -
-            F.unix_timestamp("net.CollectedAtUTC")
-        ) <= NET_WINDOW_SECS),
-        how="left"
-    ).select(
-        "qe.RequestId", "qe.GatewayObjectId", "qe.DataSource", "qe.QueryType",
-        "qe.QueryExecutionEndTimeUTC", "qe.QueryExecutionDuration",
-        "qe.SpoolingTotalDataSize", "qe.Success", "qe.ErrorMessage",
-        "net.BytesTotalPerSec_max", "net.UtilizationPct_max",
-        "net.LatencyMs_PBIRelay", "net.CurrentBandwidthBps",
-    ).withColumn(
-        # Estimated network throughput efficiency: how fast we transferred data
-        # SpoolingTotalDataSize / (QueryExecutionDuration_s * BytesTotalPerSec)
-        # [Inference] SpoolingTotalDataSize is compressed bytes; ratio is approximate
-        "network_throughput_efficiency",
-        F.when(
-            (F.col("SpoolingTotalDataSize") > 0) &
-            (F.col("BytesTotalPerSec_max") > 0) &
-            (F.col("QueryExecutionDuration") > 0),
-            F.col("SpoolingTotalDataSize") /
-            ((F.col("QueryExecutionDuration") / 1000.0) * F.col("BytesTotalPerSec_max"))
-        ).otherwise(F.lit(None).cast(DoubleType()))
-    ).withColumn(
-        "_partition_date", F.to_date(F.col("QueryExecutionEndTimeUTC"))
+    correlated = (
+        silver_qe.alias("qe")
+        .join(
+            net_agg.alias("net"),
+            (F.col("qe._gateway_host") == F.col("net.GatewayHostName"))
+            & (
+                F.abs(
+                    F.unix_timestamp("qe.QueryExecutionEndTimeUTC")
+                    - F.unix_timestamp("net.CollectedAtUTC")
+                )
+                <= NET_WINDOW_SECS
+            ),
+            how="left",
+        )
+        # U15: with a ~5-min NIC collection cadence and a ±5-min window, more than
+        # one net_agg sample can fall in range and fan the query row out. Keep the
+        # nearest NIC sample per query (row_number over RequestId by |Δt|) so one
+        # query maps to <=1 network row; a query with no sample keeps its single
+        # all-null row. Structurally guarantees output row-count <= input.
+        # [Fabric-verify-pending: compile-checked here; window semantics run in Spark.]
+        .withColumn(
+            "_net_gap",
+            F.abs(
+                F.unix_timestamp("qe.QueryExecutionEndTimeUTC")
+                - F.unix_timestamp("net.CollectedAtUTC")
+            ),
+        )
+        .withColumn(
+            "_net_rank",
+            F.row_number().over(
+                Window.partitionBy(F.col("qe.RequestId")).orderBy(
+                    F.col("_net_gap").asc_nulls_last()
+                )
+            ),
+        )
+        .filter(F.col("_net_rank") == 1)
+        .drop("_net_rank", "_net_gap")
+        .select(
+            "qe.RequestId",
+            "qe.GatewayObjectId",
+            "qe.DataSource",
+            "qe.QueryType",
+            "qe.QueryExecutionEndTimeUTC",
+            "qe.QueryExecutionDuration",
+            "qe.SpoolingTotalDataSize",
+            "qe.Success",
+            "qe.ErrorMessage",
+            "net.BytesTotalPerSec_max",
+            "net.UtilizationPct_max",
+            "net.LatencyMs_PBIRelay",
+            "net.CurrentBandwidthBps",
+        )
+        .withColumn(
+            # Estimated network throughput efficiency: how fast we transferred data
+            # SpoolingTotalDataSize / (QueryExecutionDuration_s * BytesTotalPerSec)
+            # [Inference] SpoolingTotalDataSize is compressed bytes; ratio is approximate
+            "network_throughput_efficiency",
+            F.when(
+                (F.col("SpoolingTotalDataSize") > 0)
+                & (F.col("BytesTotalPerSec_max") > 0)
+                & (F.col("QueryExecutionDuration") > 0),
+                F.col("SpoolingTotalDataSize")
+                / (
+                    (F.col("QueryExecutionDuration") / 1000.0)
+                    * F.col("BytesTotalPerSec_max")
+                ),
+            ).otherwise(F.lit(None).cast(DoubleType())),
+        )
+        .withColumn("_partition_date", F.to_date(F.col("QueryExecutionEndTimeUTC")))
     )
 
-    write_silver(correlated, "silver_network_correlated", partition_cols=["_partition_date"])
+    write_silver(
+        correlated, "silver_network_correlated", partition_cols=["_partition_date"]
+    )
 
 
 # ── ENTRY POINT ─────────────────────────────────────────────────────────────
 if __name__ == "__main__" or True:
-    print(f"=== 02_silver_correlate.py starting at {datetime.now(timezone.utc).isoformat()} ===")
+    print(
+        f"=== 02_silver_correlate.py starting at {datetime.now(timezone.utc).isoformat()} ==="
+    )
     build_silver_query_execution()
     build_silver_triage()
     build_silver_identity_attribution()
