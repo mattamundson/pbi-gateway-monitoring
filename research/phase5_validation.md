@@ -83,6 +83,19 @@ Result (PySpark 3.5.8 / OpenJDK 17): STEP 1 bronze QE 20 rows · STEP 2 artifact
 
 > **Portability fix applied:** `run_local_smoke.py`'s env check looked only for a bare `bin/java`, which never exists on Windows (`java.exe`), so it would have `[SKIP]`ped on every Windows host. It now accepts `java` **or** `java.exe`.
 
+#### Two complementary local proof paths — which to run
+
+The repo has **two** real-PySpark validation scripts. They overlap (both run Spark on synthetic data) but answer different primary questions — keep both:
+
+| Script | Primary question it answers | Run it when |
+|---|---|---|
+| `starter/deploy/run_local_smoke.py` | **Does the notebook transform code compose on a real Spark engine?** bronze→silver→gold, incl. the U17 `multiLine` reads against the collectors' exact pretty-JSON wrapper and the pain-#2 STEP 7 exact-`RequestId` triage leg. | After changing any **notebook transform code** (`0*_*.py`, `gateway_bronze_lib.py`) — fast smoke that the pipeline still runs. |
+| `starter/tests/validate_pipeline_sim.py` (+ `simulate_tenant.py`) | **Do the joins correlate correctly on realistic linked data?** Identity join #3 (RequestId == OperationId → ExecutingUser/ItemName) with the match-rate asserted in [0.70, 0.95], triage #2 root-cause buckets, fleet/skew across 3 nodes. | To prove the **correlation logic** and match-rate behaviour, or after changing join/attribution logic in `02_silver_correlate.py`. |
+
+**Both verified green under the one harness (2026-07-01).** Under the `pbi-spark` env (Python 3.11 / PySpark 3.5.8 / OpenJDK 17): `run_local_smoke.py` = 7/7 steps PASS; `validate_pipeline_sim.py` = all 6 pain-point checks PASS with identity-join match-rate **87.50%** (inside its asserted [0.70, 0.95]). One invocation detail: `validate_pipeline_sim.py` imports `gateway_bronze_lib` without adding the notebooks dir to `sys.path`, so run it with `PYTHONPATH=starter/notebooks` (or from that dir); `run_local_smoke.py` inserts the path itself and needs no `PYTHONPATH`.
+
+**Environment note:** `validate_pipeline_sim.py`'s header documents in-code workarounds for a **Python 3.14 + PySpark 3.5.1** incompatibility (`array_compact` instead of a `filter` lambda; file-based data to avoid a cloudpickle C-stack overflow). The conda harness above pins **Python 3.11**, which sidesteps that incompatibility at the environment level — confirmed by the green run above. Prefer the pinned env over per-script version workarounds.
+
 ### #2 refresh-triage join key — desk-verification split (2026-07-01)
 
 The new `Collect-RefreshHistory.ps1` (the missing Service-side leg of the #2 triage join) depends on the Power BI **REST refresh-history** record's `requestId` matching the gateway log `RequestId`. Desk verification against primary sources found this is **two links, not one**, and only one is confirmed:
