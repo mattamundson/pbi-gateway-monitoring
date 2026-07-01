@@ -12,7 +12,7 @@ Anyone with a Fabric + Azure tenant-admin role can fork this repo and stand up g
 
 ## Why this exists
 
-Two capabilities every gateway operator wants, that **no existing tool provides**, are the reason to build:
+Two capabilities every gateway operator wants, that **no existing tool we surveyed provides** (see the 10-tool teardown in [`research/phase1_2_tools.md`](research/phase1_2_tools.md)), are the reason to build:
 
 1. **Query → identity attribution** — know *which dataset and which user* caused a slow/failed gateway query. Long believed impossible; **it isn't** (see below).
 2. **Predictive intelligence** — turn static thresholds into forecasted saturation and auto-attributed failure spikes, natively in KQL.
