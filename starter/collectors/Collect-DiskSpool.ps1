@@ -67,8 +67,19 @@ $collectedAtUtc = (Get-Date).ToUniversalTime()
 # ---------------------------------------------------------------------------
 if ([string]::IsNullOrWhiteSpace($SpoolPath) -and (Test-Path $ConfigPath)) {
     $config = Get-Content $ConfigPath -Raw | ConvertFrom-Json
-    if (-not [string]::IsNullOrWhiteSpace($config.spoolPath)) {
-        $SpoolPath = $config.spoolPath
+    # config.sample.json models this as the NESTED key gateway.spoolPath. Reading
+    # the flat $config.spoolPath (the old code) THROWS under StrictMode -Latest when
+    # that flat key is absent. Read the nested key StrictMode-safely; tolerate legacy flat.
+    $cfgSpoolPath = $null
+    $gwProp = $config.PSObject.Properties['gateway']
+    if ($gwProp -and $gwProp.Value -and $gwProp.Value.PSObject.Properties['spoolPath']) {
+        $cfgSpoolPath = $gwProp.Value.spoolPath
+    }
+    elseif ($config.PSObject.Properties['spoolPath']) {
+        $cfgSpoolPath = $config.spoolPath   # legacy flat key
+    }
+    if (-not [string]::IsNullOrWhiteSpace($cfgSpoolPath)) {
+        $SpoolPath = $cfgSpoolPath
     }
 }
 

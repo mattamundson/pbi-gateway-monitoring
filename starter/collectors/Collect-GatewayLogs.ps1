@@ -70,15 +70,27 @@ $config = Get-Content $ConfigPath -Raw | ConvertFrom-Json
 # Reference: https://github.com/microsoft/fabric-toolbox/tree/main/monitoring/fabric-platform-monitoring
 # ---------------------------------------------------------------------------
 if ([string]::IsNullOrWhiteSpace($LogRootPath)) {
-    # Default: the gateway service account AppData path
-    # If the gateway runs under a custom service account, this will fail silently.
-    # The config file should specify the correct path for non-default accounts.
-    # See: https://learn.microsoft.com/en-us/data-integration/gateway/service-gateway-performance
-    if (-not [string]::IsNullOrWhiteSpace($config.gatewayLogPath)) {
-        $LogRootPath = $config.gatewayLogPath
+    # Read the configured path. config.sample.json models it as the NESTED key
+    # gateway.logPath — reading the flat $config.gatewayLogPath (the old code)
+    # THROWS under Set-StrictMode -Version Latest when that flat key is absent,
+    # so an operator on a custom service account who set gateway.logPath got a
+    # crashed collector instead of their path. Read the nested key StrictMode-safely
+    # (via PSObject.Properties) and tolerate a legacy flat key for back-compat.
+    $cfgLogPath = $null
+    $gwProp = $config.PSObject.Properties['gateway']
+    if ($gwProp -and $gwProp.Value -and $gwProp.Value.PSObject.Properties['logPath']) {
+        $cfgLogPath = $gwProp.Value.logPath
+    }
+    elseif ($config.PSObject.Properties['gatewayLogPath']) {
+        $cfgLogPath = $config.gatewayLogPath   # legacy flat key
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($cfgLogPath)) {
+        $LogRootPath = $cfgLogPath
     }
     else {
-        # [Assumption] Default service account is PBIEgwService
+        # [Assumption] Default service account is PBIEgwService — will not match a
+        # custom service account; set gateway.logPath in config.json to override.
         $LogRootPath = "$env:SystemDrive\Users\PBIEgwService\AppData\Local\Microsoft\On-premises data gateway\Report"
     }
 }
