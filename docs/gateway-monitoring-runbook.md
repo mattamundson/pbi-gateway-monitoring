@@ -318,7 +318,7 @@ Hybrid requires BOTH of these. If either fails → fall back to **Part A pure-cu
    - **Admin role on the On-premises Data Gateways** to monitor.
    - Member role on the workspace.
 
-> Greenfield note [Inference]: as owner/founder on an existing Fabric/OneLake footprint you can likely clear the SP/KeyVault provisioning; the real question is whether **F8+ capacity cost** is justified for gateway monitoring alone. If you're on trial/small capacity, prefer Part A.
+> Cost note [Inference]: teams already running a Fabric/OneLake footprint with tenant-admin access can usually clear the SP/Key Vault provisioning without friction; the real question is whether the **F8+ capacity cost** is justified for gateway monitoring alone. If you're on a trial or small capacity, prefer Part A.
 
 ## B — Target architecture
 
