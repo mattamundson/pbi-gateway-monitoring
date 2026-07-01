@@ -1,0 +1,32 @@
+name: Tests
+
+on:
+  push:
+    paths:
+      - 'starter/**'
+      - 'requirements-dev.txt'
+      - '.github/workflows/tests.yml'
+  pull_request:
+    paths:
+      - 'starter/**'
+      - 'requirements-dev.txt'
+  workflow_dispatch:
+
+jobs:
+  tier1-parser:
+    name: Tier 1 parser (Spark-free)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Generate synthetic gateway logs
+        run: python starter/tests/generate_synthetic_logs.py
+
+      - name: Run Tier 1 parser test (pure-Python, no Spark)
+        run: python starter/tests/test_parser.py

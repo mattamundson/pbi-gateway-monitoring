@@ -1,7 +1,0 @@
-"Resource","Chromium baseline","Comet realistic (with assistant + agent active)"
-"OS","macOS 11+, Windows 10+ (64-bit)","Same"
-"RAM","4 GB min, 8 GB recommended for Chrome","16 GB realistic floor if running assistant + multiple agent tabs + your normal workload. 32 GB comfortable."
-"CPU","Any modern x64 / Apple Silicon","Modern multi-core; assistant adds sustained background load during agent runs"
-"Disk","1–2 GB install + profile","2–5 GB + extension storage + local browsing data cache"
-"Network","Broadband","Same; agent traffic is modest but constant during runs"
-"GPU","Optional for Chrome","Not required; no on-device model inference confirmed"

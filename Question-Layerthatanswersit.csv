@@ -1,7 +1,0 @@
-"Question","Layer that answers it"
-"Is the gateway box CPU/disk/spool-bound?","Your build (gold_fact_counter, spool metrics)"
-"Which query/datasource is slow, and why (spool vs source-read)?","Your build (gold_fact_query)"
-"Which model/user/schedule caused that slow query?","FUAM (activities, capacity_refreshables)"
-"Is capacity throttling or the gateway the real bottleneck?","Overlay (FUAM capacity_metrics + your counters)"
-"Are people abusing refresh schedules into the gateway?","FUAM (refreshables/activities) + your query volume"
-"Gateway online/offline, datasource connection health?","Neither well — add the REST API collector (gateways/get-datasource-status)"

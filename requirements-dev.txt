@@ -1,0 +1,11 @@
+# Local development & CI test dependencies for pbi-gateway-monitoring
+#
+# The Fabric runtime already provides pyspark + delta-spark inside production
+# notebooks — these pins exist ONLY to run the starter/tests/ suite locally / in CI.
+#
+#   Tier 1  (starter/tests/test_parser.py)        -> pure stdlib, NO deps needed.
+#   Tier 2  (starter/tests/test_parser_spark.py)  -> needs the below + JDK 17
+#                                                    (Spark 3.5 fails on JDK 21+).
+
+pyspark>=3.5,<3.6
+delta-spark>=3.2,<3.3
