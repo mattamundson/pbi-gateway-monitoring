@@ -1,0 +1,64 @@
+﻿table gold_gateway_health
+
+	column GatewayObjectId
+		dataType: string
+		summarizeBy: none
+		sourceColumn: GatewayObjectId
+
+	column last_heartbeat_utc
+		dataType: dateTime
+		summarizeBy: none
+		sourceColumn: last_heartbeat_utc
+
+	column heartbeat_age_minutes
+		dataType: int64
+		summarizeBy: none
+		sourceColumn: heartbeat_age_minutes
+
+	column cpu_utilization_pct
+		dataType: double
+		summarizeBy: none
+		sourceColumn: cpu_utilization_pct
+
+	column cpu_pct_avg
+		dataType: double
+		summarizeBy: none
+		sourceColumn: cpu_pct_avg
+
+	column mem_mb_avg
+		dataType: double
+		summarizeBy: none
+		sourceColumn: mem_mb_avg
+
+	column system_cpu_pct
+		dataType: double
+		summarizeBy: none
+		sourceColumn: system_cpu_pct
+
+	column network_util_pct
+		dataType: double
+		summarizeBy: none
+		sourceColumn: network_util_pct
+
+	column network_latency_p95_ms
+		dataType: double
+		summarizeBy: none
+		sourceColumn: network_latency_p95_ms
+
+	column spool_free_pct
+		dataType: double
+		summarizeBy: none
+		sourceColumn: spool_free_pct
+
+	column _partition_date
+		dataType: dateTime
+		summarizeBy: none
+		sourceColumn: _partition_date
+
+	partition gold_gateway_health = entity
+		mode: directLake
+		source
+			entityName: gold_gateway_health
+			schemaName: dbo
+			expressionSource: DirectLakeSource
+

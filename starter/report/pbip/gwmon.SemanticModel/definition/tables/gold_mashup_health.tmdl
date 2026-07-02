@@ -1,0 +1,29 @@
+﻿table gold_mashup_health
+
+	column container_pid
+		dataType: string
+		summarizeBy: none
+		sourceColumn: container_pid
+
+	column peak_working_set_mb
+		dataType: double
+		summarizeBy: none
+		sourceColumn: peak_working_set_mb
+
+	column avg_cpu_pct
+		dataType: double
+		summarizeBy: none
+		sourceColumn: avg_cpu_pct
+
+	column is_runaway
+		dataType: boolean
+		summarizeBy: none
+		sourceColumn: is_runaway
+
+	partition gold_mashup_health = entity
+		mode: directLake
+		source
+			entityName: gold_mashup_health
+			schemaName: dbo
+			expressionSource: DirectLakeSource
+

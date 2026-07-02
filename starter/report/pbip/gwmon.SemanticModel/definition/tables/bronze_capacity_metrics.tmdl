@@ -1,0 +1,24 @@
+﻿table bronze_capacity_metrics
+
+	column timestamp
+		dataType: dateTime
+		summarizeBy: none
+		sourceColumn: timestamp
+
+	column cu_percentage
+		dataType: double
+		summarizeBy: none
+		sourceColumn: cu_percentage
+
+	column CapacityId
+		dataType: string
+		summarizeBy: none
+		sourceColumn: CapacityId
+
+	partition bronze_capacity_metrics = entity
+		mode: directLake
+		source
+			entityName: bronze_capacity_metrics
+			schemaName: dbo
+			expressionSource: DirectLakeSource
+

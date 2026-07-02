@@ -1,0 +1,29 @@
+﻿table silver_identity_attribution
+
+	column attribution_kind
+		dataType: string
+		summarizeBy: none
+		sourceColumn: attribution_kind
+
+	column artifact_id
+		dataType: string
+		summarizeBy: none
+		sourceColumn: artifact_id
+
+	column DataSource
+		dataType: string
+		summarizeBy: none
+		sourceColumn: DataSource
+
+	column attribution_confidence
+		dataType: string
+		summarizeBy: none
+		sourceColumn: attribution_confidence
+
+	partition silver_identity_attribution = entity
+		mode: directLake
+		source
+			entityName: silver_identity_attribution
+			schemaName: dbo
+			expressionSource: DirectLakeSource
+

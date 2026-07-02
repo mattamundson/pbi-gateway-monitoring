@@ -1,0 +1,64 @@
+﻿table silver_triage
+
+	column event_time
+		dataType: dateTime
+		summarizeBy: none
+		sourceColumn: event_time
+
+	column root_cause_class
+		dataType: string
+		summarizeBy: none
+		sourceColumn: root_cause_class
+
+	column failure_layer
+		dataType: string
+		summarizeBy: none
+		sourceColumn: failure_layer
+
+	column triage_confidence
+		dataType: string
+		summarizeBy: none
+		sourceColumn: triage_confidence
+
+	column refresh_status
+		dataType: string
+		summarizeBy: none
+		sourceColumn: refresh_status
+
+	column is_failure
+		dataType: boolean
+		summarizeBy: none
+		sourceColumn: is_failure
+
+	column evt_message
+		dataType: string
+		summarizeBy: none
+		sourceColumn: evt_message
+
+	column EventId
+		dataType: string
+		summarizeBy: none
+		sourceColumn: EventId
+
+	column DataSource
+		dataType: string
+		summarizeBy: none
+		sourceColumn: DataSource
+
+	column ErrorMessage
+		dataType: string
+		summarizeBy: none
+		sourceColumn: ErrorMessage
+
+	column GatewayObjectId
+		dataType: string
+		summarizeBy: none
+		sourceColumn: GatewayObjectId
+
+	partition silver_triage = entity
+		mode: directLake
+		source
+			entityName: silver_triage
+			schemaName: dbo
+			expressionSource: DirectLakeSource
+

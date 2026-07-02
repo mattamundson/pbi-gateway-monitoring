@@ -1,0 +1,295 @@
+﻿table _Measures
+	isHidden
+
+	measure 'Active Users (30d)' =
+			// [Tenant-gated] requires bronze_activity_events from the admin/activity API
+			CALCULATE(
+			    DISTINCTCOUNT(bronze_activity_events[UserId]),
+			    bronze_activity_events[event_time] >= NOW() - 30
+			)
+
+	measure 'Attribution % Evaluation Context' =
+			VAR EvalContextCount =
+			    CALCULATE (
+			        COUNTROWS ( silver_identity_attribution ),
+			        silver_identity_attribution[attribution_confidence] = "EVALUATION_CONTEXT"
+			    )
+			VAR TotalCount = COUNTROWS ( silver_identity_attribution )
+			RETURN
+			    DIVIDE ( EvalContextCount, TotalCount, 0 ) * 100
+
+	measure 'Attribution % Fuzzy Time Window' =
+			VAR FuzzyCount =
+			    CALCULATE (
+			        COUNTROWS ( silver_identity_attribution ),
+			        silver_identity_attribution[attribution_confidence] = "FUZZY_TIME_WINDOW"
+			    )
+			VAR TotalCount = COUNTROWS ( silver_identity_attribution )
+			RETURN
+			    DIVIDE ( FuzzyCount, TotalCount, 0 ) * 100
+
+	measure 'Attribution % Unattributed' =
+			VAR UnattribCount =
+			    CALCULATE (
+			        COUNTROWS ( silver_identity_attribution ),
+			        silver_identity_attribution[attribution_confidence] = "UNATTRIBUTED"
+			    )
+			VAR TotalCount = COUNTROWS ( silver_identity_attribution )
+			RETURN
+			    DIVIDE ( UnattribCount, TotalCount, 0 ) * 100
+
+	measure 'Attribution Rate %' =
+			VAR _attributed =
+			    CALCULATE(COUNTROWS(silver_identity_attribution),
+			        silver_identity_attribution[attribution_kind] = "EVALUATION_CONTEXT")
+			VAR _total = COUNTROWS(silver_identity_attribution)
+			RETURN DIVIDE(_attributed, _total, 0) * 100
+
+	measure 'Avg CPU % (rolling 7d)' =
+			AVERAGEX(
+			    DATESINPERIOD(dim_date[Date], MAX(dim_date[Date]), -7, DAY),
+			    AVERAGE(gold_gateway_health[cpu_utilization_pct])
+			)
+
+	measure 'Avg Gateway CPU %' =
+			VAR RawCPU = AVERAGE ( gold_gateway_health[cpu_pct_avg] )
+			RETURN
+			    RawCPU
+
+	measure 'Avg Gateway Mem (MB)' = DIVIDE ( AVERAGE ( gold_gateway_health[mem_kb_avg] ), 1024, 0 )
+
+	measure 'Avg Query Duration (ms)' =
+			AVERAGEX (
+			    gold_query_performance,
+			    gold_query_performance[duration_avg_ms]
+			)
+
+	measure 'Capacity CU % (avg)' =
+			// [Tenant-gated] requires capacity metrics app / admin API
+			AVERAGE(bronze_capacity_metrics[cu_percentage])
+
+	measure 'Capacity Headroom %' = 100 - AVERAGEX(gold_cluster_load, gold_cluster_load[cpu_utilization_pct])
+
+	measure 'Cluster Count' = DISTINCTCOUNT ( gold_dim_gateway[GatewayClusterId] )
+
+	measure 'Cluster Load Skew Score' = AVERAGE ( gold_cluster_load[queries_per_node_cv] )
+
+	measure 'Dataset Refresh Count (7d)' =
+			// [Tenant-gated] requires capacity refreshables from the admin API
+			CALCULATE(
+			    COUNTROWS(bronze_capacity_refreshables),
+			    bronze_capacity_refreshables[refresh_time] >= NOW() - 7
+			)
+
+	measure 'Error Rate %' =
+			DIVIDE(
+			    CALCULATE(COUNTROWS(silver_triage), silver_triage[is_failure] = TRUE()),
+			    COUNTROWS(silver_triage),
+			    0
+			) * 100
+
+	measure 'Error Rate % (7d avg)' =
+			AVERAGEX(
+			    DATESINPERIOD(dim_date[Date], MAX(dim_date[Date]), -7, DAY),
+			    [Error Rate %]
+			)
+
+	measure 'Error Rate 5min %' =
+			CALCULATE (
+			    AVERAGE ( gold_gateway_health[error_rate_pct] ),
+			    gold_gateway_health[_partition_date] = TODAY ()
+			)
+
+	measure 'Failure Layer' = SELECTEDVALUE ( silver_triage[failure_layer], "Multiple" )
+
+	measure 'Failures With OS Event' =
+			CALCULATE (
+			    COUNTROWS ( silver_triage ),
+			    silver_triage[failure_layer_os_event] = TRUE ()
+			)
+
+	measure 'Fleet Health Score' =
+			VAR _online = [Gateways Online]
+			VAR _total  = [Gateways Total]
+			RETURN DIVIDE(_online, _total, 0) * 100
+
+	measure 'Gateway Error Rate %' =
+			VAR TotalErrors  = SUMX ( gold_query_performance, gold_query_performance[error_count] )
+			VAR TotalQueries = SUMX ( gold_query_performance, gold_query_performance[query_count] )
+			RETURN
+			    DIVIDE ( TotalErrors, TotalQueries, 0 ) * 100
+
+	measure 'Gateway Status' =
+			VAR Age = [Heartbeat Age (minutes)]
+			RETURN
+			    SWITCH (
+			        TRUE (),
+			        ISBLANK ( Age ),   "Unknown",
+			        Age > 10,          "OFFLINE",
+			        Age > 5,           "Degraded",
+			        "Live"
+			    )
+
+	measure 'Gateways Online' =
+			CALCULATE(
+			    DISTINCTCOUNT(gold_gateway_health[GatewayObjectId]),
+			    gold_gateway_health[heartbeat_age_minutes] <= 5
+			)
+
+	measure 'Gateways Total' = DISTINCTCOUNT(gold_gateway_health[GatewayObjectId])
+
+	measure 'Health Trend Direction' =
+			VAR _now  = [Fleet Health Score]
+			VAR _prev = CALCULATE([Fleet Health Score], DATEADD(dim_date[Date], -1, DAY))
+			RETURN
+			    SWITCH(TRUE(),
+			        _now > _prev, "Improving",
+			        _now < _prev, "Degrading",
+			        "Stable")
+
+	measure 'Heartbeat Age (minutes)' =
+			VAR LastHeartbeat =
+			    MAX ( gold_gateway_health[last_heartbeat_utc] )
+			VAR AgeMinutes =
+			    DATEDIFF ( LastHeartbeat, NOW (), MINUTE )
+			RETURN
+			    IF ( ISBLANK ( LastHeartbeat ), BLANK (), AgeMinutes )
+
+	measure 'Hottest Node Query %' = AVERAGE ( gold_cluster_load[hottest_node_query_pct] )
+
+	measure 'Mashup CPU % (avg)' = AVERAGE(gold_mashup_health[avg_cpu_pct])
+
+	measure 'Mashup RAM Peak (MB)' = MAXX(gold_mashup_health, gold_mashup_health[peak_working_set_mb])
+
+	measure 'Max Query Duration (ms)' = MAX ( gold_query_performance[duration_max_ms] )
+
+	measure 'Network Latency P95 (ms)' = MAX ( gold_gateway_health[latency_ms_p95] )
+
+	measure 'Network Status' =
+			VAR UtilPct = [Network Utilization %]
+			RETURN
+			    SWITCH (
+			        TRUE (),
+			        ISBLANK ( UtilPct ),    "Unknown",
+			        UtilPct >= 80,          "SATURATED",
+			        UtilPct >= 60,          "HIGH",
+			        "OK"
+			    )
+
+	measure 'Network Utilization %' = AVERAGE ( gold_gateway_health[network_utilization_pct_avg] )
+
+	measure 'Node Count' = DISTINCTCOUNT ( gold_dim_gateway[GatewayObjectId] )
+
+	measure 'Nodes Offline' =
+			CALCULATE (
+			    COUNTROWS ( gold_gateway_health ),
+			    gold_gateway_health[heartbeat_age_minutes] > 10
+			)
+
+	measure 'Open Failures (24h)' =
+			CALCULATE(
+			    COUNTROWS(silver_triage),
+			    silver_triage[is_failure] = TRUE(),
+			    silver_triage[event_time] >= NOW() - 1
+			)
+
+	measure 'P95 Query Duration (ms)' =
+			PERCENTILEX.INC (
+			    gold_query_performance,
+			    gold_query_performance[duration_p95_ms],
+			    0.95
+			)
+
+	measure 'Query Volume' = COUNTROWS(gold_query_performance)
+
+	measure 'Query Volume MoM %' =
+			VAR _cur  = [Query Volume]
+			VAR _prev = CALCULATE([Query Volume], DATEADD(dim_date[Date], -1, MONTH))
+			RETURN DIVIDE(_cur - _prev, _prev, BLANK()) * 100
+
+	measure 'Refresh Success Rate %' =
+			DIVIDE(
+			    CALCULATE(COUNTROWS(silver_triage), silver_triage[refresh_status] = "Completed"),
+			    CALCULATE(COUNTROWS(silver_triage), NOT(ISBLANK(silver_triage[refresh_status]))),
+			    0
+			) * 100
+
+	measure 'Runaway Container Count' =
+			CALCULATE(
+			    DISTINCTCOUNT(gold_mashup_health[container_pid]),
+			    gold_mashup_health[is_runaway] = TRUE()
+			)
+
+	measure 'Spool Disk Status' =
+			VAR FreePct = [Spool Free Space %]
+			RETURN
+			    SWITCH (
+			        TRUE (),
+			        ISBLANK ( FreePct ),    "Unknown",
+			        FreePct <= 5,           "CRITICAL",
+			        FreePct <= 15,          "LOW",
+			        "OK"
+			    )
+
+	measure 'Spool Free Space %' = MIN ( gold_gateway_health[spool_free_pct] )
+
+	measure 'Spool Throughput (MB/s)' =
+			VAR TotalBytes = SUMX ( gold_query_performance, gold_query_performance[spool_total_bytes_sum] )
+			VAR TotalWriteMs = SUMX ( gold_query_performance, gold_query_performance[spool_writing_ms_avg] * gold_query_performance[query_count] )
+			RETURN
+			    DIVIDE (
+			        DIVIDE ( TotalBytes, 1048576 ),    -- bytes to MB
+			        DIVIDE ( TotalWriteMs, 1000 ),     -- ms to seconds
+			        0
+			    )
+
+	measure 'Spooled Query %' =
+			AVERAGEX ( gold_query_performance, gold_query_performance[spooled_pct] )
+			
+			// ---- Mashup process health (PAIN #5) [NET-NEW] ----
+			// Peak working set across mashup containers per gateway; drives the "runaway" alert.
+			Peak Mashup Working Set (MB) =
+			    MAX ( gold_mashup_health[peak_working_set_mb] )
+			
+			Runaway Mashup Containers =
+			    CALCULATE (
+			        COUNTROWS ( gold_mashup_health ),
+			        gold_mashup_health[runaway_container] = TRUE ()
+			    )
+			
+			Avg Mashup Working Set (MB) =
+			    AVERAGE ( gold_mashup_health[avg_working_set_mb] )
+
+	measure 'System CPU - Gateway CPU Gap %' = AVERAGE ( gold_gateway_health[system_cpu_avg] ) - AVERAGE ( gold_gateway_health[cpu_pct_avg] )
+
+	measure 'Total Data Spooled (GB)' =
+			DIVIDE (
+			    SUMX ( gold_query_performance, gold_query_performance[spool_total_bytes_sum] ),
+			    1073741824,   -- bytes to GB
+			    0
+			)
+
+	measure 'Total Errors' = SUMX ( gold_query_performance, gold_query_performance[error_count] )
+
+	measure 'Total Queries' = SUMX ( gold_query_performance, gold_query_performance[query_count] )
+
+	measure 'Triage Coverage %' =
+			VAR TriagedCount =
+			    CALCULATE (
+			        COUNTROWS ( silver_triage ),
+			        silver_triage[triage_confidence] IN { "EXACT_REQUESTID", "TIME_WINDOW" }
+			    )
+			VAR TotalFailed = COUNTROWS ( silver_triage )
+			RETURN
+			    DIVIDE ( TriagedCount, TotalFailed, 0 ) * 100
+
+	column _
+		dataType: int64
+		isHidden
+		summarizeBy: none
+		sourceColumn: [_]
+
+	partition _Measures = calculated
+		mode: import
+		source = ROW("_", 1)
+

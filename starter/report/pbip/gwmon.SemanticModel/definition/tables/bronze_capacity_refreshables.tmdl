@@ -1,0 +1,24 @@
+﻿table bronze_capacity_refreshables
+
+	column refresh_time
+		dataType: dateTime
+		summarizeBy: none
+		sourceColumn: refresh_time
+
+	column DatasetId
+		dataType: string
+		summarizeBy: none
+		sourceColumn: DatasetId
+
+	column status
+		dataType: string
+		summarizeBy: none
+		sourceColumn: status
+
+	partition bronze_capacity_refreshables = entity
+		mode: directLake
+		source
+			entityName: bronze_capacity_refreshables
+			schemaName: dbo
+			expressionSource: DirectLakeSource
+

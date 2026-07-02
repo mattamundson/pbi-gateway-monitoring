@@ -55,10 +55,19 @@ can't render a visual, but it proves every field a visual references exists in t
 model. Run it after editing either the report or the measures. Current status: **PASS**
 (157 queryRefs, 113 distinct, 0 unresolved).
 
-## Finalize in Desktop (the one manual pass)
+## Finalize in Desktop (the one manual pass) — RECOMMENDED: open the PBIP
 
-1. Open `dist/gwmon_model.pbit` in Power BI Desktop (Sept 2024+).
-2. Edit the `DirectLakeSource` M expression -> your Lakehouse SQL analytics endpoint.
+The easiest path is the assembled **PBIP project** (`../pbip/gwmon.pbip`) — one double-click
+loads the model **and** the 14-page report together:
+
+1. Double-click **`starter/report/pbip/gwmon.pbip`** in Power BI Desktop (Sept 2024+ with the
+   PBIP preview enabled: *Options > Preview features > Power BI Project (.pbip) save*).
+2. Edit the `DirectLakeSource` expression -> your Lakehouse SQL analytics endpoint.
 3. Add `dim_date` values (mark-as-date-table is pre-flagged) so time-intelligence resolves.
-4. Load `../gateway_monitor_v2.report.json` (the 13-page PBIR report) against this model.
-5. *Save As `.pbix`* — that Desktop step is the only way to get a model-bearing `.pbix`.
+4. *Save As `.pbix`* — that Desktop step is the only way to get a model-bearing `.pbix`.
+
+Rebuild the PBIP after editing the report/measures: `python build_pbip.py` (auto-discovers the
+pinned `pbi-tools.core`; regenerates the TMDL model from the `.dax` files).
+
+**Fallback** if your Desktop build predates PBIP support: open `dist/gwmon_model.pbit`, then
+*File > Open* `../gateway_monitor_v2.report.json`, then *Save As `.pbix`*.

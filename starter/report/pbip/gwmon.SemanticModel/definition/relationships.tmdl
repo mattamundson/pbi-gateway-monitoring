@@ -1,0 +1,8 @@
+﻿relationship date_health
+	fromColumn: gold_gateway_health.last_heartbeat_utc
+	toColumn: dim_date.Date
+
+relationship date_triage
+	fromColumn: silver_triage.event_time
+	toColumn: dim_date.Date
+

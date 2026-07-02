@@ -1,0 +1,20 @@
+﻿model Model
+	culture: en-US
+	defaultPowerBIDataSourceVersion: powerBI_V3
+	sourceQueryCulture: en-US
+
+annotation __PBI_TimeIntelligenceEnabled = 0
+
+ref table gold_gateway_health
+ref table gold_query_performance
+ref table gold_cluster_load
+ref table gold_dim_gateway
+ref table gold_mashup_health
+ref table silver_triage
+ref table silver_identity_attribution
+ref table dim_date
+ref table bronze_activity_events
+ref table bronze_capacity_refreshables
+ref table bronze_capacity_metrics
+ref table _Measures
+

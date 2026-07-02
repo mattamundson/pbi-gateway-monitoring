@@ -1,0 +1,24 @@
+﻿table bronze_activity_events
+
+	column UserId
+		dataType: string
+		summarizeBy: none
+		sourceColumn: UserId
+
+	column event_time
+		dataType: dateTime
+		summarizeBy: none
+		sourceColumn: event_time
+
+	column Activity
+		dataType: string
+		summarizeBy: none
+		sourceColumn: Activity
+
+	partition bronze_activity_events = entity
+		mode: directLake
+		source
+			entityName: bronze_activity_events
+			schemaName: dbo
+			expressionSource: DirectLakeSource
+

@@ -1,0 +1,8 @@
+﻿expression DirectLakeSource =
+		let
+		    // [Unverified] Placeholder DirectLake source. In Power BI Desktop, repoint
+		    // this to your deployed Lakehouse SQL analytics endpoint (Fabric workspace).
+		    Source = Sql.Database("<lakehouse-sql-endpoint>.datawarehouse.fabric.microsoft.com", "gwmon_lakehouse")
+		in
+		    Source
+

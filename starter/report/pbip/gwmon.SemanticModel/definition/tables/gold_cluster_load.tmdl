@@ -1,0 +1,34 @@
+﻿table gold_cluster_load
+
+	column GatewayClusterName
+		dataType: string
+		summarizeBy: none
+		sourceColumn: GatewayClusterName
+
+	column cpu_utilization_pct
+		dataType: double
+		summarizeBy: none
+		sourceColumn: cpu_utilization_pct
+
+	column queries_per_node_cv
+		dataType: double
+		summarizeBy: none
+		sourceColumn: queries_per_node_cv
+
+	column load_skew_classification
+		dataType: string
+		summarizeBy: none
+		sourceColumn: load_skew_classification
+
+	column hottest_node_query_pct
+		dataType: double
+		summarizeBy: none
+		sourceColumn: hottest_node_query_pct
+
+	partition gold_cluster_load = entity
+		mode: directLake
+		source
+			entityName: gold_cluster_load
+			schemaName: dbo
+			expressionSource: DirectLakeSource
+

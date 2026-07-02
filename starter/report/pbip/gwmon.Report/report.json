@@ -1,0 +1,1094 @@
+{
+ "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/pbir/2.0.0/schema.json",
+ "_label": "[NET-NEW] v2 branded report - existing 4 pages + 10 new (RuiRomano + fuam informed)",
+ "_honesty_note": "[Unverified] Hand-authored PBIR. Open once in Power BI Desktop to finalize bindings, add dim_date, and validate DirectLake. Tenant Breadth page is admin-API gated.",
+ "version": "5.0",
+ "theme": {
+  "name": "GWMon Nexus \u00e2\u20ac\u201d Brand Theme v1",
+  "colors": {
+   "primary": "#01696F",
+   "secondary": "#20808D",
+   "error": "#A13544",
+   "warning": "#DA7101",
+   "neutral": "#7A7974"
+  },
+  "themeFile": "theme/gwmon-brand.theme.json"
+ },
+ "filters": [],
+ "pages": [
+  {
+   "name": "Executive Overview",
+   "displayName": "Executive Overview",
+   "filters": [],
+   "visualContainers": [
+    {
+     "x": 0,
+     "y": 0,
+     "z": 1000,
+     "width": 1280,
+     "height": 40,
+     "config": "{\"name\": \"txt_hdr\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 0, \"y\": 0, \"width\": 1280, \"height\": 40}}], \"singleVisual\": {\"visualType\": \"textbox\", \"objects\": {\"general\": [{\"properties\": {\"paragraphs\": [{\"textRuns\": [{\"value\": \"Executive Overview \\u2014 Gateway Estate at a Glance\", \"textStyle\": {\"fontSize\": \"16px\", \"fontWeight\": \"bold\"}}], \"horizontalTextAlignment\": \"left\"}]}}]}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 0,
+     "y": 52,
+     "z": 1000,
+     "width": 250,
+     "height": 20,
+     "config": "{\"name\": \"kpi_health_lbl\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 0, \"y\": 52, \"width\": 250, \"height\": 20}}], \"singleVisual\": {\"visualType\": \"textbox\", \"objects\": {\"general\": [{\"properties\": {\"paragraphs\": [{\"textRuns\": [{\"value\": \"Fleet Health %\", \"textStyle\": {\"fontSize\": \"10px\", \"fontWeight\": \"normal\"}}], \"horizontalTextAlignment\": \"left\"}]}}]}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 0,
+     "y": 74,
+     "z": 1,
+     "width": 250,
+     "height": 96,
+     "config": "{\"name\": \"kpi_health\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 0, \"y\": 74, \"width\": 250, \"height\": 96}}], \"singleVisual\": {\"visualType\": \"card\", \"projections\": {\"Values\": [{\"queryRef\": \"gold_gateway_health.Fleet Health Score\", \"active\": true}]}, \"objects\": {\"labels\": [{\"properties\": {\"show\": {\"expr\": {\"Literal\": {\"Value\": \"true\"}}}}}]}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 256,
+     "y": 52,
+     "z": 1000,
+     "width": 250,
+     "height": 20,
+     "config": "{\"name\": \"kpi_online_lbl\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 256, \"y\": 52, \"width\": 250, \"height\": 20}}], \"singleVisual\": {\"visualType\": \"textbox\", \"objects\": {\"general\": [{\"properties\": {\"paragraphs\": [{\"textRuns\": [{\"value\": \"Gateways Online\", \"textStyle\": {\"fontSize\": \"10px\", \"fontWeight\": \"normal\"}}], \"horizontalTextAlignment\": \"left\"}]}}]}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 256,
+     "y": 74,
+     "z": 1,
+     "width": 250,
+     "height": 96,
+     "config": "{\"name\": \"kpi_online\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 256, \"y\": 74, \"width\": 250, \"height\": 96}}], \"singleVisual\": {\"visualType\": \"card\", \"projections\": {\"Values\": [{\"queryRef\": \"gold_gateway_health.Gateways Online\", \"active\": true}]}, \"objects\": {\"labels\": [{\"properties\": {\"show\": {\"expr\": {\"Literal\": {\"Value\": \"true\"}}}}}]}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 512,
+     "y": 52,
+     "z": 1000,
+     "width": 250,
+     "height": 20,
+     "config": "{\"name\": \"kpi_fail_lbl\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 512, \"y\": 52, \"width\": 250, \"height\": 20}}], \"singleVisual\": {\"visualType\": \"textbox\", \"objects\": {\"general\": [{\"properties\": {\"paragraphs\": [{\"textRuns\": [{\"value\": \"Open Failures (24h)\", \"textStyle\": {\"fontSize\": \"10px\", \"fontWeight\": \"normal\"}}], \"horizontalTextAlignment\": \"left\"}]}}]}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 512,
+     "y": 74,
+     "z": 1,
+     "width": 250,
+     "height": 96,
+     "config": "{\"name\": \"kpi_fail\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 512, \"y\": 74, \"width\": 250, \"height\": 96}}], \"singleVisual\": {\"visualType\": \"card\", \"projections\": {\"Values\": [{\"queryRef\": \"silver_triage.Open Failures (24h)\", \"active\": true}]}, \"objects\": {\"labels\": [{\"properties\": {\"show\": {\"expr\": {\"Literal\": {\"Value\": \"true\"}}}}}]}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 768,
+     "y": 52,
+     "z": 1000,
+     "width": 250,
+     "height": 20,
+     "config": "{\"name\": \"kpi_attr_lbl\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 768, \"y\": 52, \"width\": 250, \"height\": 20}}], \"singleVisual\": {\"visualType\": \"textbox\", \"objects\": {\"general\": [{\"properties\": {\"paragraphs\": [{\"textRuns\": [{\"value\": \"Attribution Rate %\", \"textStyle\": {\"fontSize\": \"10px\", \"fontWeight\": \"normal\"}}], \"horizontalTextAlignment\": \"left\"}]}}]}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 768,
+     "y": 74,
+     "z": 1,
+     "width": 250,
+     "height": 96,
+     "config": "{\"name\": \"kpi_attr\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 768, \"y\": 74, \"width\": 250, \"height\": 96}}], \"singleVisual\": {\"visualType\": \"card\", \"projections\": {\"Values\": [{\"queryRef\": \"silver_identity_attribution.Attribution Rate %\", \"active\": true}]}, \"objects\": {\"labels\": [{\"properties\": {\"show\": {\"expr\": {\"Literal\": {\"Value\": \"true\"}}}}}]}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 1024,
+     "y": 52,
+     "z": 1000,
+     "width": 250,
+     "height": 20,
+     "config": "{\"name\": \"kpi_head_lbl\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 1024, \"y\": 52, \"width\": 250, \"height\": 20}}], \"singleVisual\": {\"visualType\": \"textbox\", \"objects\": {\"general\": [{\"properties\": {\"paragraphs\": [{\"textRuns\": [{\"value\": \"Capacity Headroom %\", \"textStyle\": {\"fontSize\": \"10px\", \"fontWeight\": \"normal\"}}], \"horizontalTextAlignment\": \"left\"}]}}]}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 1024,
+     "y": 74,
+     "z": 1,
+     "width": 250,
+     "height": 96,
+     "config": "{\"name\": \"kpi_head\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 1024, \"y\": 74, \"width\": 250, \"height\": 96}}], \"singleVisual\": {\"visualType\": \"card\", \"projections\": {\"Values\": [{\"queryRef\": \"gold_cluster_load.Capacity Headroom %\", \"active\": true}]}, \"objects\": {\"labels\": [{\"properties\": {\"show\": {\"expr\": {\"Literal\": {\"Value\": \"true\"}}}}}]}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 0,
+     "y": 190,
+     "z": 1000,
+     "width": 1280,
+     "height": 24,
+     "config": "{\"name\": \"txt_trend\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 0, \"y\": 190, \"width\": 1280, \"height\": 24}}], \"singleVisual\": {\"visualType\": \"textbox\", \"objects\": {\"general\": [{\"properties\": {\"paragraphs\": [{\"textRuns\": [{\"value\": \"Trends (historical \\u2014 requires dim_date + previous-data load)\", \"textStyle\": {\"fontSize\": \"12px\", \"fontWeight\": \"bold\"}}], \"horizontalTextAlignment\": \"left\"}]}}]}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 0,
+     "y": 218,
+     "z": 1,
+     "width": 630,
+     "height": 240,
+     "config": "{\"name\": \"ln_err\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 0, \"y\": 218, \"width\": 630, \"height\": 240}}], \"singleVisual\": {\"visualType\": \"lineChart\", \"projections\": {\"Category\": [{\"queryRef\": \"dim_date.Date\", \"active\": true}], \"Y\": [{\"queryRef\": \"silver_triage.Error Rate %\", \"active\": true}]}, \"objects\": {}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 650,
+     "y": 218,
+     "z": 1,
+     "width": 630,
+     "height": 240,
+     "config": "{\"name\": \"ln_vol\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 650, \"y\": 218, \"width\": 630, \"height\": 240}}], \"singleVisual\": {\"visualType\": \"lineChart\", \"projections\": {\"Category\": [{\"queryRef\": \"dim_date.Date\", \"active\": true}], \"Y\": [{\"queryRef\": \"gold_query_performance.Query Volume\", \"active\": true}]}, \"objects\": {}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 0,
+     "y": 470,
+     "z": 1000,
+     "width": 1280,
+     "height": 60,
+     "config": "{\"name\": \"txt_note\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 0, \"y\": 470, \"width\": 1280, \"height\": 60}}], \"singleVisual\": {\"visualType\": \"textbox\", \"objects\": {\"general\": [{\"properties\": {\"paragraphs\": [{\"textRuns\": [{\"value\": \"[Unverified] Hand-authored PBIR page \\u2014 open in Power BI Desktop to finalize bindings + validate DirectLake. Trend visuals require a Date dimension and the historical (previous-data) load described in REPORT-BUILDOUT-PLAN.md.\", \"textStyle\": {\"fontSize\": \"10px\", \"fontWeight\": \"normal\"}}], \"horizontalTextAlignment\": \"left\"}]}}]}, \"vcObjects\": {}}}"
+    }
+   ],
+   "config": "{\"name\": \"Executive Overview\", \"theme\": {\"name\": \"GWMon Nexus\"}}"
+  },
+  {
+   "name": "Fleet Overview",
+   "displayName": "Fleet Overview",
+   "filters": [],
+   "visualContainers": [
+    {
+     "x": 0,
+     "y": 0,
+     "z": 1000,
+     "width": 1280,
+     "height": 40,
+     "config": "{\"name\": \"txt_9658\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 0, \"y\": 0, \"width\": 1280, \"height\": 40}}], \"singleVisual\": {\"visualType\": \"textbox\", \"objects\": {\"general\": [{\"properties\": {\"paragraphs\": [{\"textRuns\": [{\"value\": \"Fleet Overview \\u2014 Gateway Health\"}], \"horizontalTextAlignment\": \"left\"}]}}]}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 0,
+     "y": 50,
+     "z": 3000,
+     "width": 200,
+     "height": 80,
+     "config": "{\"name\": \"slicer_cluster\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 0, \"y\": 50, \"width\": 200, \"height\": 80}}], \"singleVisual\": {\"visualType\": \"slicer\", \"projections\": {\"Values\": [{\"queryRef\": \"gold_dim_gateway.GatewayClusterName\"}]}, \"objects\": {\"data\": [{\"properties\": {\"mode\": {\"expr\": {\"Literal\": {\"Value\": \"'Dropdown'\"}}}}}]}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 210,
+     "y": 50,
+     "z": 3000,
+     "width": 200,
+     "height": 80,
+     "config": "{\"name\": \"slicer_node\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 210, \"y\": 50, \"width\": 200, \"height\": 80}}], \"singleVisual\": {\"visualType\": \"slicer\", \"projections\": {\"Values\": [{\"queryRef\": \"gold_dim_gateway.GatewayNodeName\"}]}, \"objects\": {\"data\": [{\"properties\": {\"mode\": {\"expr\": {\"Literal\": {\"Value\": \"'Dropdown'\"}}}}}]}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 0,
+     "y": 145,
+     "z": 2000,
+     "width": 230,
+     "height": 100,
+     "config": "{\"name\": \"kpi_Heartbeat_Age_(minut\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 0, \"y\": 145, \"width\": 230, \"height\": 100}}], \"singleVisual\": {\"visualType\": \"card\", \"projections\": {\"Values\": [{\"queryRef\": \"gold_gateway_health.Heartbeat Age (minutes)\", \"active\": true}]}, \"objects\": {\"labels\": [{\"properties\": {\"show\": {\"expr\": {\"Literal\": {\"Value\": \"true\"}}}}}]}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 240,
+     "y": 145,
+     "z": 2000,
+     "width": 230,
+     "height": 100,
+     "config": "{\"name\": \"kpi_Nodes_Offline\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 240, \"y\": 145, \"width\": 230, \"height\": 100}}], \"singleVisual\": {\"visualType\": \"card\", \"projections\": {\"Values\": [{\"queryRef\": \"gold_gateway_health.Nodes Offline\", \"active\": true}]}, \"objects\": {\"labels\": [{\"properties\": {\"show\": {\"expr\": {\"Literal\": {\"Value\": \"true\"}}}}}]}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 480,
+     "y": 145,
+     "z": 2000,
+     "width": 230,
+     "height": 100,
+     "config": "{\"name\": \"kpi_Node_Count\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 480, \"y\": 145, \"width\": 230, \"height\": 100}}], \"singleVisual\": {\"visualType\": \"card\", \"projections\": {\"Values\": [{\"queryRef\": \"gold_dim_gateway.Node Count\", \"active\": true}]}, \"objects\": {\"labels\": [{\"properties\": {\"show\": {\"expr\": {\"Literal\": {\"Value\": \"true\"}}}}}]}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 720,
+     "y": 145,
+     "z": 2000,
+     "width": 230,
+     "height": 100,
+     "config": "{\"name\": \"kpi_Cluster_Count\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 720, \"y\": 145, \"width\": 230, \"height\": 100}}], \"singleVisual\": {\"visualType\": \"card\", \"projections\": {\"Values\": [{\"queryRef\": \"gold_dim_gateway.Cluster Count\", \"active\": true}]}, \"objects\": {\"labels\": [{\"properties\": {\"show\": {\"expr\": {\"Literal\": {\"Value\": \"true\"}}}}}]}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 960,
+     "y": 145,
+     "z": 2000,
+     "width": 230,
+     "height": 100,
+     "config": "{\"name\": \"kpi_Avg_Gateway_CPU_%\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 960, \"y\": 145, \"width\": 230, \"height\": 100}}], \"singleVisual\": {\"visualType\": \"card\", \"projections\": {\"Values\": [{\"queryRef\": \"gold_gateway_health.Avg Gateway CPU %\", \"active\": true}]}, \"objects\": {\"labels\": [{\"properties\": {\"show\": {\"expr\": {\"Literal\": {\"Value\": \"true\"}}}}}]}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 0,
+     "y": 255,
+     "z": 2000,
+     "width": 230,
+     "height": 100,
+     "config": "{\"name\": \"kpi_Avg_Gateway_Mem_(MB)\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 0, \"y\": 255, \"width\": 230, \"height\": 100}}], \"singleVisual\": {\"visualType\": \"card\", \"projections\": {\"Values\": [{\"queryRef\": \"gold_gateway_health.Avg Gateway Mem (MB)\", \"active\": true}]}, \"objects\": {\"labels\": [{\"properties\": {\"show\": {\"expr\": {\"Literal\": {\"Value\": \"true\"}}}}}]}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 240,
+     "y": 255,
+     "z": 2000,
+     "width": 230,
+     "height": 100,
+     "config": "{\"name\": \"kpi_Network_Utilization_\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 240, \"y\": 255, \"width\": 230, \"height\": 100}}], \"singleVisual\": {\"visualType\": \"card\", \"projections\": {\"Values\": [{\"queryRef\": \"gold_gateway_health.Network Utilization %\", \"active\": true}]}, \"objects\": {\"labels\": [{\"properties\": {\"show\": {\"expr\": {\"Literal\": {\"Value\": \"true\"}}}}}]}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 480,
+     "y": 255,
+     "z": 2000,
+     "width": 230,
+     "height": 100,
+     "config": "{\"name\": \"kpi_Cluster_Load_Skew_Sc\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 480, \"y\": 255, \"width\": 230, \"height\": 100}}], \"singleVisual\": {\"visualType\": \"card\", \"projections\": {\"Values\": [{\"queryRef\": \"gold_cluster_load.Cluster Load Skew Score\", \"active\": true}]}, \"objects\": {\"labels\": [{\"properties\": {\"show\": {\"expr\": {\"Literal\": {\"Value\": \"true\"}}}}}]}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 720,
+     "y": 255,
+     "z": 2000,
+     "width": 230,
+     "height": 100,
+     "config": "{\"name\": \"kpi_Hottest_Node_Query_%\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 720, \"y\": 255, \"width\": 230, \"height\": 100}}], \"singleVisual\": {\"visualType\": \"card\", \"projections\": {\"Values\": [{\"queryRef\": \"gold_cluster_load.Hottest Node Query %\", \"active\": true}]}, \"objects\": {\"labels\": [{\"properties\": {\"show\": {\"expr\": {\"Literal\": {\"Value\": \"true\"}}}}}]}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 960,
+     "y": 255,
+     "z": 2000,
+     "width": 230,
+     "height": 100,
+     "config": "{\"name\": \"kpi_System_CPU_-_Gateway\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 960, \"y\": 255, \"width\": 230, \"height\": 100}}], \"singleVisual\": {\"visualType\": \"card\", \"projections\": {\"Values\": [{\"queryRef\": \"gold_gateway_health.System CPU - Gateway CPU Gap %\", \"active\": true}]}, \"objects\": {\"labels\": [{\"properties\": {\"show\": {\"expr\": {\"Literal\": {\"Value\": \"true\"}}}}}]}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 0,
+     "y": 370,
+     "z": 2001,
+     "width": 620,
+     "height": 240,
+     "config": "{\"name\": \"mat_fleet_status\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 0, \"y\": 370, \"width\": 620, \"height\": 240}}], \"singleVisual\": {\"visualType\": \"matrix\", \"projections\": {\"Rows\": [{\"queryRef\": \"gold_dim_gateway.GatewayNodeName\"}, {\"queryRef\": \"gold_dim_gateway.GatewayClusterName\"}, {\"queryRef\": \"gold_dim_gateway.Version\"}, {\"queryRef\": \"gold_dim_gateway.Status\"}], \"Values\": [{\"queryRef\": \"gold_gateway_health.Heartbeat Age (minutes)\", \"active\": true}, {\"queryRef\": \"gold_gateway_health.Avg Gateway CPU %\", \"active\": true}, {\"queryRef\": \"gold_gateway_health.Network Utilization %\", \"active\": true}, {\"queryRef\": \"gold_gateway_health.Spool Free Space %\", \"active\": true}]}, \"objects\": {}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 640,
+     "y": 370,
+     "z": 2001,
+     "width": 620,
+     "height": 240,
+     "config": "{\"name\": \"bar_cluster_load\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 640, \"y\": 370, \"width\": 620, \"height\": 240}}], \"singleVisual\": {\"visualType\": \"clusteredBarChart\", \"projections\": {\"Category\": [{\"queryRef\": \"gold_cluster_load.GatewayClusterName\"}], \"Y\": [{\"queryRef\": \"gold_cluster_load.Cluster Load Skew Score\", \"active\": true}]}, \"objects\": {}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 0,
+     "y": 625,
+     "z": 2001,
+     "width": 620,
+     "height": 220,
+     "config": "{\"name\": \"line_latency\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 0, \"y\": 625, \"width\": 620, \"height\": 220}}], \"singleVisual\": {\"visualType\": \"lineChart\", \"projections\": {\"Category\": [{\"queryRef\": \"gold_gateway_health._partition_date\"}], \"Y\": [{\"queryRef\": \"gold_gateway_health.Network Latency P95 (ms)\", \"active\": true}]}, \"objects\": {}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 640,
+     "y": 625,
+     "z": 1000,
+     "width": 620,
+     "height": 50,
+     "config": "{\"name\": \"txt_104c\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 640, \"y\": 625, \"width\": 620, \"height\": 50}}], \"singleVisual\": {\"visualType\": \"textbox\", \"objects\": {\"general\": [{\"properties\": {\"paragraphs\": [{\"textRuns\": [{\"value\": \"Gateway Status: Live = heartbeat < 5 min | Degraded = 5-10 min | OFFLINE > 10 min\"}], \"horizontalTextAlignment\": \"left\"}]}}]}, \"vcObjects\": {}}}"
+    }
+   ],
+   "config": "{\"activeSectionIndex\": 0, \"defaultDrillFilterOtherVisuals\": true, \"hasReadOnlyMode\": false, \"objects\": {}}"
+  },
+  {
+   "name": "Query & Identity",
+   "displayName": "Query & Identity",
+   "filters": [],
+   "visualContainers": [
+    {
+     "x": 0,
+     "y": 0,
+     "z": 1000,
+     "width": 1280,
+     "height": 40,
+     "config": "{\"name\": \"txt_2a2f\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 0, \"y\": 0, \"width\": 1280, \"height\": 40}}], \"singleVisual\": {\"visualType\": \"textbox\", \"objects\": {\"general\": [{\"properties\": {\"paragraphs\": [{\"textRuns\": [{\"value\": \"Query & Identity \\u2014 Duration, Attribution, Data Sources\"}], \"horizontalTextAlignment\": \"left\"}]}}]}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 0,
+     "y": 50,
+     "z": 3000,
+     "width": 200,
+     "height": 80,
+     "config": "{\"name\": \"slicer_datasource\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 0, \"y\": 50, \"width\": 200, \"height\": 80}}], \"singleVisual\": {\"visualType\": \"slicer\", \"projections\": {\"Values\": [{\"queryRef\": \"gold_query_performance.DataSource\"}]}, \"objects\": {\"data\": [{\"properties\": {\"mode\": {\"expr\": {\"Literal\": {\"Value\": \"'Dropdown'\"}}}}}]}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 210,
+     "y": 50,
+     "z": 3000,
+     "width": 200,
+     "height": 80,
+     "config": "{\"name\": \"slicer_qtype\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 210, \"y\": 50, \"width\": 200, \"height\": 80}}], \"singleVisual\": {\"visualType\": \"slicer\", \"projections\": {\"Values\": [{\"queryRef\": \"gold_query_performance.QueryType\"}]}, \"objects\": {\"data\": [{\"properties\": {\"mode\": {\"expr\": {\"Literal\": {\"Value\": \"'Dropdown'\"}}}}}]}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 0,
+     "y": 145,
+     "z": 2000,
+     "width": 230,
+     "height": 100,
+     "config": "{\"name\": \"kpi_Total_Queries\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 0, \"y\": 145, \"width\": 230, \"height\": 100}}], \"singleVisual\": {\"visualType\": \"card\", \"projections\": {\"Values\": [{\"queryRef\": \"gold_query_performance.Total Queries\", \"active\": true}]}, \"objects\": {\"labels\": [{\"properties\": {\"show\": {\"expr\": {\"Literal\": {\"Value\": \"true\"}}}}}]}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 240,
+     "y": 145,
+     "z": 2000,
+     "width": 230,
+     "height": 100,
+     "config": "{\"name\": \"kpi_Avg_Query_Duration_(\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 240, \"y\": 145, \"width\": 230, \"height\": 100}}], \"singleVisual\": {\"visualType\": \"card\", \"projections\": {\"Values\": [{\"queryRef\": \"gold_query_performance.Avg Query Duration (ms)\", \"active\": true}]}, \"objects\": {\"labels\": [{\"properties\": {\"show\": {\"expr\": {\"Literal\": {\"Value\": \"true\"}}}}}]}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 480,
+     "y": 145,
+     "z": 2000,
+     "width": 230,
+     "height": 100,
+     "config": "{\"name\": \"kpi_P95_Query_Duration_(\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 480, \"y\": 145, \"width\": 230, \"height\": 100}}], \"singleVisual\": {\"visualType\": \"card\", \"projections\": {\"Values\": [{\"queryRef\": \"gold_query_performance.P95 Query Duration (ms)\", \"active\": true}]}, \"objects\": {\"labels\": [{\"properties\": {\"show\": {\"expr\": {\"Literal\": {\"Value\": \"true\"}}}}}]}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 720,
+     "y": 145,
+     "z": 2000,
+     "width": 230,
+     "height": 100,
+     "config": "{\"name\": \"kpi_Max_Query_Duration_(\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 720, \"y\": 145, \"width\": 230, \"height\": 100}}], \"singleVisual\": {\"visualType\": \"card\", \"projections\": {\"Values\": [{\"queryRef\": \"gold_query_performance.Max Query Duration (ms)\", \"active\": true}]}, \"objects\": {\"labels\": [{\"properties\": {\"show\": {\"expr\": {\"Literal\": {\"Value\": \"true\"}}}}}]}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 960,
+     "y": 145,
+     "z": 2000,
+     "width": 230,
+     "height": 100,
+     "config": "{\"name\": \"kpi_Gateway_Error_Rate_%\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 960, \"y\": 145, \"width\": 230, \"height\": 100}}], \"singleVisual\": {\"visualType\": \"card\", \"projections\": {\"Values\": [{\"queryRef\": \"gold_query_performance.Gateway Error Rate %\", \"active\": true}]}, \"objects\": {\"labels\": [{\"properties\": {\"show\": {\"expr\": {\"Literal\": {\"Value\": \"true\"}}}}}]}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 0,
+     "y": 255,
+     "z": 2001,
+     "width": 840,
+     "height": 240,
+     "config": "{\"name\": \"line_duration_trend\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 0, \"y\": 255, \"width\": 840, \"height\": 240}}], \"singleVisual\": {\"visualType\": \"lineChart\", \"projections\": {\"Category\": [{\"queryRef\": \"gold_query_performance.hour_utc\"}], \"Y\": [{\"queryRef\": \"gold_query_performance.Avg Query Duration (ms)\", \"active\": true}]}, \"objects\": {}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 850,
+     "y": 255,
+     "z": 2001,
+     "width": 410,
+     "height": 240,
+     "config": "{\"name\": \"bar_attribution\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 850, \"y\": 255, \"width\": 410, \"height\": 240}}], \"singleVisual\": {\"visualType\": \"stackedBarChart\", \"projections\": {\"Category\": [{\"queryRef\": \"silver_identity_attribution.attribution_confidence\"}], \"Y\": [{\"queryRef\": \"silver_identity_attribution.Attribution % Evaluation Context\", \"active\": true}, {\"queryRef\": \"silver_identity_attribution.Attribution % Fuzzy Time Window\", \"active\": true}, {\"queryRef\": \"silver_identity_attribution.Attribution % Unattributed\", \"active\": true}]}, \"objects\": {}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 0,
+     "y": 510,
+     "z": 2001,
+     "width": 420,
+     "height": 240,
+     "config": "{\"name\": \"bar_top_datasources\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 0, \"y\": 510, \"width\": 420, \"height\": 240}}], \"singleVisual\": {\"visualType\": \"clusteredBarChart\", \"projections\": {\"Category\": [{\"queryRef\": \"gold_query_performance.DataSource\"}], \"Y\": [{\"queryRef\": \"gold_query_performance.Avg Query Duration (ms)\", \"active\": true}]}, \"objects\": {}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 430,
+     "y": 510,
+     "z": 2001,
+     "width": 420,
+     "height": 240,
+     "config": "{\"name\": \"bar_by_artifact\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 430, \"y\": 510, \"width\": 420, \"height\": 240}}], \"singleVisual\": {\"visualType\": \"clusteredBarChart\", \"projections\": {\"Category\": [{\"queryRef\": \"silver_identity_attribution.artifact_id\"}], \"Y\": [{\"queryRef\": \"gold_query_performance.Total Queries\", \"active\": true}]}, \"objects\": {}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 860,
+     "y": 510,
+     "z": 1000,
+     "width": 400,
+     "height": 60,
+     "config": "{\"name\": \"txt_3a68\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 860, \"y\": 510, \"width\": 400, \"height\": 60}}], \"singleVisual\": {\"visualType\": \"textbox\", \"objects\": {\"general\": [{\"properties\": {\"paragraphs\": [{\"textRuns\": [{\"value\": \"\\u26a0 Attribution is best-effort only. Paginated Reports, Dataflow Gen1, and DirectQuery sessions are not reliably attributed.\"}], \"horizontalTextAlignment\": \"left\"}]}}]}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 0,
+     "y": 765,
+     "z": 2001,
+     "width": 1260,
+     "height": 220,
+     "config": "{\"name\": \"mat_query_detail\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 0, \"y\": 765, \"width\": 1260, \"height\": 220}}], \"singleVisual\": {\"visualType\": \"matrix\", \"projections\": {\"Rows\": [{\"queryRef\": \"gold_query_performance.DataSource\"}, {\"queryRef\": \"gold_query_performance.QueryType\"}, {\"queryRef\": \"silver_identity_attribution.artifact_id\"}], \"Values\": [{\"queryRef\": \"gold_query_performance.Total Queries\", \"active\": true}, {\"queryRef\": \"gold_query_performance.Avg Query Duration (ms)\", \"active\": true}, {\"queryRef\": \"gold_query_performance.P95 Query Duration (ms)\", \"active\": true}, {\"queryRef\": \"gold_query_performance.Gateway Error Rate %\", \"active\": true}]}, \"objects\": {}, \"vcObjects\": {}}}"
+    }
+   ],
+   "config": "{\"activeSectionIndex\": 0, \"defaultDrillFilterOtherVisuals\": true, \"hasReadOnlyMode\": false, \"objects\": {}}"
+  },
+  {
+   "name": "Failures & Triage",
+   "displayName": "Failures & Triage",
+   "filters": [],
+   "visualContainers": [
+    {
+     "x": 0,
+     "y": 0,
+     "z": 1000,
+     "width": 1280,
+     "height": 40,
+     "config": "{\"name\": \"txt_6a5b\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 0, \"y\": 0, \"width\": 1280, \"height\": 40}}], \"singleVisual\": {\"visualType\": \"textbox\", \"objects\": {\"general\": [{\"properties\": {\"paragraphs\": [{\"textRuns\": [{\"value\": \"Failures & Triage \\u2014 Root-Cause Buckets\"}], \"horizontalTextAlignment\": \"left\"}]}}]}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 0,
+     "y": 50,
+     "z": 3000,
+     "width": 200,
+     "height": 80,
+     "config": "{\"name\": \"slicer_failure_layer\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 0, \"y\": 50, \"width\": 200, \"height\": 80}}], \"singleVisual\": {\"visualType\": \"slicer\", \"projections\": {\"Values\": [{\"queryRef\": \"silver_triage.failure_layer\"}]}, \"objects\": {\"data\": [{\"properties\": {\"mode\": {\"expr\": {\"Literal\": {\"Value\": \"'Dropdown'\"}}}}}]}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 210,
+     "y": 50,
+     "z": 3000,
+     "width": 200,
+     "height": 80,
+     "config": "{\"name\": \"slicer_triage_conf\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 210, \"y\": 50, \"width\": 200, \"height\": 80}}], \"singleVisual\": {\"visualType\": \"slicer\", \"projections\": {\"Values\": [{\"queryRef\": \"silver_triage.triage_confidence\"}]}, \"objects\": {\"data\": [{\"properties\": {\"mode\": {\"expr\": {\"Literal\": {\"Value\": \"'Dropdown'\"}}}}}]}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 0,
+     "y": 145,
+     "z": 2000,
+     "width": 230,
+     "height": 100,
+     "config": "{\"name\": \"kpi_Total_Errors\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 0, \"y\": 145, \"width\": 230, \"height\": 100}}], \"singleVisual\": {\"visualType\": \"card\", \"projections\": {\"Values\": [{\"queryRef\": \"gold_query_performance.Total Errors\", \"active\": true}]}, \"objects\": {\"labels\": [{\"properties\": {\"show\": {\"expr\": {\"Literal\": {\"Value\": \"true\"}}}}}]}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 240,
+     "y": 145,
+     "z": 2000,
+     "width": 230,
+     "height": 100,
+     "config": "{\"name\": \"kpi_Gateway_Error_Rate_%\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 240, \"y\": 145, \"width\": 230, \"height\": 100}}], \"singleVisual\": {\"visualType\": \"card\", \"projections\": {\"Values\": [{\"queryRef\": \"gold_query_performance.Gateway Error Rate %\", \"active\": true}]}, \"objects\": {\"labels\": [{\"properties\": {\"show\": {\"expr\": {\"Literal\": {\"Value\": \"true\"}}}}}]}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 480,
+     "y": 145,
+     "z": 2000,
+     "width": 230,
+     "height": 100,
+     "config": "{\"name\": \"kpi_Error_Rate_5min_%\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 480, \"y\": 145, \"width\": 230, \"height\": 100}}], \"singleVisual\": {\"visualType\": \"card\", \"projections\": {\"Values\": [{\"queryRef\": \"gold_gateway_health.Error Rate 5min %\", \"active\": true}]}, \"objects\": {\"labels\": [{\"properties\": {\"show\": {\"expr\": {\"Literal\": {\"Value\": \"true\"}}}}}]}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 720,
+     "y": 145,
+     "z": 2000,
+     "width": 230,
+     "height": 100,
+     "config": "{\"name\": \"kpi_Triage_Coverage_%\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 720, \"y\": 145, \"width\": 230, \"height\": 100}}], \"singleVisual\": {\"visualType\": \"card\", \"projections\": {\"Values\": [{\"queryRef\": \"silver_triage.Triage Coverage %\", \"active\": true}]}, \"objects\": {\"labels\": [{\"properties\": {\"show\": {\"expr\": {\"Literal\": {\"Value\": \"true\"}}}}}]}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 960,
+     "y": 145,
+     "z": 2000,
+     "width": 230,
+     "height": 100,
+     "config": "{\"name\": \"kpi_Failures_With_OS_Eve\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 960, \"y\": 145, \"width\": 230, \"height\": 100}}], \"singleVisual\": {\"visualType\": \"card\", \"projections\": {\"Values\": [{\"queryRef\": \"silver_triage.Failures With OS Event\", \"active\": true}]}, \"objects\": {\"labels\": [{\"properties\": {\"show\": {\"expr\": {\"Literal\": {\"Value\": \"true\"}}}}}]}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 0,
+     "y": 255,
+     "z": 2001,
+     "width": 620,
+     "height": 230,
+     "config": "{\"name\": \"line_error_trend\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 0, \"y\": 255, \"width\": 620, \"height\": 230}}], \"singleVisual\": {\"visualType\": \"lineChart\", \"projections\": {\"Category\": [{\"queryRef\": \"gold_query_performance._partition_date\"}], \"Y\": [{\"queryRef\": \"gold_query_performance.Gateway Error Rate %\", \"active\": true}]}, \"objects\": {}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 640,
+     "y": 255,
+     "z": 2001,
+     "width": 620,
+     "height": 230,
+     "config": "{\"name\": \"bar_failure_layer\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 640, \"y\": 255, \"width\": 620, \"height\": 230}}], \"singleVisual\": {\"visualType\": \"clusteredBarChart\", \"projections\": {\"Category\": [{\"queryRef\": \"silver_triage.failure_layer\"}], \"Y\": [{\"queryRef\": \"silver_triage.Failures With OS Event\", \"active\": true}]}, \"objects\": {}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 0,
+     "y": 500,
+     "z": 2001,
+     "width": 1260,
+     "height": 260,
+     "config": "{\"name\": \"mat_triage_detail\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 0, \"y\": 500, \"width\": 1260, \"height\": 260}}], \"singleVisual\": {\"visualType\": \"matrix\", \"projections\": {\"Rows\": [{\"queryRef\": \"silver_triage.DataSource\"}, {\"queryRef\": \"silver_triage.ErrorMessage\"}, {\"queryRef\": \"silver_triage.failure_layer\"}, {\"queryRef\": \"silver_triage.triage_confidence\"}], \"Values\": [{\"queryRef\": \"gold_query_performance.Total Errors\", \"active\": true}, {\"queryRef\": \"silver_triage.Triage Coverage %\", \"active\": true}]}, \"objects\": {}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 0,
+     "y": 775,
+     "z": 2001,
+     "width": 1260,
+     "height": 200,
+     "config": "{\"name\": \"mat_os_events\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 0, \"y\": 775, \"width\": 1260, \"height\": 200}}], \"singleVisual\": {\"visualType\": \"matrix\", \"projections\": {\"Rows\": [{\"queryRef\": \"silver_triage.evt_message\"}, {\"queryRef\": \"silver_triage.EventId\"}, {\"queryRef\": \"silver_triage.GatewayObjectId\"}], \"Values\": [{\"queryRef\": \"silver_triage.Failures With OS Event\", \"active\": true}]}, \"objects\": {}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 0,
+     "y": 985,
+     "z": 1000,
+     "width": 1260,
+     "height": 60,
+     "config": "{\"name\": \"txt_84d7\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 0, \"y\": 985, \"width\": 1260, \"height\": 60}}], \"singleVisual\": {\"visualType\": \"textbox\", \"objects\": {\"general\": [{\"properties\": {\"paragraphs\": [{\"textRuns\": [{\"value\": \"Triage confidence: EXACT_REQUESTID = reliable | TIME_WINDOW = medium confidence | HOST_ONLY = temporal coincidence only\"}], \"horizontalTextAlignment\": \"left\"}]}}]}, \"vcObjects\": {}}}"
+    }
+   ],
+   "config": "{\"activeSectionIndex\": 0, \"defaultDrillFilterOtherVisuals\": true, \"hasReadOnlyMode\": false, \"objects\": {}}"
+  },
+  {
+   "name": "Capacity & Spool",
+   "displayName": "Capacity & Spool",
+   "filters": [],
+   "visualContainers": [
+    {
+     "x": 0,
+     "y": 0,
+     "z": 1000,
+     "width": 1280,
+     "height": 40,
+     "config": "{\"name\": \"txt_642b\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 0, \"y\": 0, \"width\": 1280, \"height\": 40}}], \"singleVisual\": {\"visualType\": \"textbox\", \"objects\": {\"general\": [{\"properties\": {\"paragraphs\": [{\"textRuns\": [{\"value\": \"Capacity & Spool \\u2014 CPU, Memory, Disk Spooler, Network\"}], \"horizontalTextAlignment\": \"left\"}]}}]}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 0,
+     "y": 50,
+     "z": 3000,
+     "width": 200,
+     "height": 80,
+     "config": "{\"name\": \"slicer_node_cap\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 0, \"y\": 50, \"width\": 200, \"height\": 80}}], \"singleVisual\": {\"visualType\": \"slicer\", \"projections\": {\"Values\": [{\"queryRef\": \"gold_dim_gateway.GatewayNodeName\"}]}, \"objects\": {\"data\": [{\"properties\": {\"mode\": {\"expr\": {\"Literal\": {\"Value\": \"'Dropdown'\"}}}}}]}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 0,
+     "y": 145,
+     "z": 2000,
+     "width": 230,
+     "height": 100,
+     "config": "{\"name\": \"kpi_Avg_Gateway_CPU_%\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 0, \"y\": 145, \"width\": 230, \"height\": 100}}], \"singleVisual\": {\"visualType\": \"card\", \"projections\": {\"Values\": [{\"queryRef\": \"gold_gateway_health.Avg Gateway CPU %\", \"active\": true}]}, \"objects\": {\"labels\": [{\"properties\": {\"show\": {\"expr\": {\"Literal\": {\"Value\": \"true\"}}}}}]}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 240,
+     "y": 145,
+     "z": 2000,
+     "width": 230,
+     "height": 100,
+     "config": "{\"name\": \"kpi_Avg_Gateway_Mem_(MB)\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 240, \"y\": 145, \"width\": 230, \"height\": 100}}], \"singleVisual\": {\"visualType\": \"card\", \"projections\": {\"Values\": [{\"queryRef\": \"gold_gateway_health.Avg Gateway Mem (MB)\", \"active\": true}]}, \"objects\": {\"labels\": [{\"properties\": {\"show\": {\"expr\": {\"Literal\": {\"Value\": \"true\"}}}}}]}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 480,
+     "y": 145,
+     "z": 2000,
+     "width": 230,
+     "height": 100,
+     "config": "{\"name\": \"kpi_System_CPU_-_Gateway\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 480, \"y\": 145, \"width\": 230, \"height\": 100}}], \"singleVisual\": {\"visualType\": \"card\", \"projections\": {\"Values\": [{\"queryRef\": \"gold_gateway_health.System CPU - Gateway CPU Gap %\", \"active\": true}]}, \"objects\": {\"labels\": [{\"properties\": {\"show\": {\"expr\": {\"Literal\": {\"Value\": \"true\"}}}}}]}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 720,
+     "y": 145,
+     "z": 2000,
+     "width": 230,
+     "height": 100,
+     "config": "{\"name\": \"kpi_Spool_Free_Space_%\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 720, \"y\": 145, \"width\": 230, \"height\": 100}}], \"singleVisual\": {\"visualType\": \"card\", \"projections\": {\"Values\": [{\"queryRef\": \"gold_gateway_health.Spool Free Space %\", \"active\": true}]}, \"objects\": {\"labels\": [{\"properties\": {\"show\": {\"expr\": {\"Literal\": {\"Value\": \"true\"}}}}}]}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 960,
+     "y": 145,
+     "z": 2000,
+     "width": 230,
+     "height": 100,
+     "config": "{\"name\": \"kpi_Spool_Disk_Status\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 960, \"y\": 145, \"width\": 230, \"height\": 100}}], \"singleVisual\": {\"visualType\": \"card\", \"projections\": {\"Values\": [{\"queryRef\": \"gold_gateway_health.Spool Disk Status\", \"active\": true}]}, \"objects\": {\"labels\": [{\"properties\": {\"show\": {\"expr\": {\"Literal\": {\"Value\": \"true\"}}}}}]}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 0,
+     "y": 255,
+     "z": 2000,
+     "width": 230,
+     "height": 100,
+     "config": "{\"name\": \"kpi_Spool_Throughput_(MB\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 0, \"y\": 255, \"width\": 230, \"height\": 100}}], \"singleVisual\": {\"visualType\": \"card\", \"projections\": {\"Values\": [{\"queryRef\": \"gold_query_performance.Spool Throughput (MB/s)\", \"active\": true}]}, \"objects\": {\"labels\": [{\"properties\": {\"show\": {\"expr\": {\"Literal\": {\"Value\": \"true\"}}}}}]}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 240,
+     "y": 255,
+     "z": 2000,
+     "width": 230,
+     "height": 100,
+     "config": "{\"name\": \"kpi_Total_Data_Spooled_(\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 240, \"y\": 255, \"width\": 230, \"height\": 100}}], \"singleVisual\": {\"visualType\": \"card\", \"projections\": {\"Values\": [{\"queryRef\": \"gold_query_performance.Total Data Spooled (GB)\", \"active\": true}]}, \"objects\": {\"labels\": [{\"properties\": {\"show\": {\"expr\": {\"Literal\": {\"Value\": \"true\"}}}}}]}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 480,
+     "y": 255,
+     "z": 2000,
+     "width": 230,
+     "height": 100,
+     "config": "{\"name\": \"kpi_Spooled_Query_%\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 480, \"y\": 255, \"width\": 230, \"height\": 100}}], \"singleVisual\": {\"visualType\": \"card\", \"projections\": {\"Values\": [{\"queryRef\": \"gold_query_performance.Spooled Query %\", \"active\": true}]}, \"objects\": {\"labels\": [{\"properties\": {\"show\": {\"expr\": {\"Literal\": {\"Value\": \"true\"}}}}}]}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 720,
+     "y": 255,
+     "z": 2000,
+     "width": 230,
+     "height": 100,
+     "config": "{\"name\": \"kpi_Network_Utilization_\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 720, \"y\": 255, \"width\": 230, \"height\": 100}}], \"singleVisual\": {\"visualType\": \"card\", \"projections\": {\"Values\": [{\"queryRef\": \"gold_gateway_health.Network Utilization %\", \"active\": true}]}, \"objects\": {\"labels\": [{\"properties\": {\"show\": {\"expr\": {\"Literal\": {\"Value\": \"true\"}}}}}]}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 960,
+     "y": 255,
+     "z": 2000,
+     "width": 230,
+     "height": 100,
+     "config": "{\"name\": \"kpi_Network_Status\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 960, \"y\": 255, \"width\": 230, \"height\": 100}}], \"singleVisual\": {\"visualType\": \"card\", \"projections\": {\"Values\": [{\"queryRef\": \"gold_gateway_health.Network Status\", \"active\": true}]}, \"objects\": {\"labels\": [{\"properties\": {\"show\": {\"expr\": {\"Literal\": {\"Value\": \"true\"}}}}}]}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 0,
+     "y": 370,
+     "z": 2001,
+     "width": 420,
+     "height": 220,
+     "config": "{\"name\": \"line_cpu_trend\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 0, \"y\": 370, \"width\": 420, \"height\": 220}}], \"singleVisual\": {\"visualType\": \"lineChart\", \"projections\": {\"Category\": [{\"queryRef\": \"gold_gateway_health._partition_date\"}], \"Y\": [{\"queryRef\": \"gold_gateway_health.Avg Gateway CPU %\", \"active\": true}]}, \"objects\": {}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 430,
+     "y": 370,
+     "z": 2001,
+     "width": 420,
+     "height": 220,
+     "config": "{\"name\": \"line_spool_trend\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 430, \"y\": 370, \"width\": 420, \"height\": 220}}], \"singleVisual\": {\"visualType\": \"lineChart\", \"projections\": {\"Category\": [{\"queryRef\": \"gold_gateway_health._partition_date\"}], \"Y\": [{\"queryRef\": \"gold_gateway_health.Spool Free Space %\", \"active\": true}]}, \"objects\": {}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 860,
+     "y": 370,
+     "z": 2001,
+     "width": 400,
+     "height": 220,
+     "config": "{\"name\": \"line_network_trend\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 860, \"y\": 370, \"width\": 400, \"height\": 220}}], \"singleVisual\": {\"visualType\": \"lineChart\", \"projections\": {\"Category\": [{\"queryRef\": \"gold_gateway_health._partition_date\"}], \"Y\": [{\"queryRef\": \"gold_gateway_health.Network Utilization %\", \"active\": true}]}, \"objects\": {}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 0,
+     "y": 605,
+     "z": 2001,
+     "width": 620,
+     "height": 240,
+     "config": "{\"name\": \"scatter_spool_vs_duration\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 0, \"y\": 605, \"width\": 620, \"height\": 240}}], \"singleVisual\": {\"visualType\": \"scatterChart\", \"projections\": {\"Details\": [{\"queryRef\": \"gold_query_performance.DataSource\"}], \"X\": [{\"queryRef\": \"gold_query_performance.Spool Throughput (MB/s)\", \"active\": true}], \"Y\": [{\"queryRef\": \"gold_query_performance.Avg Query Duration (ms)\", \"active\": true}]}, \"objects\": {}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 640,
+     "y": 605,
+     "z": 2001,
+     "width": 620,
+     "height": 240,
+     "config": "{\"name\": \"bar_spooled_by_ds\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 640, \"y\": 605, \"width\": 620, \"height\": 240}}], \"singleVisual\": {\"visualType\": \"clusteredBarChart\", \"projections\": {\"Category\": [{\"queryRef\": \"gold_query_performance.DataSource\"}], \"Y\": [{\"queryRef\": \"gold_query_performance.Spooled Query %\", \"active\": true}]}, \"objects\": {}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 0,
+     "y": 860,
+     "z": 1000,
+     "width": 1260,
+     "height": 70,
+     "config": "{\"name\": \"txt_836a\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 0, \"y\": 860, \"width\": 1260, \"height\": 70}}], \"singleVisual\": {\"visualType\": \"textbox\", \"objects\": {\"general\": [{\"properties\": {\"paragraphs\": [{\"textRuns\": [{\"value\": \"Spool disk forecast via KQL series_decompose_forecast is defined in starter/kql/02_anomaly_forecast.kql. Run in Eventhouse and pin result to this page as a separate visual tile after Phase 5 pilot deployment.\"}], \"horizontalTextAlignment\": \"left\"}]}}]}, \"vcObjects\": {}}}"
+    }
+   ],
+   "config": "{\"activeSectionIndex\": 0, \"defaultDrillFilterOtherVisuals\": true, \"hasReadOnlyMode\": false, \"objects\": {}}"
+  },
+  {
+   "name": "Historical Trends",
+   "displayName": "Historical Trends",
+   "filters": [],
+   "visualContainers": [
+    {
+     "x": 0,
+     "y": 0,
+     "z": 1000,
+     "width": 1280,
+     "height": 40,
+     "config": "{\"name\": \"h6\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 0, \"y\": 0, \"width\": 1280, \"height\": 40}}], \"singleVisual\": {\"visualType\": \"textbox\", \"objects\": {\"general\": [{\"properties\": {\"paragraphs\": [{\"textRuns\": [{\"value\": \"Historical Trends - Gateway Estate Over Time\", \"textStyle\": {\"fontSize\": \"16px\", \"fontWeight\": \"bold\"}}], \"horizontalTextAlignment\": \"left\"}]}}]}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 0,
+     "y": 52,
+     "z": 1,
+     "width": 300,
+     "height": 90,
+     "config": "{\"name\": \"h6c1\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 0, \"y\": 52, \"width\": 300, \"height\": 90}}], \"singleVisual\": {\"visualType\": \"card\", \"projections\": {\"Values\": [{\"queryRef\": \"silver_triage.Error Rate % (7d avg)\", \"active\": true}]}, \"objects\": {}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 320,
+     "y": 52,
+     "z": 1,
+     "width": 300,
+     "height": 90,
+     "config": "{\"name\": \"h6c2\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 320, \"y\": 52, \"width\": 300, \"height\": 90}}], \"singleVisual\": {\"visualType\": \"card\", \"projections\": {\"Values\": [{\"queryRef\": \"gold_query_performance.Query Volume MoM %\", \"active\": true}]}, \"objects\": {}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 640,
+     "y": 52,
+     "z": 1,
+     "width": 300,
+     "height": 90,
+     "config": "{\"name\": \"h6c3\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 640, \"y\": 52, \"width\": 300, \"height\": 90}}], \"singleVisual\": {\"visualType\": \"card\", \"projections\": {\"Values\": [{\"queryRef\": \"gold_gateway_health.Avg CPU % (rolling 7d)\", \"active\": true}]}, \"objects\": {}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 0,
+     "y": 150,
+     "z": 1,
+     "width": 630,
+     "height": 240,
+     "config": "{\"name\": \"h6l1\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 0, \"y\": 150, \"width\": 630, \"height\": 240}}], \"singleVisual\": {\"visualType\": \"lineChart\", \"projections\": {\"Category\": [{\"queryRef\": \"dim_date.Date\", \"active\": true}], \"Y\": [{\"queryRef\": \"silver_triage.Error Rate %\", \"active\": true}]}, \"objects\": {}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 650,
+     "y": 150,
+     "z": 1,
+     "width": 630,
+     "height": 240,
+     "config": "{\"name\": \"h6l2\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 650, \"y\": 150, \"width\": 630, \"height\": 240}}], \"singleVisual\": {\"visualType\": \"lineChart\", \"projections\": {\"Category\": [{\"queryRef\": \"dim_date.Date\", \"active\": true}], \"Y\": [{\"queryRef\": \"gold_query_performance.Query Volume\", \"active\": true}]}, \"objects\": {}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 0,
+     "y": 400,
+     "z": 1,
+     "width": 1280,
+     "height": 220,
+     "config": "{\"name\": \"h6a1\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 0, \"y\": 400, \"width\": 1280, \"height\": 220}}], \"singleVisual\": {\"visualType\": \"areaChart\", \"projections\": {\"Category\": [{\"queryRef\": \"dim_date.Date\", \"active\": true}], \"Y\": [{\"queryRef\": \"gold_gateway_health.Fleet Health Score\", \"active\": true}]}, \"objects\": {}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 0,
+     "y": 626,
+     "z": 1,
+     "width": 300,
+     "height": 60,
+     "config": "{\"name\": \"h6s\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 0, \"y\": 626, \"width\": 300, \"height\": 60}}], \"singleVisual\": {\"visualType\": \"slicer\", \"projections\": {\"Values\": [{\"queryRef\": \"dim_date.Date\", \"active\": true}]}, \"objects\": {}, \"vcObjects\": {}}}"
+    }
+   ],
+   "config": "{\"name\": \"Historical Trends\"}"
+  },
+  {
+   "name": "Mashups Profiles",
+   "displayName": "Mashups Profiles",
+   "filters": [],
+   "visualContainers": [
+    {
+     "x": 0,
+     "y": 0,
+     "z": 1000,
+     "width": 1280,
+     "height": 40,
+     "config": "{\"name\": \"h7\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 0, \"y\": 0, \"width\": 1280, \"height\": 40}}], \"singleVisual\": {\"visualType\": \"textbox\", \"objects\": {\"general\": [{\"properties\": {\"paragraphs\": [{\"textRuns\": [{\"value\": \"Mashups Profiles - Per-Process RAM/CPU (G5)\", \"textStyle\": {\"fontSize\": \"16px\", \"fontWeight\": \"bold\"}}], \"horizontalTextAlignment\": \"left\"}]}}]}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 0,
+     "y": 52,
+     "z": 1,
+     "width": 300,
+     "height": 90,
+     "config": "{\"name\": \"h7c1\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 0, \"y\": 52, \"width\": 300, \"height\": 90}}], \"singleVisual\": {\"visualType\": \"card\", \"projections\": {\"Values\": [{\"queryRef\": \"gold_mashup_health.Mashup RAM Peak (MB)\", \"active\": true}]}, \"objects\": {}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 320,
+     "y": 52,
+     "z": 1,
+     "width": 300,
+     "height": 90,
+     "config": "{\"name\": \"h7c2\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 320, \"y\": 52, \"width\": 300, \"height\": 90}}], \"singleVisual\": {\"visualType\": \"card\", \"projections\": {\"Values\": [{\"queryRef\": \"gold_mashup_health.Mashup CPU % (avg)\", \"active\": true}]}, \"objects\": {}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 640,
+     "y": 52,
+     "z": 1,
+     "width": 300,
+     "height": 90,
+     "config": "{\"name\": \"h7c3\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 640, \"y\": 52, \"width\": 300, \"height\": 90}}], \"singleVisual\": {\"visualType\": \"card\", \"projections\": {\"Values\": [{\"queryRef\": \"gold_mashup_health.Runaway Container Count\", \"active\": true}]}, \"objects\": {}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 0,
+     "y": 150,
+     "z": 1,
+     "width": 630,
+     "height": 300,
+     "config": "{\"name\": \"h7b1\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 0, \"y\": 150, \"width\": 630, \"height\": 300}}], \"singleVisual\": {\"visualType\": \"clusteredColumnChart\", \"projections\": {\"Category\": [{\"queryRef\": \"gold_mashup_health.container_pid\", \"active\": true}], \"Y\": [{\"queryRef\": \"gold_mashup_health.peak_working_set_mb\", \"active\": true}]}, \"objects\": {}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 650,
+     "y": 150,
+     "z": 1,
+     "width": 630,
+     "height": 300,
+     "config": "{\"name\": \"h7t1\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 650, \"y\": 150, \"width\": 630, \"height\": 300}}], \"singleVisual\": {\"visualType\": \"tableEx\", \"projections\": {\"Values\": [{\"queryRef\": \"gold_mashup_health.container_pid\", \"active\": true}, {\"queryRef\": \"gold_mashup_health.peak_working_set_mb\", \"active\": true}, {\"queryRef\": \"gold_mashup_health.avg_cpu_pct\", \"active\": true}, {\"queryRef\": \"gold_mashup_health.is_runaway\", \"active\": true}]}, \"objects\": {}, \"vcObjects\": {}}}"
+    }
+   ],
+   "config": "{\"name\": \"Mashups Profiles\"}"
+  },
+  {
+   "name": "Mashups Logs",
+   "displayName": "Mashups Logs",
+   "filters": [],
+   "visualContainers": [
+    {
+     "x": 0,
+     "y": 0,
+     "z": 1000,
+     "width": 1280,
+     "height": 40,
+     "config": "{\"name\": \"h8\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 0, \"y\": 0, \"width\": 1280, \"height\": 40}}], \"singleVisual\": {\"visualType\": \"textbox\", \"objects\": {\"general\": [{\"properties\": {\"paragraphs\": [{\"textRuns\": [{\"value\": \"Mashups Logs - Operation Detail\", \"textStyle\": {\"fontSize\": \"16px\", \"fontWeight\": \"bold\"}}], \"horizontalTextAlignment\": \"left\"}]}}]}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 0,
+     "y": 52,
+     "z": 1,
+     "width": 300,
+     "height": 60,
+     "config": "{\"name\": \"h8s\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 0, \"y\": 52, \"width\": 300, \"height\": 60}}], \"singleVisual\": {\"visualType\": \"slicer\", \"projections\": {\"Values\": [{\"queryRef\": \"gold_mashup_health.container_pid\", \"active\": true}]}, \"objects\": {}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 0,
+     "y": 120,
+     "z": 1,
+     "width": 1280,
+     "height": 400,
+     "config": "{\"name\": \"h8t\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 0, \"y\": 120, \"width\": 1280, \"height\": 400}}], \"singleVisual\": {\"visualType\": \"tableEx\", \"projections\": {\"Values\": [{\"queryRef\": \"gold_mashup_health.container_pid\", \"active\": true}, {\"queryRef\": \"gold_mashup_health.avg_cpu_pct\", \"active\": true}, {\"queryRef\": \"gold_mashup_health.peak_working_set_mb\", \"active\": true}, {\"queryRef\": \"gold_mashup_health.is_runaway\", \"active\": true}]}, \"objects\": {}, \"vcObjects\": {}}}"
+    }
+   ],
+   "config": "{\"name\": \"Mashups Logs\"}"
+  },
+  {
+   "name": "Logs Explorer",
+   "displayName": "Logs Explorer",
+   "filters": [],
+   "visualContainers": [
+    {
+     "x": 0,
+     "y": 0,
+     "z": 1000,
+     "width": 1280,
+     "height": 40,
+     "config": "{\"name\": \"h9\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 0, \"y\": 0, \"width\": 1280, \"height\": 40}}], \"singleVisual\": {\"visualType\": \"textbox\", \"objects\": {\"general\": [{\"properties\": {\"paragraphs\": [{\"textRuns\": [{\"value\": \"Logs Explorer - Gateway Error/Info (G2)\", \"textStyle\": {\"fontSize\": \"16px\", \"fontWeight\": \"bold\"}}], \"horizontalTextAlignment\": \"left\"}]}}]}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 0,
+     "y": 52,
+     "z": 1,
+     "width": 300,
+     "height": 60,
+     "config": "{\"name\": \"h9s1\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 0, \"y\": 52, \"width\": 300, \"height\": 60}}], \"singleVisual\": {\"visualType\": \"slicer\", \"projections\": {\"Values\": [{\"queryRef\": \"silver_triage.root_cause_class\", \"active\": true}]}, \"objects\": {}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 640,
+     "y": 52,
+     "z": 1,
+     "width": 300,
+     "height": 90,
+     "config": "{\"name\": \"h9c\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 640, \"y\": 52, \"width\": 300, \"height\": 90}}], \"singleVisual\": {\"visualType\": \"card\", \"projections\": {\"Values\": [{\"queryRef\": \"silver_triage.Error Rate %\", \"active\": true}]}, \"objects\": {}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 0,
+     "y": 150,
+     "z": 1,
+     "width": 1280,
+     "height": 220,
+     "config": "{\"name\": \"h9l\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 0, \"y\": 150, \"width\": 1280, \"height\": 220}}], \"singleVisual\": {\"visualType\": \"lineChart\", \"projections\": {\"Category\": [{\"queryRef\": \"dim_date.Date\", \"active\": true}], \"Y\": [{\"queryRef\": \"silver_triage.Error Rate %\", \"active\": true}]}, \"objects\": {}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 0,
+     "y": 380,
+     "z": 1,
+     "width": 1280,
+     "height": 300,
+     "config": "{\"name\": \"h9t\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 0, \"y\": 380, \"width\": 1280, \"height\": 300}}], \"singleVisual\": {\"visualType\": \"tableEx\", \"projections\": {\"Values\": [{\"queryRef\": \"silver_triage.event_time\", \"active\": true}, {\"queryRef\": \"silver_triage.root_cause_class\", \"active\": true}, {\"queryRef\": \"silver_triage.is_failure\", \"active\": true}, {\"queryRef\": \"silver_triage.refresh_status\", \"active\": true}]}, \"objects\": {}, \"vcObjects\": {}}}"
+    }
+   ],
+   "config": "{\"name\": \"Logs Explorer\"}"
+  },
+  {
+   "name": "Requests",
+   "displayName": "Requests",
+   "filters": [],
+   "visualContainers": [
+    {
+     "x": 0,
+     "y": 0,
+     "z": 1000,
+     "width": 1280,
+     "height": 40,
+     "config": "{\"name\": \"h10\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 0, \"y\": 0, \"width\": 1280, \"height\": 40}}], \"singleVisual\": {\"visualType\": \"textbox\", \"objects\": {\"general\": [{\"properties\": {\"paragraphs\": [{\"textRuns\": [{\"value\": \"Requests - Throughput and Duration\", \"textStyle\": {\"fontSize\": \"16px\", \"fontWeight\": \"bold\"}}], \"horizontalTextAlignment\": \"left\"}]}}]}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 0,
+     "y": 52,
+     "z": 1,
+     "width": 630,
+     "height": 300,
+     "config": "{\"name\": \"h10h\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 0, \"y\": 52, \"width\": 630, \"height\": 300}}], \"singleVisual\": {\"visualType\": \"columnChart\", \"projections\": {\"Category\": [{\"queryRef\": \"gold_query_performance.QueryType\", \"active\": true}], \"Y\": [{\"queryRef\": \"gold_query_performance.Query Volume\", \"active\": true}]}, \"objects\": {}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 650,
+     "y": 52,
+     "z": 1,
+     "width": 630,
+     "height": 300,
+     "config": "{\"name\": \"h10l\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 650, \"y\": 52, \"width\": 630, \"height\": 300}}], \"singleVisual\": {\"visualType\": \"lineChart\", \"projections\": {\"Category\": [{\"queryRef\": \"dim_date.Date\", \"active\": true}], \"Y\": [{\"queryRef\": \"gold_query_performance.Query Volume\", \"active\": true}]}, \"objects\": {}, \"vcObjects\": {}}}"
+    }
+   ],
+   "config": "{\"name\": \"Requests\"}"
+  },
+  {
+   "name": "Counters Deep-Dive",
+   "displayName": "Counters Deep-Dive",
+   "filters": [],
+   "visualContainers": [
+    {
+     "x": 0,
+     "y": 0,
+     "z": 1000,
+     "width": 1280,
+     "height": 40,
+     "config": "{\"name\": \"h11\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 0, \"y\": 0, \"width\": 1280, \"height\": 40}}], \"singleVisual\": {\"visualType\": \"textbox\", \"objects\": {\"general\": [{\"properties\": {\"paragraphs\": [{\"textRuns\": [{\"value\": \"Counters Deep-Dive - CPU / Memory / Handles\", \"textStyle\": {\"fontSize\": \"16px\", \"fontWeight\": \"bold\"}}], \"horizontalTextAlignment\": \"left\"}]}}]}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 0,
+     "y": 52,
+     "z": 1,
+     "width": 630,
+     "height": 280,
+     "config": "{\"name\": \"h11a\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 0, \"y\": 52, \"width\": 630, \"height\": 280}}], \"singleVisual\": {\"visualType\": \"lineChart\", \"projections\": {\"Category\": [{\"queryRef\": \"dim_date.Date\", \"active\": true}], \"Y\": [{\"queryRef\": \"gold_gateway_health.Avg CPU % (rolling 7d)\", \"active\": true}]}, \"objects\": {}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 650,
+     "y": 52,
+     "z": 1,
+     "width": 630,
+     "height": 280,
+     "config": "{\"name\": \"h11b\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 650, \"y\": 52, \"width\": 630, \"height\": 280}}], \"singleVisual\": {\"visualType\": \"lineChart\", \"projections\": {\"Category\": [{\"queryRef\": \"dim_date.Date\", \"active\": true}], \"Y\": [{\"queryRef\": \"gold_gateway_health.cpu_utilization_pct\", \"active\": true}]}, \"objects\": {}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 0,
+     "y": 350,
+     "z": 1,
+     "width": 300,
+     "height": 90,
+     "config": "{\"name\": \"h11c\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 0, \"y\": 350, \"width\": 300, \"height\": 90}}], \"singleVisual\": {\"visualType\": \"card\", \"projections\": {\"Values\": [{\"queryRef\": \"gold_cluster_load.Capacity Headroom %\", \"active\": true}]}, \"objects\": {}, \"vcObjects\": {}}}"
+    }
+   ],
+   "config": "{\"name\": \"Counters Deep-Dive\"}"
+  },
+  {
+   "name": "Gateway Profile",
+   "displayName": "Gateway Profile",
+   "filters": [],
+   "visualContainers": [
+    {
+     "x": 0,
+     "y": 0,
+     "z": 1000,
+     "width": 1280,
+     "height": 40,
+     "config": "{\"name\": \"h12\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 0, \"y\": 0, \"width\": 1280, \"height\": 40}}], \"singleVisual\": {\"visualType\": \"textbox\", \"objects\": {\"general\": [{\"properties\": {\"paragraphs\": [{\"textRuns\": [{\"value\": \"Gateway Profile - Inventory / Config / Credential Drift (G10)\", \"textStyle\": {\"fontSize\": \"16px\", \"fontWeight\": \"bold\"}}], \"horizontalTextAlignment\": \"left\"}]}}]}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 0,
+     "y": 52,
+     "z": 1,
+     "width": 300,
+     "height": 90,
+     "config": "{\"name\": \"h12c1\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 0, \"y\": 52, \"width\": 300, \"height\": 90}}], \"singleVisual\": {\"visualType\": \"card\", \"projections\": {\"Values\": [{\"queryRef\": \"gold_gateway_health.Gateways Total\", \"active\": true}]}, \"objects\": {}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 320,
+     "y": 52,
+     "z": 1,
+     "width": 300,
+     "height": 90,
+     "config": "{\"name\": \"h12c2\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 320, \"y\": 52, \"width\": 300, \"height\": 90}}], \"singleVisual\": {\"visualType\": \"card\", \"projections\": {\"Values\": [{\"queryRef\": \"gold_gateway_health.Gateways Online\", \"active\": true}]}, \"objects\": {}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 0,
+     "y": 150,
+     "z": 1,
+     "width": 1280,
+     "height": 400,
+     "config": "{\"name\": \"h12t\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 0, \"y\": 150, \"width\": 1280, \"height\": 400}}], \"singleVisual\": {\"visualType\": \"tableEx\", \"projections\": {\"Values\": [{\"queryRef\": \"gold_dim_gateway.GatewayObjectId\", \"active\": true}, {\"queryRef\": \"gold_dim_gateway.Version\", \"active\": true}, {\"queryRef\": \"gold_dim_gateway.Status\", \"active\": true}, {\"queryRef\": \"gold_dim_gateway.is_current\", \"active\": true}, {\"queryRef\": \"gold_dim_gateway.valid_from\", \"active\": true}, {\"queryRef\": \"gold_dim_gateway.valid_to\", \"active\": true}]}, \"objects\": {}, \"vcObjects\": {}}}"
+    }
+   ],
+   "config": "{\"name\": \"Gateway Profile\"}"
+  },
+  {
+   "name": "Alerting State",
+   "displayName": "Alerting State",
+   "filters": [],
+   "visualContainers": [
+    {
+     "x": 0,
+     "y": 0,
+     "z": 1000,
+     "width": 1280,
+     "height": 40,
+     "config": "{\"name\": \"h13\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 0, \"y\": 0, \"width\": 1280, \"height\": 40}}], \"singleVisual\": {\"visualType\": \"textbox\", \"objects\": {\"general\": [{\"properties\": {\"paragraphs\": [{\"textRuns\": [{\"value\": \"Alerting State - Activator Rules and Heartbeat (G1)\", \"textStyle\": {\"fontSize\": \"16px\", \"fontWeight\": \"bold\"}}], \"horizontalTextAlignment\": \"left\"}]}}]}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 0,
+     "y": 52,
+     "z": 1,
+     "width": 300,
+     "height": 90,
+     "config": "{\"name\": \"h13c1\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 0, \"y\": 52, \"width\": 300, \"height\": 90}}], \"singleVisual\": {\"visualType\": \"card\", \"projections\": {\"Values\": [{\"queryRef\": \"gold_gateway_health.Heartbeat Age (minutes)\", \"active\": true}]}, \"objects\": {}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 320,
+     "y": 52,
+     "z": 1,
+     "width": 300,
+     "height": 90,
+     "config": "{\"name\": \"h13c2\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 320, \"y\": 52, \"width\": 300, \"height\": 90}}], \"singleVisual\": {\"visualType\": \"card\", \"projections\": {\"Values\": [{\"queryRef\": \"gold_gateway_health.Gateways Online\", \"active\": true}]}, \"objects\": {}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 0,
+     "y": 150,
+     "z": 1,
+     "width": 1280,
+     "height": 320,
+     "config": "{\"name\": \"h13t\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 0, \"y\": 150, \"width\": 1280, \"height\": 320}}], \"singleVisual\": {\"visualType\": \"tableEx\", \"projections\": {\"Values\": [{\"queryRef\": \"gold_gateway_health.GatewayObjectId\", \"active\": true}, {\"queryRef\": \"gold_gateway_health.heartbeat_age_minutes\", \"active\": true}, {\"queryRef\": \"gold_gateway_health.cpu_utilization_pct\", \"active\": true}]}, \"objects\": {}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 0,
+     "y": 480,
+     "z": 1000,
+     "width": 1280,
+     "height": 50,
+     "config": "{\"name\": \"h13n\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 0, \"y\": 480, \"width\": 1280, \"height\": 50}}], \"singleVisual\": {\"visualType\": \"textbox\", \"objects\": {\"general\": [{\"properties\": {\"paragraphs\": [{\"textRuns\": [{\"value\": \"[Unverified] Live Activator rule firing is tenant-gated; this page surfaces armed rules + heartbeat age.\", \"textStyle\": {\"fontSize\": \"10px\", \"fontWeight\": \"normal\"}}], \"horizontalTextAlignment\": \"left\"}]}}]}, \"vcObjects\": {}}}"
+    }
+   ],
+   "config": "{\"name\": \"Alerting State\"}"
+  },
+  {
+   "name": "Tenant Breadth",
+   "displayName": "Tenant Breadth",
+   "filters": [],
+   "visualContainers": [
+    {
+     "x": 0,
+     "y": 0,
+     "z": 1000,
+     "width": 1280,
+     "height": 40,
+     "config": "{\"name\": \"h14\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 0, \"y\": 0, \"width\": 1280, \"height\": 40}}], \"singleVisual\": {\"visualType\": \"textbox\", \"objects\": {\"general\": [{\"properties\": {\"paragraphs\": [{\"textRuns\": [{\"value\": \"Tenant Breadth - Capacity / Activity / Refreshables (fuam-style) [Tenant-gated]\", \"textStyle\": {\"fontSize\": \"16px\", \"fontWeight\": \"bold\"}}], \"horizontalTextAlignment\": \"left\"}]}}]}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 0,
+     "y": 52,
+     "z": 1,
+     "width": 300,
+     "height": 90,
+     "config": "{\"name\": \"h14c1\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 0, \"y\": 52, \"width\": 300, \"height\": 90}}], \"singleVisual\": {\"visualType\": \"card\", \"projections\": {\"Values\": [{\"queryRef\": \"bronze_activity_events.Active Users (30d)\", \"active\": true}]}, \"objects\": {}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 320,
+     "y": 52,
+     "z": 1,
+     "width": 300,
+     "height": 90,
+     "config": "{\"name\": \"h14c2\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 320, \"y\": 52, \"width\": 300, \"height\": 90}}], \"singleVisual\": {\"visualType\": \"card\", \"projections\": {\"Values\": [{\"queryRef\": \"bronze_capacity_refreshables.Dataset Refresh Count (7d)\", \"active\": true}]}, \"objects\": {}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 640,
+     "y": 52,
+     "z": 1,
+     "width": 300,
+     "height": 90,
+     "config": "{\"name\": \"h14c3\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 640, \"y\": 52, \"width\": 300, \"height\": 90}}], \"singleVisual\": {\"visualType\": \"card\", \"projections\": {\"Values\": [{\"queryRef\": \"bronze_capacity_metrics.Capacity CU % (avg)\", \"active\": true}]}, \"objects\": {}, \"vcObjects\": {}}}"
+    },
+    {
+     "x": 0,
+     "y": 160,
+     "z": 1000,
+     "width": 1280,
+     "height": 60,
+     "config": "{\"name\": \"h14n\", \"layouts\": [{\"id\": 0, \"position\": {\"x\": 0, \"y\": 160, \"width\": 1280, \"height\": 60}}], \"singleVisual\": {\"visualType\": \"textbox\", \"objects\": {\"general\": [{\"properties\": {\"paragraphs\": [{\"textRuns\": [{\"value\": \"[Tenant-gated] All visuals on this page require the admin-API grant (activity events, capacity metrics). Authorable now; data flows only after the SPN grant. See REPORT-BUILDOUT-PLAN.md section 5.\", \"textStyle\": {\"fontSize\": \"10px\", \"fontWeight\": \"normal\"}}], \"horizontalTextAlignment\": \"left\"}]}}]}, \"vcObjects\": {}}}"
+    }
+   ],
+   "config": "{\"name\": \"Tenant Breadth\"}"
+  }
+ ],
+ "bookmarks": [],
+ "config": "{\"activeSectionIndex\": 0, \"defaultDrillFilterOtherVisuals\": true, \"hasReadOnlyMode\": false, \"linguisticSchemaSyncVersion\": 0, \"objects\": {\"report\": [{\"properties\": {\"filterPaneEnabled\": {\"expr\": {\"Literal\": {\"Value\": \"true\"}}}, \"allowChangeFilterTypes\": {\"expr\": {\"Literal\": {\"Value\": \"true\"}}}}}]}}"
+}

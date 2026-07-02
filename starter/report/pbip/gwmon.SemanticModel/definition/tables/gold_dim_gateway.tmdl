@@ -1,0 +1,49 @@
+﻿table gold_dim_gateway
+
+	column GatewayObjectId
+		dataType: string
+		summarizeBy: none
+		sourceColumn: GatewayObjectId
+
+	column GatewayClusterName
+		dataType: string
+		summarizeBy: none
+		sourceColumn: GatewayClusterName
+
+	column GatewayNodeName
+		dataType: string
+		summarizeBy: none
+		sourceColumn: GatewayNodeName
+
+	column Version
+		dataType: string
+		summarizeBy: none
+		sourceColumn: Version
+
+	column Status
+		dataType: string
+		summarizeBy: none
+		sourceColumn: Status
+
+	column is_current
+		dataType: boolean
+		summarizeBy: none
+		sourceColumn: is_current
+
+	column valid_from
+		dataType: dateTime
+		summarizeBy: none
+		sourceColumn: valid_from
+
+	column valid_to
+		dataType: dateTime
+		summarizeBy: none
+		sourceColumn: valid_to
+
+	partition gold_dim_gateway = entity
+		mode: directLake
+		source
+			entityName: gold_dim_gateway
+			schemaName: dbo
+			expressionSource: DirectLakeSource
+
