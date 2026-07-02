@@ -113,11 +113,33 @@ def build_model(measures):
         return c
     tables = []
     for t, cols in SCHEMA.items():
-        cobjs = [col(n, dt) for n, dt in cols]
         if t == "dim_date":
-            for c in cobjs:
-                if c["name"] == "Date":
-                    c["dataCategory"] = "PaddedDateTableDates"
+            # dim_date is a self-contained calculated DATE table (CALENDAR) so
+            # time-intelligence works the moment the model opens -- no dependency
+            # on a Lakehouse dim_date Delta table. Marked as a date table via the
+            # PaddedDateTableDates category on the key column.
+            tables.append({
+                "name": "dim_date",
+                "columns": [
+                    {"name": "Date", "dataType": "dateTime", "sourceColumn": "[Date]",
+                     "type": "calculatedTableColumn", "summarizeBy": "none",
+                     "dataCategory": "PaddedDateTableDates", "isNameInferred": True},
+                    {"name": "Year", "dataType": "int64", "sourceColumn": "[Year]",
+                     "type": "calculatedTableColumn", "summarizeBy": "none", "isNameInferred": True},
+                    {"name": "MonthNumber", "dataType": "int64", "sourceColumn": "[MonthNumber]",
+                     "type": "calculatedTableColumn", "summarizeBy": "none", "isNameInferred": True},
+                    {"name": "MonthName", "dataType": "string", "sourceColumn": "[MonthName]",
+                     "type": "calculatedTableColumn", "summarizeBy": "none", "isNameInferred": True},
+                ],
+                "partitions": [{"name": "dim_date", "mode": "import", "source": {
+                    "type": "calculated",
+                    "expression": ('ADDCOLUMNS(CALENDAR(DATE(2020,1,1), DATE(2030,12,31)), '
+                                   '"Year", YEAR([Date]), "MonthNumber", MONTH([Date]), '
+                                   '"MonthName", FORMAT([Date], "MMMM"))')}}],
+                "annotations": [{"name": "GwmonDateTable", "value": "1"}],
+            })
+            continue
+        cobjs = [col(n, dt) for n, dt in cols]
         tables.append({
             "name": t, "columns": cobjs,
             "partitions": [{"name": t, "mode": "directLake",

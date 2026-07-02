@@ -4,27 +4,30 @@
 		dataType: dateTime
 		dataCategory: PaddedDateTableDates
 		summarizeBy: none
-		sourceColumn: Date
+		isNameInferred
+		sourceColumn: [Date]
 
 	column Year
 		dataType: int64
 		summarizeBy: none
-		sourceColumn: Year
-
-	column MonthName
-		dataType: string
-		summarizeBy: none
-		sourceColumn: MonthName
+		isNameInferred
+		sourceColumn: [Year]
 
 	column MonthNumber
 		dataType: int64
 		summarizeBy: none
-		sourceColumn: MonthNumber
+		isNameInferred
+		sourceColumn: [MonthNumber]
 
-	partition dim_date = entity
-		mode: directLake
-		source
-			entityName: dim_date
-			schemaName: dbo
-			expressionSource: DirectLakeSource
+	column MonthName
+		dataType: string
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [MonthName]
+
+	partition dim_date = calculated
+		mode: import
+		source = ADDCOLUMNS(CALENDAR(DATE(2020,1,1), DATE(2030,12,31)), "Year", YEAR([Date]), "MonthNumber", MONTH([Date]), "MonthName", FORMAT([Date], "MMMM"))
+
+	annotation GwmonDateTable = 1
 
