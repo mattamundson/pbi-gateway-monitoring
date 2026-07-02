@@ -128,3 +128,64 @@ window / single workspace") is now built into `starter/kql/01_identity_join.kql`
 (`dynamic([...])`) is pushed down **before** the join so the throttled engine scans far
 fewer rows. Empty filter = all workspaces (unchanged default). Validate on F2+ or a
 narrow-window trial run per Session 1.
+
+---
+
+## 2026-07-02 — Session 3 (live tenant, browser-driven attempt)
+
+**Environment:** Real Fabric tenant, **free trial capacity** (59 days left), `Gateway-Pilot`
+workspace, driven live via browser automation. Goal: run the flagship identity-join pilot.
+
+### Pain #3 — CONFIRMED BLOCKER (live): Workspace Monitoring Eventhouse fails to provision on trial capacity
+
+**Status upgrade:** 🟠 BUILT / UNPROVEN → 🔴 **LIVE-CONFIRMED as a trial-capacity blocker**
+(root cause isolated; not a code bug, not a network/VPN issue).
+
+**What happened, in order:**
+1. `Gateway-Pilot` had **Workspace Monitoring OFF** — no Eventhouse, so `PowerBIDatasetsWorkspace`
+   did not exist. That alone is why the pilot query had nothing to hit. (Prerequisite gap, now
+   surfaced explicitly.)
+2. Enabled it via **Workspace settings → Monitoring → + Eventhouse**. Fabric created three items
+   (**Monitoring Eventhouse**, **Monitoring KQL database**, **Monitoring_Eventstream**) but then
+   threw: **`Failed to update ingestion for fabric monitoring`**.
+3. After ~10 min + multiple reloads, the Monitoring KQL database still shows
+   **`Access error: Can't access the Eventhouse. Check your network for a VPN preventing access`**
+   and **`Something went wrong`** (KustoWebV2 errors) on the Tables / Data Activity panels. The
+   Eventhouse backend never came online.
+
+**Error IDs (for MS support):** Activity `d9069e3d-e3aa-435d-b6fc-1d3bdbbdfc65`;
+Kusto `KustoWebV2:5a19b9af-a6b0-4074-a586-5a7cf615b9ba` / `KustoWebV2:a2b9c74d-dc31-44f1-9967-a4c73e940ecc`;
+Time `2026-07-02 01:53:38 CDT`; Service version `13.0.28506.393`.
+
+**VPN / network RULED OUT (hard evidence)** — Fabric's "check your VPN" text is a misleading
+generic. From the client machine:
+- Cluster host `16f93f410c3b4163b3625e18cfac6898-api.analysis.windows.net` **resolves** to a public
+  Azure IP `20.98.145.48` (normal `privatelink → wabi-us-central → centralus.cloudapp.azure.com` CNAME chain).
+- **TCP 443 to the cluster succeeds** (`TcpTestSucceeded: True`).
+- System DNS resolver is **Comcast `75.75.75.75`**, not the VPN's `100.100.100.100` — the VPN's DNS
+  is not in the path. (Machine does run a split-tunnel VPN, but it is provably not intercepting this.)
+- The front door is reachable; the **Kusto backend itself returns application errors** → the
+  Eventhouse failed to provision, which is a **capacity** problem, not connectivity.
+
+**Conclusion:** Workspace Monitoring's Eventhouse cannot provision on the free trial capacity.
+This is exactly the Pain #3 trial-capacity limit, now field-confirmed. **Resolution: paid F2+
+capacity** (matches Session 1 + the repo's standing recommendation). Support escalation possible
+with the IDs above; the Log-Analytics path (`XmlaRequestId`) is the alternative that avoids the
+Fabric Eventhouse entirely.
+
+### Flagship identity join — still UNPROVEN (unchanged)
+
+The exact join (phase5 **U19**) requires `PowerBIDatasetsWorkspace`, which requires a working
+monitoring Eventhouse → blocked until F2+. The **desk-verification of the join key is unaffected**;
+this only blocks the *live* confirmation. Two other prerequisites remain and are independent of
+capacity: (a) a semantic model actively refreshing **through the on-prem gateway** in the monitored
+workspace, and (b) a `RequestId` copied from the **gateway host** `QueryStartReport*.csv` (that host
+is not the client machine). All three (F2+ capacity + gateway-routed refresh + gateway RequestId)
+must be present at once for a green run — best assembled in the real pilot environment.
+
+## Tally After Session 3
+
+| Pain # | Prior status | Post-session status | Change |
+|---|---|---|---|
+| #3 | 🟠 BUILT / UNPROVEN | 🔴 Trial-capacity blocker **live-confirmed**; VPN/network ruled out | Root cause isolated; F2+ required |
+| U19 (exact identity join) | [Unverified] | [Unverified] — live run blocked on F2+ + gateway pieces | No change; desk-verification stands |
