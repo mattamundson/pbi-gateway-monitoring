@@ -1,0 +1,61 @@
+// =============================================================================
+// PILOT-identity-join-test.kql  |  The 5-minute flagship confirmation
+//
+// Run this in the Eventhouse / KQL Database that Workspace Monitoring created in
+// your pilot workspace (Fabric portal -> workspace -> KQL DB -> New KQL Queryset).
+// Run each numbered block top-to-bottom and paste the returns back to the assistant.
+//
+// PREREQS (all must be true or the match returns empty for a boring reason):
+//   - Workspace Monitoring is ON for the workspace (Settings -> Monitoring -> On)
+//   - A semantic model in it refreshes THROUGH your on-prem gateway
+//   - You clicked Refresh on that model at least once in the last hour
+//   - You copied 2-3 RequestId GUIDs from the gateway host's newest
+//     QueryStartReport*.csv (RequestId column), at:
+//     C:\Windows\ServiceProfiles\PBIEgwService\AppData\Local\Microsoft\
+//         On-premises data gateway\Report
+// =============================================================================
+
+
+// ---- (1) PEEK: does the monitoring table have any recent rows? --------------
+// Empty here => monitoring hasn't captured activity yet: wait 10-15 min after a
+// refresh and retry. Paste what this returns (even "empty").
+PowerBIDatasetsWorkspace
+| where Timestamp > ago(1d)
+| take 20
+| project Timestamp, OperationId, OperationName, ExecutingUser, ItemName
+
+
+// ---- (2) THE MATCH: gateway RequestId -> user + dataset (the flagship test) --
+// Replace the GUID with one you copied from the gateway log. Run once per
+// RequestId (try 2-3). Rows back with ExecutingUser + ItemName populated = the
+// core promise is PROVEN live. Paste exactly what returns for each.
+PowerBIDatasetsWorkspace
+| where OperationId == "PASTE-YOUR-REQUESTID-HERE"
+| project Timestamp, OperationId, OperationName,
+          ExecutingUser, ItemName, ItemId, WorkspaceId
+
+
+// ---- (3) SCHEMA: confirm the real column names in YOUR tenant ----------------
+// Resolves the desk-verified-only column-name assumptions (phase5 U2). Paste all.
+PowerBIDatasetsWorkspace
+| getschema
+| project ColumnName, ColumnType
+
+
+// ---- (4) OPTIONAL, if the trial capacity is still throttle-slow --------------
+// A narrowed version of the production join (starter/kql/01_identity_join.kql):
+// last 15 min, single workspace, so it stays under a trial Spark/KQL throttle.
+// Set the workspace GUID (from block 2's WorkspaceId), then run.
+let lookback = 15m;
+let ws = "PASTE-YOUR-WORKSPACE-GUID-HERE";
+PowerBIDatasetsWorkspace
+| where Timestamp > ago(lookback)
+| where WorkspaceId == ws
+| where OperationName in ("QueryEnd", "ExecutionMetrics", "RefreshEnd")
+| project Timestamp, OperationId, ExecutingUser, ItemName, DurationMs, CpuTimeMs
+| order by Timestamp desc
+| take 25
+
+// Redaction: ExecutingUser is a real UPN and ItemName may be a real dataset name.
+// Redact to user@... / Dataset-A if you prefer -- the assistant only needs to see
+// THAT the fields populated and WHICH RequestIds matched, not the actual values.
