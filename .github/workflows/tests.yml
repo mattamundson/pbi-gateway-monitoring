@@ -106,3 +106,27 @@ jobs:
           python starter/notebooks/00_tenant_extract.py
           python starter/notebooks/01a_tenant_silver_gold.py
           python starter/notebooks/04_capacity_bridge.py
+
+      # Execute the Deploy_TenantExtract orchestrator's code cells in MOCK mode so
+      # the wired chain (tenant_doctor -> 00 -> 01a -> 04) can't silently break.
+      - name: Run Deploy_TenantExtract orchestrator (mock)
+        env:
+          TENANT_EXTRACT_MOCK: '1'
+          TENANT_DOCTOR_MOCK: '1'
+          FORCE_JSON_LANDING: '1'
+          CAPACITY_BRIDGE_MODE: mock
+          BRONZE_LANDING_PATH: ${{ runner.temp }}/nexus_deploy/bronze
+          GOLD_LANDING_PATH: ${{ runner.temp }}/nexus_deploy/gold
+          NB_DIR: starter/notebooks
+          CONFIG_PATH: starter/config/config.sample.json
+        run: |
+          python - <<'PY'
+          import json
+          nb = json.load(open("starter/deploy/Deploy_TenantExtract.ipynb"))
+          g = {}
+          for i, c in enumerate(nb["cells"]):
+              if c["cell_type"] == "code":
+                  exec(compile("".join(c["source"]), f"cell{i}", "exec"), g)
+          assert g["cap_rows"] == 60 and g["gold_counts"]["gold_inventory"] == 4, "deploy chain regression"
+          print("Deploy_TenantExtract mock chain OK")
+          PY
