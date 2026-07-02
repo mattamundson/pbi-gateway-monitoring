@@ -1,0 +1,59 @@
+{
+  "name": "GWMon Nexus — Brand Theme v1",
+  "_label": "[NET-NEW] custom brand theme — import in Power BI Desktop (View > Themes > Browse for themes)",
+  "_honesty_note": "[Unverified] Structurally valid Power BI theme JSON. Visual rendering not confirmed without opening a report in Desktop.",
+  "dataColors": [
+    "#01696F", "#20808D", "#3FA7B0", "#7FC8CE", "#DA7101",
+    "#E6A15C", "#A13544", "#C76A75", "#4B5563", "#9CA3AF"
+  ],
+  "background": "#FFFFFF",
+  "secondaryBackground": "#F4F6F7",
+  "foreground": "#14252A",
+  "foregroundNeutralSecondary": "#5B6B70",
+  "tableAccent": "#01696F",
+  "good": "#1F7A54",
+  "neutral": "#DA7101",
+  "bad": "#A13544",
+  "maximum": "#01696F",
+  "center": "#DA7101",
+  "minimum": "#A13544",
+  "null": "#C9CFD1",
+  "hyperlink": "#20808D",
+  "textClasses": {
+    "title": { "fontFace": "Segoe UI Semibold", "fontSize": 16, "color": "#14252A" },
+    "header": { "fontFace": "Segoe UI Semibold", "fontSize": 12, "color": "#01696F" },
+    "label": { "fontFace": "Segoe UI", "fontSize": 10, "color": "#14252A" },
+    "callout": { "fontFace": "Segoe UI Semibold", "fontSize": 40, "color": "#01696F" }
+  },
+  "visualStyles": {
+    "*": {
+      "*": {
+        "background": [{ "show": true, "color": { "solid": { "color": "#FFFFFF" } }, "transparency": 0 }],
+        "border": [{ "show": true, "color": { "solid": { "color": "#E3E7E8" } }, "radius": 6 }],
+        "dropShadow": [{ "show": true, "preset": "Bottom", "shadowSpread": { "value": 3 } }],
+        "visualHeader": [{ "show": true, "background": { "solid": { "color": "#FFFFFF" } } }],
+        "title": [{ "show": true, "fontColor": { "solid": { "color": "#14252A" } }, "fontSize": 12, "fontFamily": "Segoe UI Semibold", "alignment": "left" }]
+      }
+    },
+    "page": {
+      "*": {
+        "background": [{ "color": { "solid": { "color": "#F4F6F7" } }, "transparency": 0 }],
+        "outspace": [{ "color": { "solid": { "color": "#F4F6F7" } } }]
+      }
+    },
+    "card": {
+      "*": {
+        "labels": [{ "color": { "solid": { "color": "#01696F" } }, "fontSize": 34, "fontFamily": "Segoe UI Semibold" }],
+        "categoryLabels": [{ "color": { "solid": { "color": "#5B6B70" } }, "fontSize": 10 }]
+      }
+    },
+    "kpi": {
+      "*": {
+        "trend": [{ "direction": "HighIsGood" }]
+      }
+    },
+    "columnChart": { "*": { "dataPoint": [{ "defaultColor": { "solid": { "color": "#01696F" } } }] } },
+    "lineChart": { "*": { "lineStyles": [{ "strokeWidth": 2 }] } },
+    "slicer": { "*": { "header": [{ "fontColor": { "solid": { "color": "#01696F" } }, "fontFamily": "Segoe UI Semibold" }] } }
+  }
+}

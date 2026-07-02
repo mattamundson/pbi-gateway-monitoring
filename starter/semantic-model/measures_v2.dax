@@ -1,0 +1,134 @@
+// =============================================================================
+// measures_v2.dax  —  Enhancement measures for the v2 report buildout
+// Label: [NET-NEW]
+//
+// Companion to measures.dax. Backs the new v2 pages (exec overview, historical
+// trends, mashups, gateway profile, tenant breadth). Same semantic-model target:
+// DirectLake over the Gold Delta tables in OneLake.
+//
+// [Unverified] Standard Power BI DAX, NOT validated against a live DirectLake
+//              model. Time-intelligence needs a real Date dimension table
+//              (`dim_date`) related to the fact tables — see REPORT-BUILDOUT-PLAN.md
+//              §"Historical data model". All measures require the F2 pilot.
+//
+// [Tenant-gated] The "TENANT BREADTH" block depends on data that only flows with
+//                the admin-API grant (activity events, capacity metrics). The DAX
+//                is authorable now; the data behind it is Amo-gated.
+// =============================================================================
+
+// ---------------------------------------------------------------------------
+// EXECUTIVE OVERVIEW — single-glance KPIs (fuam-style landing page)
+// ---------------------------------------------------------------------------
+
+Fleet Health Score =
+VAR _online = [Gateways Online]
+VAR _total  = [Gateways Total]
+RETURN DIVIDE(_online, _total, 0) * 100
+
+Gateways Total = DISTINCTCOUNT(gold_gateway_health[GatewayObjectId])
+
+Gateways Online =
+CALCULATE(
+    DISTINCTCOUNT(gold_gateway_health[GatewayObjectId]),
+    gold_gateway_health[heartbeat_age_minutes] <= 5
+)
+
+Open Failures (24h) =
+CALCULATE(
+    COUNTROWS(silver_triage),
+    silver_triage[is_failure] = TRUE(),
+    silver_triage[event_time] >= NOW() - 1
+)
+
+Attribution Rate % =
+VAR _attributed =
+    CALCULATE(COUNTROWS(silver_identity_attribution),
+        silver_identity_attribution[attribution_kind] = "EVALUATION_CONTEXT")
+VAR _total = COUNTROWS(silver_identity_attribution)
+RETURN DIVIDE(_attributed, _total, 0) * 100
+
+Capacity Headroom % =
+100 - AVERAGEX(gold_cluster_load, gold_cluster_load[cpu_utilization_pct])
+
+// ---------------------------------------------------------------------------
+// HISTORICAL / TIME-SERIES — the "previous data" trend layer (needs dim_date)
+// ---------------------------------------------------------------------------
+
+Error Rate % =
+DIVIDE(
+    CALCULATE(COUNTROWS(silver_triage), silver_triage[is_failure] = TRUE()),
+    COUNTROWS(silver_triage),
+    0
+) * 100
+
+Error Rate % (7d avg) =
+AVERAGEX(
+    DATESINPERIOD(dim_date[Date], MAX(dim_date[Date]), -7, DAY),
+    [Error Rate %]
+)
+
+Query Volume =
+COUNTROWS(gold_query_performance)
+
+Query Volume MoM % =
+VAR _cur  = [Query Volume]
+VAR _prev = CALCULATE([Query Volume], DATEADD(dim_date[Date], -1, MONTH))
+RETURN DIVIDE(_cur - _prev, _prev, BLANK()) * 100
+
+Refresh Success Rate % =
+DIVIDE(
+    CALCULATE(COUNTROWS(silver_triage), silver_triage[refresh_status] = "Completed"),
+    CALCULATE(COUNTROWS(silver_triage), NOT(ISBLANK(silver_triage[refresh_status]))),
+    0
+) * 100
+
+Avg CPU % (rolling 7d) =
+AVERAGEX(
+    DATESINPERIOD(dim_date[Date], MAX(dim_date[Date]), -7, DAY),
+    AVERAGE(gold_gateway_health[cpu_utilization_pct])
+)
+
+Health Trend Direction =
+VAR _now  = [Fleet Health Score]
+VAR _prev = CALCULATE([Fleet Health Score], DATEADD(dim_date[Date], -1, DAY))
+RETURN
+    SWITCH(TRUE(),
+        _now > _prev, "Improving",
+        _now < _prev, "Degrading",
+        "Stable")
+
+// ---------------------------------------------------------------------------
+// MASHUPS — per-process bloat (G5, proven-local; RuiRomano Mashups parity)
+// ---------------------------------------------------------------------------
+
+Mashup RAM Peak (MB) = MAXX(gold_mashup_health, gold_mashup_health[peak_working_set_mb])
+
+Mashup CPU % (avg) = AVERAGE(gold_mashup_health[avg_cpu_pct])
+
+Runaway Container Count =
+CALCULATE(
+    DISTINCTCOUNT(gold_mashup_health[container_pid]),
+    gold_mashup_health[is_runaway] = TRUE()
+)
+
+// ---------------------------------------------------------------------------
+// TENANT BREADTH  [Tenant-gated] — fuam-style; data needs the admin-API grant
+// ---------------------------------------------------------------------------
+
+Active Users (30d) =
+// [Tenant-gated] requires bronze_activity_events from the admin/activity API
+CALCULATE(
+    DISTINCTCOUNT(bronze_activity_events[UserId]),
+    bronze_activity_events[event_time] >= NOW() - 30
+)
+
+Dataset Refresh Count (7d) =
+// [Tenant-gated] requires capacity refreshables from the admin API
+CALCULATE(
+    COUNTROWS(bronze_capacity_refreshables),
+    bronze_capacity_refreshables[refresh_time] >= NOW() - 7
+)
+
+Capacity CU % (avg) =
+// [Tenant-gated] requires capacity metrics app / admin API
+AVERAGE(bronze_capacity_metrics[cu_percentage])
