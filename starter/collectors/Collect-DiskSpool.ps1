@@ -2,8 +2,8 @@
 # Collect-DiskSpool.ps1
 # Label: [NET-NEW]
 #
-# Pain point addressed: #9 — Disk Spooler Surprises (no proactive disk monitoring)
-# Signal: S11b — Spool directory disk free space + current spool directory size
+# Pain point addressed: #9 -- Disk Spooler Surprises (no proactive disk monitoring)
+# Signal: S11b -- Spool directory disk free space + current spool directory size
 #
 # Context:
 #   The gateway writes compressed query results to a spool directory before
@@ -161,7 +161,7 @@ try {
     }
     else {
         Write-Verbose "Spool path not found: $SpoolPath"
-        Write-Verbose "This may mean the path is incorrect — validate in Phase 5."
+        Write-Verbose "This may mean the path is incorrect -- validate in Phase 5."
         $result.SpoolDirSizeBytes = 0
     }
 }

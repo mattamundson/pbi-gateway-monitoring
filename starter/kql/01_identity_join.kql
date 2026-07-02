@@ -30,8 +30,11 @@
 //   by the Chris Webb / Fabric CAT post above, which quotes matching the two
 //   values directly. This is desk-verification against primary sources, not a
 //   live-tenant test -- schema can still drift by tenant/preview rollout.
-//   Phase 5 (research/phase5_validation.md, item U11 -- "RequestId attribution
-//   fuzziness") is still required before calling this [Verified].
+//   Phase 5 (research/phase5_validation.md, item U19 -- "Exact Workspace-
+//   Monitoring identity join") is still required before calling this
+//   [Verified]. (U11 covers a different mechanism -- the fuzzy time-window
+//   correlation in 02_silver_correlate.py -- not this file's exact
+//   RequestId == OperationId equality join.)
 //
 // [Open question for Phase 5 -- do not widen the claim without testing] The
 //   Chris Webb post states the XmlaRequestId join also covers DirectQuery
@@ -46,6 +49,13 @@
 //   this join regardless. It resolves the common, high-value case: Fabric
 //   semantic model refresh + query attribution (and possibly DirectQuery --
 //   see open question above).
+//
+// Note: RequestId is the same value for a given query across the gateway's
+//   QueryStart and QueryExecution log/report pairs (two stages of one query),
+//   so copying RequestId from QueryStartReport*.csv -- as QUICKSTART/PILOT
+//   instruct -- is equivalent to sourcing it from a QueryExecution report and
+//   is correct for this join, even though bronze_query_execution (not
+//   bronze_query_start) is the table referenced below.
 // =============================================================================
 
 // Assumes gateway QueryStart/QueryExecution have been landed into the same

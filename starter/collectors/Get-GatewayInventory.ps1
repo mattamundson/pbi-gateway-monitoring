@@ -3,9 +3,9 @@
 # Label: [ADAPTED-FROM-SQLvariant]
 #
 # Pain points addressed:
-#   #1  — Gateway online/offline status (heartbeat)
-#   #6  — Fleet / multi-gateway view
-#   #10 — Credential / datasource state drift (datasource status check)
+#   #1  -- Gateway online/offline status (heartbeat)
+#   #6  -- Fleet / multi-gateway view
+#   #10 -- Credential / datasource state drift (datasource status check)
 #
 # Signals collected: S2 (config/datasource list), S5 (PS module inventory), S6 (REST APIs)
 #
@@ -113,7 +113,7 @@ try {
     }
     else {
         # No secret file: fall back to interactive/device-code auth.
-        # [Assumption] Not suitable for scheduled tasks — SP path is required for automation.
+        # [Assumption] Not suitable for scheduled tasks -- SP path is required for automation.
         Write-Warning "No client secret file found. Attempting interactive auth (not suitable for scheduled tasks)."
         Connect-DataGatewayServiceAccount -ErrorAction Stop
     }
@@ -178,7 +178,7 @@ try {
         }
 
         # ---------------------------------------------------------------------------
-        # Datasource status check (for credential drift detection — Pain #10)
+        # Datasource status check (for credential drift detection -- Pain #10)
         # REST: GET /gateways/{clusterId}/datasources/{datasourceId}/status
         # [Unverified] Get-DataGatewayClusterDatasource cmdlet existence and
         #              exact parameter names require Phase 5 validation.
@@ -196,14 +196,14 @@ try {
                         DatasourceName    = $ds.DatasourceName
                         DatasourceType    = $ds.DatasourceType
                         ConnectionDetails = $ds.ConnectionDetails | ConvertTo-Json -Compress
-                        # Status field: Live, Unknown, Error — drives credential-drift alerting
+                        # Status field: Live, Unknown, Error -- drives credential-drift alerting
                         Status            = if ($ds.PSObject.Properties['Status']) { $ds.Status } else { "Unknown" }
                         LastUpdated       = if ($ds.PSObject.Properties['LastUpdated']) { $ds.LastUpdated } else { $null }
                     }
                 }
             }
             catch {
-                # Datasource status check is optional — do not fail entire collection
+                # Datasource status check is optional -- do not fail entire collection
                 $errMsg = "Datasource status check failed for cluster $($cluster.Name): $_"
                 Write-Warning $errMsg
                 $collectionErrors += $errMsg

@@ -26,7 +26,12 @@
    └── Service Principal, Key Vault, Fabric workspace, capacity (F8+)
 
 2. Local smoke test (optional, ~5 min)
-   └── JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 python deploy/run_local_smoke.py
+   └── bash/Linux/macOS: JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 python deploy/run_local_smoke.py
+   └── PowerShell/Windows: $env:JAVA_HOME='C:\Program Files\Eclipse Adoptium\jdk-17'; python deploy/run_local_smoke.py
+       (the bash-style "VAR=value python ..." prefix form does NOT work in PowerShell)
+       Also requires Python 3.11 (pyspark 3.5.x does not support 3.13/3.14) and,
+       on Windows, winutils.exe/hadoop.dll on HADOOP_HOME (else SparkContext dies
+       at createTempDir).
 
 3. Open Deploy_GatewayMonitor.ipynb in a Fabric notebook
    └── Fill in the parameters cell (workspace_id, capacity_id, lakehouse_name, kv_uri…)
@@ -145,7 +150,9 @@ GET https://api.fabric.microsoft.com/v1/workspaces/{workspaceId}/items/{itemId}/
 - [ ] Fabric workspace created (not My Workspace)
 - [ ] `semantic-link-labs` installed in the Fabric environment:
   `%pip install semantic-link-labs` (run in Fabric notebook cell)
-- [ ] Python ≥ 3.9, PySpark 3.5.x, delta-spark 3.1.x (for local smoke test only)
+- [ ] Python 3.11 (PySpark 3.5.x does not support Python 3.13/3.14 — cloudpickle
+      stack overflow), delta-spark 3.1.x (for local smoke test only). On Windows,
+      also winutils.exe/hadoop.dll on HADOOP_HOME.
 
 ---
 

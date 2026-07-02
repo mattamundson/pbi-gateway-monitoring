@@ -2,10 +2,10 @@
 # Collect-NetworkMetrics.ps1
 # Label: [NET-NEW]
 #
-# Pain point addressed: #7 — Network / Bandwidth Blind Spot
-# Signal: S11 — OS-level NIC counters + latency probe
+# Pain point addressed: #7 -- Network / Bandwidth Blind Spot
+# Signal: S11 -- OS-level NIC counters + latency probe
 #
-# This is Differentiator #4 — the HIGHEST-VALUE GAP. No existing tool
+# This is Differentiator #4 -- the HIGHEST-VALUE GAP. No existing tool
 # (FPM, pbigtwmonitor, Gateway PBIT, SummitView, or any other) collects
 # OS-level network bandwidth and correlates it with gateway query data.
 #
@@ -15,8 +15,8 @@
 #   Source: https://learn.microsoft.com/en-us/data-integration/gateway/service-gateway-performance
 #
 # What this collects:
-#   - \Network Interface(*)\Bytes Total/sec  — total NIC throughput
-#   - \Network Interface(*)\Current Bandwidth — maximum NIC bandwidth (bps)
+#   - \Network Interface(*)\Bytes Total/sec  -- total NIC throughput
+#   - \Network Interface(*)\Current Bandwidth -- maximum NIC bandwidth (bps)
 #   - Test-Connection latency to Power BI relay endpoint
 #
 # [NET-NEW] No prior art in existing gateway monitoring tools.
@@ -146,7 +146,7 @@ catch {
 # ---------------------------------------------------------------------------
 # Latency probe via Test-Connection
 # Measures round-trip time to a well-known endpoint as a proxy for
-# gateway → Power BI Service network latency.
+# gateway -> Power BI Service network latency.
 #
 # [Assumption] msftncsi.com (Microsoft's network connectivity test host)
 #              is accessible from gateway host and ICMP is not blocked.

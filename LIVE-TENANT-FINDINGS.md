@@ -45,7 +45,7 @@ inference before our parser even loads. This is a Fabric platform behavior, not 
 1. Do **not** use Fabric Load-to-Tables for the raw gateway CSV. Route through the existing
    `starter/deploy/Deploy_GatewayMonitor.ipynb` notebook path which calls
    `read_gateway_csv` — that layer sanitizes column names via `_sanitize_columns()`
-   before materializing the schema.
+   (proposed fix here — implemented in Session 2 below) before materializing the schema.
 2. If you must use Load-to-Tables, pre-process the CSV with a lightweight pipeline step
    (e.g., a Data Factory dataflow or a one-cell notebook) that strips/replaces `(`, `)`,
    and `/` in the header row before ingestion.
@@ -55,7 +55,7 @@ inference before our parser even loads. This is a Fabric platform behavior, not 
 
 **Action items:**
 - [ ] Add `_sanitize_columns()` coverage for `(ms)` / `(bytes)` patterns to unit tests
-      (`starter/tests/test_gateway_bronze_lib.py`)
+      (`starter/tests/test_parser.py`)
 - [ ] Add a warning/guard in `QUICKSTART.md` explicitly telling users not to use
       Load-to-Tables for the raw gateway CSV
 - [ ] Evaluate adding a pre-ingest rename step to the Deploy notebook

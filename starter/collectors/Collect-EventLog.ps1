@@ -3,10 +3,10 @@
 # Label: [NET-NEW/ADAPTED]
 #
 # Pain points addressed:
-#   #2  — Opaque refresh failure triage (service-level crash/restart events)
-#   #10 — Service stability (gateway service events)
+#   #2  -- Opaque refresh failure triage (service-level crash/restart events)
+#   #10 -- Service stability (gateway service events)
 #
-# Signal: S9 — Windows Event Log (gateway service crash, restart, failure events)
+# Signal: S9 -- Windows Event Log (gateway service crash, restart, failure events)
 #
 # Adapted from:
 #   martinskeem/powerbi-powershell WRITE pattern (New-EventLog / Write-EventLog):
@@ -91,7 +91,7 @@ $allEvents = @()
 $collectionErrors = @()
 
 # ---------------------------------------------------------------------------
-# Application log — "On-premises data gateway" provider
+# Application log -- "On-premises data gateway" provider
 # [Adapted from martinskeem pattern] martinskeem uses Application log as
 # the integration surface for gateway status. We read from the same log.
 # Reference: https://github.com/martinskeem/powerbi-powershell
@@ -142,7 +142,7 @@ catch {
 }
 
 # ---------------------------------------------------------------------------
-# System log — Service Control Manager events for gateway service
+# System log -- Service Control Manager events for gateway service
 # EventId 7034: Service terminated unexpectedly
 # EventId 7031: Service terminated and will be restarted
 # EventId 7036: Service entered running/stopped state

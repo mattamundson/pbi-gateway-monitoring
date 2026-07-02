@@ -71,7 +71,7 @@ $config = Get-Content $ConfigPath -Raw | ConvertFrom-Json
 # ---------------------------------------------------------------------------
 if ([string]::IsNullOrWhiteSpace($LogRootPath)) {
     # Read the configured path. config.sample.json models it as the NESTED key
-    # gateway.logPath — reading the flat $config.gatewayLogPath (the old code)
+    # gateway.logPath -- reading the flat $config.gatewayLogPath (the old code)
     # THROWS under Set-StrictMode -Version Latest when that flat key is absent,
     # so an operator on a custom service account who set gateway.logPath got a
     # crashed collector instead of their path. Read the nested key StrictMode-safely
@@ -89,7 +89,7 @@ if ([string]::IsNullOrWhiteSpace($LogRootPath)) {
         $LogRootPath = $cfgLogPath
     }
     else {
-        # [Assumption] Default service account is PBIEgwService — will not match a
+        # [Assumption] Default service account is PBIEgwService -- will not match a
         # custom service account; set gateway.logPath in config.json to override.
         $LogRootPath = "$env:SystemDrive\Users\PBIEgwService\AppData\Local\Microsoft\On-premises data gateway\Report"
     }
@@ -154,7 +154,7 @@ if ($newFiles.Count -eq 0) {
 
 # ---------------------------------------------------------------------------
 # Read and stage each file as a JSON record for bronze ingest
-# [NET-NEW] We do NOT parse column values here — that is the job of
+# [NET-NEW] We do NOT parse column values here -- that is the job of
 # 01_bronze_ingest.py which does schema-adaptive column-name parsing.
 # We only emit the raw CSV content + metadata.
 # This avoids the DataFormat.Error that breaks the PBIT template on upgrade.
@@ -193,7 +193,7 @@ foreach ($file in $newFiles) {
     }
     catch {
         Write-Warning "Failed to read log file $($file.FullName): $_"
-        # Do not update watermark for failed files — they will retry next run
+        # Do not update watermark for failed files -- they will retry next run
     }
 }
 
@@ -203,7 +203,7 @@ foreach ($file in $newFiles) {
 # In production: upload directly to OneLake landing zone
 # [Assumption] OneLake ADLS Gen2 endpoint is accessible from gateway host
 # [Unverified] Actual upload mechanism to OneLake requires az CLI or REST
-#              and is not implemented here — placeholder for Phase 5.
+#              and is not implemented here -- placeholder for Phase 5.
 # ---------------------------------------------------------------------------
 $timestamp = (Get-Date).ToUniversalTime().ToString("yyyyMMdd_HHmmss")
 $outputFile = "$OutputPath\gateway_logs_$timestamp.json"

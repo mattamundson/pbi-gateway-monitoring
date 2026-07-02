@@ -100,14 +100,20 @@ python starter/deploy/run_local_smoke.py
 
 Every claim and every code file in this repo carries an explicit label. Contributors must follow the same convention — do not submit PRs that add unlabeled claims or code.
 
-| Label | Apply when |
-|---|---|
-| `[Unverified]` | Capability is implemented and locally tested but has not run in a live Fabric tenant with real data. Apply to any new feature until a pilot report confirms it. |
-| `[STUB]` | Code file is a scaffold that requires post-deploy modification (e.g., hardcoded paths, placeholder API calls). |
-| `[NET-NEW]` | Original logic not adapted from another tool or source. |
-| `[ADAPTED]` | Logic adapted or derived from a named upstream source. Name the source in a comment. |
+The canonical label set (and the required-when-confirming-a-pilot workflow) lives in the
+README's **[Honesty charter](README.md#honesty-charter)** — do not redefine it here. The two
+labels you'll use most often when adding a new feature:
 
-When a pilot report confirms a previously `[Unverified]` item, update the label in the relevant file and update the status column in [`PAIN-POINT-COVERAGE.md`](PAIN-POINT-COVERAGE.md). Include a link to the confirming pilot-report issue in the PR description.
+- **`[Built-Unverified]`** — implemented and locally tested, but not yet run in a live Fabric
+  tenant with real data. Apply to any new feature until a pilot report confirms it. (Note: some
+  older text in this repo uses the shorthand `[Unverified]` — treat it as equivalent to
+  `[Built-Unverified]`.)
+- **`[STUB]` / `[NET-NEW]` / `[ADAPTED]`** — as defined in the README charter, for scaffold code,
+  original logic, and logic adapted from a named upstream source respectively.
+
+When a pilot report confirms a previously `[Built-Unverified]` item, update the label in the
+relevant file and update the status column in [`PAIN-POINT-COVERAGE.md`](PAIN-POINT-COVERAGE.md).
+Include a link to the confirming pilot-report issue in the PR description.
 
 ---
 

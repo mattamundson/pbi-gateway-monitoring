@@ -1,6 +1,6 @@
 <#
 =============================================================================
-Collect-MashupProcesses.ps1  |  Label: [NET-NEW]  |  [Unverified — needs gateway host]
+Collect-MashupProcesses.ps1  |  Label: [NET-NEW]  |  [Unverified -- needs gateway host]
 
 CLOSES PAIN POINT #5: "Mashup engine memory/CPU bloat, no per-process visibility."
 No existing tool (FPM, RuiRomano, FUAM) captures PER-PROCESS resource use of the
@@ -29,7 +29,7 @@ NOTES / [Unverified]:
 #>
 [CmdletBinding()]
 param(
-    [string] $OutDir = ".\landing\mashup",
+    [string] $OutDir = "$PSScriptRoot\..\output",
     # Process name match patterns (regex). Gateway service + mashup containers.
     [string[]] $ProcessPatterns = @(
         'Microsoft\.Mashup\.Container',      # mashup evaluation containers (all variants)
@@ -68,6 +68,8 @@ foreach ($p in Get-MatchingProcs) {
         $cpuPctMachine = [math]::Round(($deltaCpuMs / $CpuSampleMs) / $logicalCores * 100, 2)
 
         $isMashup = ($p.Name -match 'ashup')
+        $startTimeUtc = $null
+        try { $startTimeUtc = $p.StartTime.ToUniversalTime().ToString('o') } catch { $startTimeUtc = $null }
         $records.Add([pscustomobject]@{
             CollectedAtUtc   = $nowUtc
             GatewayObjectId  = $GatewayObjectId
@@ -80,7 +82,7 @@ foreach ($p in Get-MatchingProcs) {
             CpuPercent       = $cpuPctMachine
             ThreadCount      = $p.Threads.Count
             HandleCount      = $p.HandleCount
-            StartTimeUtc     = try { $p.StartTime.ToUniversalTime().ToString('o') } catch { $null }
+            StartTimeUtc     = $startTimeUtc
             LogicalCores     = $logicalCores
         })
     } catch {
@@ -94,6 +96,6 @@ if ($records.Count -eq 0) {
 
 $stamp = (Get-Date).ToUniversalTime().ToString('yyyyMMddTHHmmssZ')
 $outFile = Join-Path $OutDir "MashupProcesses_$stamp.json"
-# newline-delimited JSON (one record per line) — friendly to the bronze reader
+# newline-delimited JSON (one record per line) -- friendly to the bronze reader
 $records | ForEach-Object { $_ | ConvertTo-Json -Compress } | Set-Content -Path $outFile -Encoding UTF8
 Write-Host "Wrote $($records.Count) process record(s) -> $outFile"

@@ -1,7 +1,7 @@
 # Pilot Guide — Start Here (explained simply, step by step)
 
 This is your hand-holding checklist to test the most important part of the tool.
-No prior Fabric-admin experience assumed. Do the steps in order. Total time: ~30–45 min.
+No prior Fabric-admin experience assumed. Do the steps in order. Total time: ~30 min.
 
 **What you're trying to prove:** that we can take a mystery ID from the gateway's
 logs and use it to find out **which report/dataset and which person** caused a slow
@@ -25,7 +25,8 @@ the guest's name. If the numbers line up, you can name the guest. That's the tes
 1. Go to **https://app.fabric.microsoft.com** and sign in.
 2. On the left, click **Workspaces** → **+ New workspace**.
 3. Name it `gateway-pilot`. Under **Advanced**, make sure it's assigned to a
-   **Fabric capacity (F-something, like F8 or higher)**. Click **Apply**.
+   **Fabric capacity (F2 or higher — F2 Pay-As-You-Go is enough for this test;
+   F8+ is only needed later for the optional Activator/alerting step)**. Click **Apply**.
    - *Why:* a workspace is just a folder/project. We use a fresh one so we don't
      touch anything real.
 
@@ -70,10 +71,11 @@ the gateway is installed** (ask whoever manages it, or do it yourself if that's 
    is the **Eventhouse / KQL Database** created by monitoring (name contains
    "Monitoring"). Click it.
 2. Click **New → KQL Queryset** (or the **Explore your data / query** button).
-3. Open the file **`starter/kql/01_identity_join.kql`** from our repo
-   (github.com/mattamundson/pbi-gateway-monitoring). Copy the **first query block**
-   (the part under "Core join").
-4. Paste it into the KQL query window.
+3. Copy-paste source: [`starter/kql/PILOT-identity-join-test.kql`](../starter/kql/PILOT-identity-join-test.kql)
+   has these queries ready to paste in order — no need to retype them. (The full
+   flagship query with all options lives in `starter/kql/01_identity_join.kql`,
+   under "Core join", if you want to go beyond the pilot test.)
+4. Paste the first query block into the KQL query window.
 5. **Important:** this query expects the gateway logs to already be in a table called
    `bronze_query_execution`. For this first quick test you probably don't have that
    yet — so instead do the **simple sanity version** below. Paste THIS instead and
@@ -259,10 +261,10 @@ solid ground.
 This guide only validates the **flagship capability** (the identity join). Once
 Task 1 succeeds, the full end-to-end deployment path is:
 
-1. **Deploy order** — follow the 6-step sequence in the [repo README](../README.md#deploy-order)
-   (stand up Lakehouse + Eventhouse → deploy `starter/collectors/*.ps1` →
-   run `starter/notebooks/01→02→03` → enable Workspace Monitoring → add KQL +
-   Activator rules).
+1. **Deploy order** — follow the 5-step sequence in the [repo README](../README.md#quickstart--fork-then-validate-in-30-min)
+   (choose your deploy path → deploy `starter/collectors/*.ps1` →
+   run `starter/notebooks/01→02→03` → enable Workspace Monitoring and run the
+   identity join → report the result).
 2. **Graduate reference → production** — work through
    [`research/phase5_validation.md`](../research/phase5_validation.md): the U1–U16
    confirmation matrix (every `[Unverified]`/`[Assumption]` with a test and a

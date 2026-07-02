@@ -7,12 +7,26 @@ Local end-to-end smoke test for the Gateway Monitor medallion pipeline.
 Exercises the REAL bronze→silver→gold transform logic using PySpark + Delta
 against synthetic CSV/JSON fixtures in starter/tests/synthetic_out/.
 
-USAGE:
+USAGE (bash / Linux / macOS):
     JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 python run_local_smoke.py
 
+USAGE (PowerShell / Windows):
+    $env:JAVA_HOME='C:/Program Files/Eclipse Adoptium/jdk-17'; python run_local_smoke.py
+    # NOTE: the bash-style "JAVA_HOME=... python run_local_smoke.py" prefix form
+    # does NOT work in PowerShell — it is not env-var assignment syntax there.
+
 REQUIREMENTS:
-    pyspark>=3.5.0, delta-spark>=3.1.0 (3.5.x compat), Python 3.9+
+    pyspark>=3.5.0, delta-spark>=3.1.0 (3.5.x compat), Python 3.11
+    (pyspark 3.5.x is NOT supported on Python 3.13/3.14 -- cloudpickle hits a
+    C-stack overflow on those interpreters; pin a Python 3.11 venv/conda env).
     Java 17 on JAVA_HOME.
+
+    Windows-only: Spark local mode also requires Hadoop's winutils.exe /
+    hadoop.dll on HADOOP_HOME (a bare pyspark install does not include them).
+    Without it, SparkSession creation dies inside createTempDir(). See
+    reference_pyspark_windows_local_harness for a known-good local setup
+    (conda-forge openjdk=17 + a winutils.exe/hadoop.dll drop under
+    <user home>/.local/hadoop-3.3.5/bin, HADOOP_HOME pointed at that dir).
 
 WHAT THIS PROVES:
     - gateway_bronze_lib.read_gateway_csv() parses synthetic QueryExecution CSV
@@ -76,6 +90,15 @@ def _check_env():
     except ImportError:
         print("[SKIP] delta-spark not installed. Run: pip install delta-spark==3.1.0")
         sys.exit(0)
+    # Windows-only: Spark local mode needs winutils.exe/hadoop.dll on HADOOP_HOME
+    # or SparkSession creation dies inside createTempDir(). Warn, don't hard-fail
+    # — some Windows setups (e.g. WSL-backed Python) don't need it.
+    if os.name == "nt" and not os.environ.get("HADOOP_HOME", ""):
+        print(
+            "[WARN] HADOOP_HOME not set on Windows — Spark local mode may fail at "
+            "SparkContext.createTempDir() without winutils.exe/hadoop.dll. "
+            "See reference_pyspark_windows_local_harness for a known-good setup."
+        )
 
 
 _check_env()
@@ -449,6 +472,13 @@ try:
             .filter(F.col("RequestId").isNotNull())
         )
         rh_count = rh.count()
+        # generate_synthetic_logs.gen_refresh_history() emits 16 records
+        # (req-1000..req-1015) + 2 orphans (req-9001/req-9002) = 18 rows.
+        # Hard-assert instead of just printing [PASS] so a broken multiLine
+        # read (0 rows) can't silently pass.
+        assert (
+            rh_count == 18
+        ), f"multiLine refresh ingest expected 18 rows, got {rh_count}"
         print(
             f"[PASS] bronze_refresh_history: {rh_count} refresh records "
             "(multiLine JSON + explode(RefreshRecords) OK)"

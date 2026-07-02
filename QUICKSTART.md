@@ -5,7 +5,8 @@ ticket number (`RequestId`) matches a Fabric Workspace Monitoring record that kn
 **user** and **dataset**. If it matches, the tool's core promise is real.
 
 > Full hand-holding version: [`docs/PILOT-GUIDE-START-HERE.md`](docs/PILOT-GUIDE-START-HERE.md).
-> This is the condensed path. **Requires:** Fabric admin, F8+ capacity.
+> This is the condensed path. **Requires:** Fabric admin, F2+ capacity for the identity-join
+> test; F8+ only for the optional Activator/alerting step.
 
 ---
 
@@ -13,7 +14,8 @@ ticket number (`RequestId`) matches a Fabric Workspace Monitoring record that kn
 
 **1. Make a test workspace**
 - https://app.fabric.microsoft.com → **Workspaces → + New workspace**
-- Name `gateway-pilot`, assign to your **F8+ capacity**, Apply.
+- Name `gateway-pilot`, assign to your **F2+ capacity** (F8+ only needed later for the
+  optional Activator/alerting step), Apply.
 
 **2. Turn on Workspace Monitoring** (the "guest list")
 - Open workspace → **Workspace settings** (gear) → **Monitoring** → toggle **On** → Save.
@@ -28,7 +30,8 @@ ticket number (`RequestId`) matches a Fabric Workspace Monitoring record that kn
   `C:\Windows\ServiceProfiles\PBIEgwService\AppData\Local\Microsoft\On-premises data gateway\Report`
 - Open a `QueryStartReport*` file in Notepad; find the **`RequestId`** column; copy 2–3 values.
 
-**5. Run the match** — in the Eventhouse/KQL DB created in `gateway-pilot`, **New → KQL Queryset**:
+**5. Run the match** — in the Eventhouse/KQL DB created in `gateway-pilot`, **New → KQL Queryset**.
+Copy-paste source (no need to retype): [`starter/kql/PILOT-identity-join-test.kql`](starter/kql/PILOT-identity-join-test.kql).
 
 Peek first:
 ```kql
@@ -80,8 +83,9 @@ names) — this happens **before** any of our parsing code runs, so it can't be 
 
 **Route the CSV through the notebook path instead:** `starter/notebooks/01_bronze_ingest.py`
 → `read_gateway_csv()`, which auto-sanitizes those headers (`(ms)`→`_ms`, `(bytes)`→`_bytes`)
-for both known *and* new/unknown columns. Confirmed on a live tenant 2026-07-01 —
-see [`LIVE-TENANT-FINDINGS.md`](LIVE-TENANT-FINDINGS.md) → Pain #4.
+for both known *and* new/unknown columns. The `InvalidColumnName` bug itself was confirmed
+on a live tenant 2026-07-01; the sanitizer fix was proven on local Spark (off-tenant
+follow-up) — see [`LIVE-TENANT-FINDINGS.md`](LIVE-TENANT-FINDINGS.md) → Pain #4.
 
 ## What happens next
 Paste the results (even an error) back to the assistant. That flips the biggest

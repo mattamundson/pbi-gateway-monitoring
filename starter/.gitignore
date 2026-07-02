@@ -3,6 +3,8 @@ __pycache__/
 config/config.json
 *.local.json
 tests/synthetic_out/
+# NOTE: tests/sim_out/ is a committed fixture (feeds validate_pipeline_sim.py so
+# reviewers can run Tier-3 without Spark) — intentionally NOT ignored here.
 spark-warehouse/
 metastore_db/
 derby.log

@@ -36,15 +36,18 @@ PowerBIDatasetsWorkspace
 
 
 // ---- (3) SCHEMA: confirm the real column names in YOUR tenant ----------------
-// Resolves the desk-verified-only column-name assumptions (phase5 U2). Paste all.
+// Confirms the desk-verified column-name claim in 01_identity_join.kql's header
+// block (PowerBIDatasetsWorkspace schema). Paste all.
 PowerBIDatasetsWorkspace
 | getschema
 | project ColumnName, ColumnType
 
 
 // ---- (4) OPTIONAL, if the trial capacity is still throttle-slow --------------
-// A narrowed version of the production join (starter/kql/01_identity_join.kql):
-// last 15 min, single workspace, so it stays under a trial Spark/KQL throttle.
+// A narrowed monitoring-table scan (NOT the full gateway↔monitoring join --
+// that requires landing the gateway logs into the Eventhouse first; see
+// starter/kql/01_identity_join.kql): last 15 min, single workspace, so it
+// stays under a trial Spark/KQL throttle.
 // Set the workspace GUID (from block 2's WorkspaceId), then run.
 let lookback = 15m;
 let ws = "PASTE-YOUR-WORKSPACE-GUID-HERE";

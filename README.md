@@ -2,7 +2,7 @@
 
 **Fork-ready open-source accelerator for Fabric-native On-Premises Data Gateway observability — built on a two-pass evidence pipeline; pending live-tenant validation.**
 
-> **Status:** Reference architecture + locally-validated starter kit. The schema-adaptive parser (pain #4) is proven on real Spark. All other capabilities are implemented and locally tested on synthetic data. Live-tenant validation is open to the community. This is not a certified one-click product yet.
+> **Status:** Reference architecture + locally-validated starter kit. The schema-adaptive parser (pain #4) is proven on real Spark via the notebook ingestion path (Fabric's Load-to-Tables shortcut still fails at platform schema-inference — see [`LIVE-TENANT-FINDINGS.md`](LIVE-TENANT-FINDINGS.md)). All other capabilities are implemented and locally tested on synthetic data. Live-tenant validation is open to the community. This is not a certified one-click product yet.
 
 > **New here / ready to test?** Start with the hand-holding pilot guide: [`docs/PILOT-GUIDE-START-HERE.md`](docs/PILOT-GUIDE-START-HERE.md) — a plain-English, step-by-step walkthrough to validate the flagship capability in ~30 minutes. Or see the condensed path: [`QUICKSTART.md`](QUICKSTART.md).
 
@@ -44,7 +44,7 @@ The gateway `RequestId` is byte-identical to `XmlaRequestId`/`OperationId` in Fa
 
 - Documented in [`docs/TECHNIQUE-query-identity-attribution.md`](docs/TECHNIQUE-query-identity-attribution.md)
 - Desk-verified 2026-07-01 against [Microsoft's semantic model operations reference](https://learn.microsoft.com/en-us/fabric/enterprise/powerbi/semantic-model-operations) — the join key is stated verbatim in MS docs, not inferred from community posts
-- **Status: `[Desk-Verified]` — the join key is confirmed in primary docs; live-tenant match rate is the open question the community pilot resolves**
+- **Status: join key `[Desk-Verified]`; live-tenant proof `[Built-Unverified]`** — the join key is confirmed in primary docs, but a first live-tenant attempt hit a trial-capacity Spark throttle before match rate could be measured (see [`LIVE-TENANT-FINDINGS.md`](LIVE-TENANT-FINDINGS.md)). Match rate remains the open question the community pilot resolves
 - Residual scope: Dataflow Gen1 and Paginated Reports are confirmed-blocked by platform. DirectQuery-through-gateway is an open question (Chris Webb's analysis suggests it may work; Phase 5 tests this explicitly)
 
 ### 2. Per-query network cost — `starter/collectors/Collect-NetworkMetrics.ps1`
@@ -64,8 +64,8 @@ All 10 operator pain points from [`research/phase3_painpoints.md`](research/phas
 |---|---|---|---|
 | 1 | No real-time gateway-offline alerting | `starter/alerting/activator-rules.json` + KQL | `[Built-Unverified]` |
 | 2 | Opaque refresh failures — can't triage gateway vs. source vs. network | `Collect-RefreshHistory.ps1` (Service-side leg) + silver correlate triage join + `starter/kql/03_diffpatterns_triage.kql` | `[Built-Unverified]` |
-| 3 | Zero query attribution — no dataset/user/report per query | `starter/kql/01_identity_join.kql` | `[Desk-Verified]` — **live-tenant match rate is the community pilot goal** |
-| 4 | Gateway Performance PBIT breaks on log schema drift | `starter/notebooks/01_bronze_ingest.py` (schema-adaptive, column-name-based) | **PROVEN on real Spark 3.5.1** |
+| 3 | Zero query attribution — no dataset/user/report per query | `starter/kql/01_identity_join.kql` | Join **key**: `[Desk-Verified]`. Live **proof**: `[Built-Unverified]` — a first live-tenant attempt hit a trial-capacity Spark throttle before match rate could be measured. **Live-tenant match rate is still the community pilot goal.** See [`LIVE-TENANT-FINDINGS.md`](LIVE-TENANT-FINDINGS.md) |
+| 4 | Gateway Performance PBIT breaks on log schema drift | `starter/notebooks/01_bronze_ingest.py` (schema-adaptive, column-name-based) | **PROVEN on real Spark 3.5.1** via the notebook ingestion path — Fabric's Load-to-Tables shortcut still fails at platform schema-inference on the raw CSV; see [`LIVE-TENANT-FINDINGS.md`](LIVE-TENANT-FINDINGS.md) |
 | 5 | Mashup engine memory/CPU bloat with no per-process visibility | `Collect-MashupProcesses.ps1` + `gold_mashup_health` | **PROVEN (local Spark, runaway detection)**  |
 | 6 | No multi-gateway / fleet view | `starter/kql/` gold aggregation + inventory collector | `[Built-Local-Tested]` |
 | 7 | No gateway-native network bandwidth metrics | `starter/collectors/Collect-NetworkMetrics.ps1` | `[Built-Unverified]` |
@@ -93,7 +93,7 @@ See [`starter/config/credentials.md`](starter/config/credentials.md) for the ful
 
 ---
 
-## Quickstart — fork, then validate in ~1 hour
+## Quickstart — fork, then validate in ~30 min
 
 **Step 1 — Choose your deploy path** (read [`docs/DEPLOYMENT-DECISION.md`](docs/DEPLOYMENT-DECISION.md)):
 
@@ -205,6 +205,18 @@ This repo uses explicit status labels on every claim and every code file.
 | `[NET-NEW]` | Original logic not adapted from another tool |
 | `[ADAPTED]` | Adapted from a named upstream source |
 
+This table is the **canonical** label set for the whole repo. `CONTRIBUTING.md` points here
+rather than redefining its own set. `PAIN-POINT-COVERAGE.md` and `LIVE-TENANT-FINDINGS.md` use
+a parallel 🟢/🟡/🟠/🔴/⚠️ emoji shorthand for at-a-glance scanning — the equivalence is:
+
+| Emoji | Meaning | Closest charter label |
+|---|---|---|
+| 🟢 PROVEN | Code exists and is verified working (real Spark, or a passing test) | `[Built-Local-Tested]` (or `[Desk-Verified]` + tenant-confirmed, for live proof) |
+| 🟡 BUILT / LOCAL-TESTED | Code exists, runs end-to-end on synthetic data | `[Built-Local-Tested]` |
+| 🟠 BUILT / UNPROVEN | Implemented, not yet executed against real or synthetic data here | `[Built-Unverified]` |
+| 🔴 NOT ADDRESSED | Little or no implementation yet | *(no charter label — absence of implementation, not a confirmation claim)* |
+| ⚠️ REGRESSION FOUND | Previously proven locally; a live-tenant run exposed a real failure | *(no charter label — see the linked `LIVE-TENANT-FINDINGS.md` entry for the fix path)* |
+
 **What this repo does NOT claim:**
 - Full autonomy or self-healing operation
 - eBPF-on-Windows (blocked in 2026; ETW is the correct path — see [`research/frontier_instrumentation.md`](research/frontier_instrumentation.md))
@@ -215,8 +227,29 @@ This repo uses explicit status labels on every claim and every code file.
 
 ---
 
+## Known gaps (internal testers read this)
+
+Two known follow-ups that are collected today but not yet wired all the way through.
+Flagging these for transparency, not asking you to fix them during the pilot:
+
+1. **Mashup-process and gateway-inventory `Datasources` data are collected but not yet
+   ingested.** `Collect-MashupProcesses.ps1` and `Get-GatewayInventory.ps1` (which includes a
+   `Datasources` field per node) both write landing JSON, but `starter/notebooks/01_bronze_ingest.py`
+   has no `ingest_mashup_processes()` step, and its `ingest_gateway_inventory()` only reads
+   `DatasourceCount`, not the `Datasources` array itself. The collected files land safely; they
+   just don't flow into the medallion pipeline yet.
+2. **`01_bronze_ingest.py` keeps its own parser instead of importing `gateway_bronze_lib`.**
+   `starter/notebooks/gateway_bronze_lib.py` holds the schema-adaptive `read_gateway_csv()` +
+   `_sanitize_columns()` logic referenced elsewhere in this repo (including the Pain #4 fix in
+   [`LIVE-TENANT-FINDINGS.md`](LIVE-TENANT-FINDINGS.md)), but `01_bronze_ingest.py`'s own
+   `ingest_gateway_logs()` has a separate, hand-rolled parsing path rather than importing that
+   library. Both are locally tested; they just haven't been consolidated.
+
+---
+
 ## License
 
-MIT — see [LICENSE](LICENSE).
+Proprietary and confidential — internal evaluation and use only. All rights
+reserved. Not licensed for public distribution. See [LICENSE](LICENSE).
 
 This repo was designed via an evidence-based research pipeline. Read [`research/`](research/) to follow the full methodology, and [`DECISIONS.md`](DECISIONS.md) to understand why each architectural choice was made.

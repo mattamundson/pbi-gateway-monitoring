@@ -23,7 +23,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "notebooks"))
 try:
     from gateway_bronze_lib import (
         normalize_eval_context_py as normalize_eval_context,
-        parse_csv_rows as parse_csv_schema_adaptive_lib,
+        parse_csv_rows as parse_csv_schema_adaptive,
     )
 
     _USE_LIB = True
@@ -70,53 +70,10 @@ QE_KNOWN = {
 }
 
 
-def parse_csv_schema_adaptive(raw_csv, known_cols):
-    """Column-NAME-based parse; unknown cols -> _extra_cols; never raises."""
-    reader = csv.reader(io.StringIO(raw_csv))
-    try:
-        rows = list(reader)
-    except csv.Error:
-        rows = [ln.split(",") for ln in raw_csv.strip().splitlines()]
-    if len(rows) < 2:
-        return []
-    headers = [h.strip().strip('"') for h in rows[0]]
-    out = []
-    for values in rows[1:]:
-        if not values or (len(values) == 1 and not values[0].strip()):
-            continue
-        rec, extra = {}, {}
-        for i, val in enumerate(values):
-            if i >= len(headers):
-                extra[f"_overflow_{i}"] = val
-                continue
-            h = headers[i]
-            if h in known_cols:
-                rec[h] = val
-            else:
-                extra[h] = val
-        for h in known_cols:
-            rec.setdefault(h, None)
-        rec["_extra_cols"] = extra
-        out.append(rec)
-    return out
-
-
-def normalize_eval_context(raw):
-    if raw is None:
-        return None
-    s = raw.strip()
-    if not s:
-        return None
-    if s.startswith("{"):
-        return s
-    try:
-        d = base64.b64decode(s, validate=True).decode("utf-8", "strict")
-        if d.strip().startswith("{"):
-            return d
-    except (binascii.Error, ValueError, UnicodeDecodeError):
-        pass
-    return s
-
+# parse_csv_schema_adaptive and normalize_eval_context are imported above from
+# gateway_bronze_lib (parse_csv_rows / normalize_eval_context_py) when available —
+# this keeps the tests exercising the single source of truth instead of a
+# hand-maintained duplicate. See the _USE_LIB import guard above.
 
 # ------------------------------- tests -------------------------------
 FAILS = []
