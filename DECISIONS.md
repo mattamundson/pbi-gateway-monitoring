@@ -19,12 +19,13 @@ Read this to understand *why* the repo is shaped the way it is.
 | D7 | **Network cost via Windows ETW** (`Microsoft-Windows-TCPIP`/`Kernel-Network`) | eBPF is blocked on Windows in 2026; ETW is the native equivalent for per-PID bytes+RTT. Breaks the network-blindspot ceiling. |
 | D8 | **Honesty charter: label everything** | Every claim tagged `[Feasible-now]`/`[Unverified]`/`[Blocked-by-platform]`; every code file `[STUB]`/`[ADAPTED]`/`[NET-NEW]`. Prevents over-selling unproven capability. |
 | D9 | **Roadmap: v1 alerting+parser → v2 network+triage → v3 identity → v4 OTLP bus → v5 ML → v6 OTel profiler** | Sequenced by (pain ÷ effort). `[Feasible-now]` items first; `[Experimental]` frontier gated on pilot. |
+| D10 | **Databricks-first compute evaluated, DEFERRED — Fabric-native stays canonical** | A 2026-07-02 session pivoted compute to Azure Databricks (Unity Catalog `dbw_gatewaymon_dev`, admin-API ingestion) because the Fabric **trial** Spark pool throttled (HTTP 430) and dropped kernels. But that motivation is *validation reliability*, which the local **`pbi-spark` conda harness** already solves with no tenant/trial (see `test_medallion_spark.py`). So Databricks is **not required for validation** — it stays an *optional production-compute backend* (OneLake = storage contract, Fabric = serving). The Databricks admin-API ingestion is **blocked on a tenant-admin SPN grant** (Amo-gated). The coarser `gateway_id`/`dataset_id` join used there does NOT supersede the canonical D6 identity join. Full record: `docs/session-logs/2026-07-02-databricks-first-pivot.md`; reconstructed skeletons: `starter/databricks/`. |
 
 ## What we explicitly do NOT claim
 Full autonomy; eBPF-on-Windows; exact per-DirectQuery *user* attribution; per-OPDG CU billing; "works first try" (pending pilot). See `PRODUCTIZATION.md`.
 
 ## Verification status
-- ✅ **Verified locally (real Spark 3.5.1 + JDK 17):** schema-adaptive parser (both test tiers), full medallion bronze→silver→gold on synthetic data (`starter/deploy/run_local_smoke.py`).
+- ✅ **Verified locally (real Spark 3.5.x + JDK 17):** schema-adaptive parser (both test tiers); the medallion bronze→silver→gold on synthetic data (`starter/deploy/run_local_smoke.py`); and — new (Tier 2.5) — the notebooks' OWN `build_silver_*`/`build_gold_*` transforms incl. the U15 fan-out closure and triage confidence tiers (`starter/tests/test_medallion_spark.py`).
 - ❌ **Unverified (needs tenant pilot):** identity join, Activator rules, EvaluationContext encoding in-the-wild, Workspace Monitoring column names, `DataGateway` cmdlet names, one-click deploy notebook, report bindings.
 
 ## Changelog (high level)
