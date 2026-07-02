@@ -66,6 +66,19 @@
     "_comment": "If true, 01_bronze_ingest.py reads FPM Eventhouse tables exposed as Delta via Eventhouse OneLake availability. Set enabled=true and provide the Delta path only if you have FPM deployed. Reference: https://learn.microsoft.com/en-us/fabric/real-time-intelligence/event-house-onelake-availability"
   },
 
+  "tenantExtract": {
+    "activityLookbackDays": 7,
+    "_comment": "00_tenant_extract.py pulls tenant inventory (Scanner API), activity events, and refreshables to feed the Nexus report's Tenant Overview / Timeline / Refresh Analytics pages. Requires an SP with admin read scopes + tenant setting 'Allow service principals to use read-only admin APIs'."
+  },
+
+  "capacityBridge": {
+    "mode": "mock",
+    "_modeComment": "How 04_capacity_bridge.py populates gold_capacities + the CU measures. One of: 'mock' (synthetic, CI/local), 'fpm_eventhouse' (read FPM CapacityUtilizationEvents Delta), 'capacity_metrics_xmla' (query the Fabric Capacity Metrics semantic model via XMLA). CU has no clean public REST endpoint, so a bridge is required for live CU. Until wired live, CU cards render empty by design.",
+    "eventhouseDeltaPath": "",
+    "xmlaEndpoint": "",
+    "dataset": "Microsoft Fabric Capacity Metrics"
+  },
+
   "features": {
     "collectNetworkMetrics": false,
     "_networkComment": "Enable Collect-NetworkMetrics.ps1 (v2 feature — requires NIC counter access)",
@@ -74,6 +87,10 @@
     "collectRefreshHistory": false,
     "_refreshHistoryComment": "Enable REST refresh history collection (v2 feature — requires Admin API access to dataset list)",
     "collectActivityEvents": false,
-    "_activityEventsComment": "Enable Power BI Activity Events collection for identity attribution (v3 feature)"
+    "_activityEventsComment": "Enable Power BI Activity Events collection for identity attribution + tenant adoption (v3; used by 00_tenant_extract.py)",
+    "collectInventory": false,
+    "_inventoryComment": "Enable Scanner API tenant inventory/lineage collection (00_tenant_extract.py -> gold_inventory)",
+    "collectRefreshables": false,
+    "_refreshablesComment": "Enable Admin Refreshables (Premium) collection (00_tenant_extract.py -> gold_refreshables)"
   }
 }

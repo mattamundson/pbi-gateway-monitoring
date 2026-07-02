@@ -183,6 +183,27 @@ workspace, and (b) a `RequestId` copied from the **gateway host** `QueryStartRep
 is not the client machine). All three (F2+ capacity + gateway-routed refresh + gateway RequestId)
 must be present at once for a green run — best assembled in the real pilot environment.
 
+## 2026-07-02 — Session 5 (tenant-extract pipeline + Capacity Metrics bridge + CI harness)
+
+Off-tenant engineering. Turns the enhanced report's biggest headwind — "tenant pages render empty" — into a wired, CI-tested feed. No live tenant run; live numbers still gated on an admin-scoped SP.
+
+### Tenant-extract pipeline (feeds Nexus Tenant Overview / Timeline / Refresh Analytics)
+- **New `starter/notebooks/00_tenant_extract.py`**: Scanner API (getModifiedWorkspaces → getInfo batch≤100 → poll scanStatus → scanResult), Activity Events (per-UTC-day paging + continuationToken), and Refreshables. MSAL client-credentials auth; 429/5xx backoff honoring Retry-After. Spark- and requests-optional so it is unit-testable; **MOCK mode** (`TENANT_EXTRACT_MOCK=1`) emits deterministic bronze with no network.
+- **New `starter/notebooks/01a_tenant_silver_gold.py`**: pure-Python transforms → `gold_inventory`, `gold_activities`, `gold_refreshables` (schemas match the TMDL model exactly).
+- **New `starter/notebooks/04_capacity_bridge.py`**: `gold_capacities` + CU, config-driven `capacityBridge.mode` = `mock` | `fpm_eventhouse` | `capacity_metrics_xmla`. Honest headwind captured: CU has no clean public REST endpoint, so a bridge is mandatory for live CU.
+
+### Verification
+- **New `starter/tests/test_tenant_extract.py`** (Spark-free): transforms + full mock chain → 4 gold tables. **PASS 4/4.** Existing Tier-1 parser suite still **PASS**.
+- **CI (`.github/workflows/tests.yml`)**: added the tenant test to `tier1-parser`; added a `tenant-harness` job (mock chain 00→01a→04). The `tier2-spark` job already runs the full PySpark harness on **ubuntu-latest + JDK 17** (`test_parser_spark.py` + `run_local_smoke.py`) — the JDK-25-vs-Spark-3.5 blocker from Session 4 is a local-sandbox limit only; CI pins JDK 17.
+
+### Status
+| Item | Status | Note |
+|---|---|---|
+| Tenant report feed | 🟢 **Built + CI-tested (mock)** | Live run needs admin-scoped SP + read-only admin API tenant setting |
+| `gold_capacities` / CU | 🟠 **Bridge built; live [Unverified]** | Needs `fpm_eventhouse` or `capacity_metrics_xmla` mode wired; XMLA DAX columns per app version |
+
+---
+
 ## 2026-07-02 — Session 4 (off-tenant code follow-up: G3 match-rate + G4 notebook routing)
 
 Off-tenant engineering follow-up turning the standing G3/G4 findings into runnable artifacts. No new tenant run; items remain infra-gated for `[Verified]`.
