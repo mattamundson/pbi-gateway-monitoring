@@ -20,11 +20,13 @@ real data — i.e. the top pain points proven end-to-end, not just locally.
 - [ ] **[me]** Confirm the reports-loop binding brake runs live (skips until PR #2 lands on `main`)
 
 ## Phase 1 — Tenant enablement (THE master gate — everything live is downstream)
-- [ ] **[Amo]** Provision an **F2+ Fabric capacity** and assign it to the workspace
-- [ ] **[Amo]** Enable **Workspace Monitoring** (Eventhouse) — trial refused it; F2 unblocks (required for D6)
-- [ ] **[Amo]** Register the **service principal** + enable *Tenant settings -> "Service principals can access read-only admin APIs"* + admin consent  *(script: `starter/deploy/register-spn-admin-api.ps1`)*
-- [ ] **[Amo]** Re-run `starter/notebooks/tenant_doctor.py` — confirm 401 / 0-admin-rows clears
-- [ ] **[Amo]** Decide capacity sizing + cost ceiling
+- [x] **[Amo]** Provision an **F2+ Fabric capacity** (`gwmoncap01`, eastus) and assign it to workspace `Gateway-Pilot`
+- [x] **[Amo]** Enable **Workspace Monitoring** (Eventhouse) — trial refused it; F2 unblocked it (required for D6)
+- [x] **[me→Amo]** Register the **service principal** (app `531bd06b…`, SP `b7d111f8…`) + Tenant.Read.All + admin-consent + group `gwmon-admin-api-sps`  *(script: `starter/deploy/register-spn-admin-api.ps1`)*
+- [ ] **[Amo]** Store the SPN client secret in 1Password — run `starter/deploy/store-spn-secret.ps1` from an **interactive** terminal after `op signin` (background jobs can't reach the 1Password desktop IPC). Store: `op://Amo Personal/Gwmon-SPN-AdminAPI/credential`
+- [ ] **[Amo]** Flip *Tenant settings -> "Service principals can access read-only admin APIs"* -> enable for group `gwmon-admin-api-sps` (portal-only, tenant admin)
+- [ ] **[Amo]** Run `starter/notebooks/tenant_doctor.py` (stdlib-only smoke; secret via `op read` in-shell) — confirm 401 / 0-admin-rows clears
+- [ ] **[Amo]** Decide capacity sizing + cost ceiling (F2 ~$0.36/hr — **pause `gwmoncap01` when idle**)
 
 ## Phase 2 — Semantic model + report finalization (Desktop)
 - [x] Branded 14-page PBIR report, DirectLake `.pbit`, one-click PBIP, binding validator (PASS)
