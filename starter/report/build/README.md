@@ -39,7 +39,21 @@ so you can inspect or pack later.
 | File | What |
 |------|------|
 | `build_pbit.py` | the generator (DAX -> TMSL -> PbixProj -> `.pbit`) |
+| `validate_report_bindings.py` | headless binding validator (report queryRefs vs model) |
 | `../dist/gwmon_model.pbit` | the packed template (12 tables, 50 measures, DirectLake) |
+
+## Validate the report binds (no Desktop needed)
+
+```bash
+python starter/report/build/validate_report_bindings.py
+#   cross-checks every visual queryRef in gateway_monitor_v2.report.json against
+#   the packed .pbit model; exits non-zero (fail-closed) on any unresolved binding.
+```
+
+This is the one *"does the report actually bind"* proof achievable headlessly: it
+can't render a visual, but it proves every field a visual references exists in the
+model. Run it after editing either the report or the measures. Current status: **PASS**
+(157 queryRefs, 113 distinct, 0 unresolved).
 
 ## Finalize in Desktop (the one manual pass)
 
