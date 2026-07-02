@@ -519,16 +519,18 @@ except Exception as _e:
 print(
     textwrap.dedent(
         """
-  [Unverified — requires Fabric tenant pilot]
-  The following were NOT exercised by this local smoke test:
+  This smoke test proves the shared gateway_bronze_lib path + measures.dax column
+  contract. The notebooks' OWN build_silver_*/build_gold_* transforms (incl. the
+  silver_triage Level-2 time-window fallback, the U15 nearest-pick fan-out dedup,
+  silver_identity_attribution split, silver_network_correlated join, and
+  gold_cluster_load CV) are now covered separately by
+  starter/tests/test_medallion_spark.py (Tier 2.5, deterministic, on real Spark).
+
+  [Unverified — requires Fabric tenant pilot] Still NOT proven anywhere local:
     - Fabric Lakehouse ABFSS read/write (requires live OneLake)
-    - DeltaTable merge / SCD-2 on gold_dim_gateway
-    - silver_triage Level-2 time-window fallback + U15 nearest-pick dedup
-      (Level-1 exact-RequestId join IS now exercised in STEP 7)
-    - silver_identity_attribution fuzzy join (requires Activity Events fixture)
-    - silver_network_correlated time-window join (requires network_metrics fixture)
+    - DeltaTable merge / true SCD-2 history on gold_dim_gateway
+    - silver_identity_attribution Activity-Events fuzzy join (needs live audit log)
     - Collect-MashupProcesses on a REAL gateway host (process names vary by version)
-    - gold_cluster_load CV computation (requires multi-node inventory fixture)
     - Fabric Activator rule evaluation
     - FPM Eventhouse bridge
 """

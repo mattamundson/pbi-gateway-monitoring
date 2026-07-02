@@ -1,9 +1,11 @@
-# Starter Tests — two-tier + simulation verification
+# Starter Tests — tiered local verification (no live gateway or Fabric)
 
-Closes the verification gap without a live gateway or Fabric. Both tiers exercise
-the **shared** bronze logic in `../notebooks/gateway_bronze_lib.py` (single source
-of truth), against synthetic logs that embed the exact edge cases that break the
-official Microsoft PBIT template.
+Closes the verification gap without a live gateway or Fabric. Tiers 1–3 exercise the
+**shared** bronze logic in `../notebooks/gateway_bronze_lib.py` (single source of
+truth) against synthetic logs that embed the exact edge cases that break the official
+Microsoft PBIT template. **Tier 2.5** (`test_medallion_spark.py`) additionally runs
+the notebooks' OWN `build_silver_*` / `build_gold_*` transforms — the code Tiers 1–3
+never touch — so a bug in `02`/`03` can no longer ship green.
 
 ## Files
 
@@ -19,6 +21,16 @@ fixture) feeds `validate_pipeline_sim.py`.
 - `test_parser_spark.py` — **Tier 2 (PySpark).** Runs the real native-Spark path
   (`read_gateway_csv` + casts + UDF-free `add_artifact_identity`) — the exact code
   the Fabric notebook runs.
+- `test_medallion_spark.py` — **Tier 2.5 (PySpark integration).** Imports and runs
+  the REAL `build_silver_*` / `build_gold_*` functions from `02_silver_correlate.py`
+  and `03_gold_aggregate.py` against deterministic, inline bronze fixtures in a temp
+  Lakehouse (parquet, no tenant). This is the ONLY test that executes the notebooks'
+  own transform logic — Tiers 1–3 exercise `gateway_bronze_lib` and re-implement the
+  rest. Proves: the `(RequestId, QueryTrackingId)` dedup, the triage confidence
+  vocabulary (`EXACT_REQUESTID` / `TIME_WINDOW` / `GATEWAY_ONLY`), the **U15
+  fan-out dedup** (network + triage output rows ≤ input — previously "runs only in a
+  full Spark session"), the identity `EVALUATION_CONTEXT` vs `UNATTRIBUTED` split, the
+  multi-node cluster-load CV, `gold_gateway_health` assembly, and the SCD dim.
 - `simulate_tenant.py` — **[NET-NEW] [Simulated]** Correlated multi-source simulator.
   Generates 200 query events over 3 simulated days where IDs line up across:
   gateway QueryStartReport, QueryExecutionReport, a mock PowerBIDatasetsWorkspace
@@ -42,6 +54,10 @@ python test_parser.py
 # Tier 2 — PySpark (needs pyspark + Java 11/17; NOT Java 21+/25 with Spark 3.5)
 export JAVA_HOME=/path/to/jdk-17
 python test_parser_spark.py
+
+# Tier 2.5 — real build_silver_*/build_gold_* integration (deterministic, no tenant)
+export JAVA_HOME=/path/to/jdk-17
+python test_medallion_spark.py
 
 # Tier 3 — Simulator + Join Proof [Simulated]
 export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
@@ -78,6 +94,15 @@ All 6 checks **PASS**:
 
 OVERALL RESULT: **PASS** (exit 0)
 
+### Tier 2.5 — Medallion integration (real notebook `build_*` functions)
+
+All 25 assertions **PASS** (Spark 3.5.8 + JDK 17, pbi-spark conda env). This is the
+first coverage of the notebooks' OWN silver/gold logic (Tiers 1–3 never imported
+`02`/`03`). Notably it proves the **U15 fan-out closure** — `silver_network_correlated`
+and `silver_triage` emit ≤ 1 row per input query — which the code comments previously
+labeled `[Fabric-verify-pending: window semantics run in Spark]`. Still NOT proven
+here: ABFSS I/O, DeltaTable SCD-2 merge, Activity-Events fuzzy join, Activator.
+
 ## Environment notes
 
 - **Java:** Spark 3.5 supports JDK 8/11/17. JDK 21+/25 fails with
@@ -86,6 +111,13 @@ OVERALL RESULT: **PASS** (exit 0)
   with lambdas (8 MB C-stack limit).  `validate_pipeline_sim.py` uses
   `F.array_compact` instead of `F.filter(arr, lambda x: ...)` and reads all
   test data from CSV files (no `createDataFrame`). See `SIMULATION.md`.
+- **Spark worker Python (Windows + conda):** when a test uses `createDataFrame`
+  from a Python collection, Spark spawns an executor-side Python **worker** and
+  resolves `python` on PATH — which on this box can launch the system Python 3.14
+  and crash the task (`SocketException: Connection reset`). `test_medallion_spark.py`
+  pins `PYSPARK_PYTHON`/`PYSPARK_DRIVER_PYTHON = sys.executable` (the pbi-spark 3.11
+  interpreter) BEFORE creating the session, so worker and driver share one runtime.
+  Run it under the `pbi-spark` conda env. See `reference_pyspark_windows_local_harness`.
 - **No Python UDFs:** identity extraction uses native Spark SQL (`unbase64`,
   `decode`, `get_json_object`) — faster than a UDF and avoids cloudpickle issues.
 - These tests validate parsing/transform logic + join structure.
