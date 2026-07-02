@@ -88,13 +88,62 @@ def bridge_fpm_eventhouse(delta_path: str) -> list[dict]:
     return [r.asDict() for r in agg.collect()]
 
 
-def bridge_capacity_metrics_xmla(xmla_endpoint: str, dataset: str, token: str) -> list[dict]:
-    """Query the Capacity Metrics semantic model via XMLA/executeQueries.
-    [Unverified] Requires XMLA read + admin/dataset access; DAX columns per app version."""
-    raise NotImplementedError(
-        "Wire pyadomd/executeQueries against the Capacity Metrics model here. "
-        "Use CAPACITY_METRICS_DAX as the starting query; confirm column names live."
-    )
+def bridge_capacity_metrics_xmla(dataset_id: str, token: str, group_id: str = "",
+                                 dax: str = "") -> list[dict]:
+    """Query the Fabric Capacity Metrics semantic model with a DAX query via the
+    Power BI REST **executeQueries** endpoint (no XMLA client library needed — works
+    from any Fabric notebook over HTTPS with a bearer token).
+
+    POST /v1.0/myorg[/groups/{groupId}]/datasets/{datasetId}/executeQueries
+      body: {"queries":[{"query": <DAX>}], "serializerSettings":{"includeNulls":true}}
+    Response: results[0].tables[0].rows -> list of {"Col[Name]": value} dicts.
+    Execute Queries caps: 1 query/call, 100k rows, 120 req/min.
+    Docs: https://learn.microsoft.com/en-us/rest/api/power-bi/datasets/execute-queries
+
+    [Unverified] Requires: dataset build/read permission on the Capacity Metrics model,
+    the 'Dataset Execute Queries REST API' tenant setting ON, and XMLA read-write on the
+    capacity hosting the model. The DAX column names below follow the current app schema
+    and MUST be confirmed live (they change between Metrics-app versions).
+    """
+    if not _REQUESTS:
+        raise RuntimeError("capacity_metrics_xmla mode requires the 'requests' package")
+    if not dataset_id or not token:
+        raise ValueError("capacity_metrics_xmla needs bridge.datasetId and bridge.token")
+
+    base = "https://api.powerbi.com/v1.0/myorg"
+    scope = f"{base}/groups/{group_id}" if group_id else base
+    url = f"{scope}/datasets/{dataset_id}/executeQueries"
+    body = {"queries": [{"query": dax or CAPACITY_METRICS_DAX}],
+            "serializerSettings": {"includeNulls": True}}
+
+    r = requests.post(url, headers={"Authorization": f"Bearer {token}",
+                                    "Content-Type": "application/json"},
+                      json=body, timeout=120)
+    r.raise_for_status()
+    raw_rows = r.json()["results"][0]["tables"][0].get("rows", [])
+
+    # executeQueries returns keys like "Capacities[Capacity Id]" / "[CU_s]".
+    # Normalize to the gold_capacities schema. Map by trailing name, tolerant of
+    # table-prefix and bracket differences so a column rename doesn't hard-fail.
+    def pick(row, *names):
+        for k, v in row.items():
+            leaf = k.split("[")[-1].rstrip("]").strip().lower()
+            if leaf in names:
+                return v
+        return None
+
+    out: list[dict] = []
+    for row in raw_rows:
+        out.append({
+            "CapacityId": pick(row, "capacity id", "capacityid", "capacity_id"),
+            "CapacityName": pick(row, "capacity name", "capacityname"),
+            "Region": pick(row, "region"),
+            "Sku": pick(row, "sku"),
+            "cu_seconds": pick(row, "cu_s", "cu (s)", "cu seconds", "cu_seconds"),
+            "_partition_date": pick(row, "date"),
+        })
+    print(f"[capacity_metrics_xmla] executeQueries returned {len(out)} rows")
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -125,7 +174,10 @@ def run(config: dict | None = None) -> int:
         rows = bridge_fpm_eventhouse(bridge.get("eventhouseDeltaPath", ""))
     elif mode == "capacity_metrics_xmla":
         rows = bridge_capacity_metrics_xmla(
-            bridge.get("xmlaEndpoint", ""), bridge.get("dataset", ""), bridge.get("token", ""))
+            dataset_id=bridge.get("datasetId", ""),
+            token=bridge.get("token", "") or os.getenv("PBI_ACCESS_TOKEN", ""),
+            group_id=bridge.get("groupId", ""),
+            dax=bridge.get("dax", ""))
     else:
         raise ValueError(f"Unknown capacity bridge mode: {mode}")
     return _write_gold(rows)

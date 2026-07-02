@@ -73,10 +73,16 @@
 
   "capacityBridge": {
     "mode": "mock",
-    "_modeComment": "How 04_capacity_bridge.py populates gold_capacities + the CU measures. One of: 'mock' (synthetic, CI/local), 'fpm_eventhouse' (read FPM CapacityUtilizationEvents Delta), 'capacity_metrics_xmla' (query the Fabric Capacity Metrics semantic model via XMLA). CU has no clean public REST endpoint, so a bridge is required for live CU. Until wired live, CU cards render empty by design.",
+    "_modeComment": "How 04_capacity_bridge.py populates gold_capacities + the CU measures. One of: 'mock' (synthetic, CI/local), 'fpm_eventhouse' (read FPM CapacityUtilizationEvents Delta), 'capacity_metrics_xmla' (run DAX against the Fabric Capacity Metrics semantic model via the Power BI REST executeQueries endpoint). CU has no clean public REST endpoint, so a bridge is required for live CU. Until wired live, CU cards render empty by design.",
     "eventhouseDeltaPath": "",
-    "xmlaEndpoint": "",
-    "dataset": "Microsoft Fabric Capacity Metrics"
+    "datasetId": "",
+    "_datasetIdComment": "capacity_metrics_xmla: the semantic-model (dataset) GUID of the installed 'Microsoft Fabric Capacity Metrics' app. Find it in the workspace URL.",
+    "groupId": "",
+    "_groupIdComment": "Optional workspace (group) GUID hosting the Metrics model; omit for My Workspace.",
+    "token": "",
+    "_tokenComment": "Bearer token for executeQueries; leave blank to use env PBI_ACCESS_TOKEN. Requires the 'Dataset Execute Queries REST API' tenant setting + build/read on the model.",
+    "dax": "",
+    "_daxComment": "Optional DAX override; blank uses the built-in CAPACITY_METRICS_DAX (confirm column names against your Metrics-app version)."
   },
 
   "features": {

@@ -41,7 +41,7 @@ An MVP exists when **all** of the following are true:
 ## M2 — Data-ingestion correctness (U1, U2, U3, U7, U9, U10, U14) 🟠→🟢
 - [ ] **U1/U2** — inspect 10 real `QueryStart` rows; confirm `EvaluationContext` encoding + `$.artifactId`/`$.artifactKind` keys resolve `artifact_id`.
 - [ ] **U10** — force a new column; confirm `mergeSchema=true` append succeeds.
-- [ ] **U14** — add a `_cast_errors` sidecar / quarantine column so bad numerics (`"N/A"` in a `(ms)` col) are visible, not silently nulled.
+- [x] **U14** — `_cast_value` now returns `(value, cast_ok)`; unparseable numerics are quarantined into a per-row `_cast_errors` column (visible, not silently nulled). ✅ code-complete; live data confirms in M1.
 - [ ] **U3** — confirm a comma-bearing `ErrorMessage` parses to the right field count (RFC-4180 reader).
 - [ ] **U7** — confirm gold Delta tables are DirectLake-eligible (V-Order, supported types); OPTIMIZE/V-Order if DQ fallback is frequent.
 - [ ] **U9** — confirm `LAKEHOUSE_PATH` ABFSS pattern resolves in a real workspace.
@@ -65,7 +65,7 @@ An MVP exists when **all** of the following are true:
 - [ ] Wire notification delivery (Teams webhook / email from config); confirm end-to-end.
 
 ## M6 — Capacity Metrics bridge / CU (tenant breadth) 🟠→🟢
-- [ ] Implement the `capacity_metrics_xmla` mode (currently a `NotImplementedError` stub in `04_capacity_bridge.py`) against the real Capacity Metrics semantic model — OR validate the `fpm_eventhouse` Delta path.
+- [x] `capacity_metrics_xmla` mode **implemented** via the Power BI REST executeQueries endpoint (DAX → normalized `gold_capacities`); tolerant column mapping. ✅ code-complete; needs a live Metrics model + Execute-Queries tenant setting to verify (M1).
 - [ ] Confirm CU DAX column names in the live Capacity Metrics app (they vary by version).
 - [ ] Verify CU measures + cards populate on the Tenant Overview page.
 

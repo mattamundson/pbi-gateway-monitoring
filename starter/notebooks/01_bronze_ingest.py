@@ -242,6 +242,7 @@ def parse_csv_schema_adaptive(
 
         row = {}
         extra_cols = {}
+        cast_errors = []  # U14: per-row quarantine of unparseable values
 
         for i, val in enumerate(values):
             if i >= len(headers):
@@ -252,7 +253,17 @@ def parse_csv_schema_adaptive(
             header = headers[i]
             if i in col_map:
                 delta_name, col_type = col_map[i]
-                row[delta_name] = _cast_value(val, col_type)
+                # U14: distinguish a genuine null from an UNPARSEABLE value. A bad
+                # numeric (e.g. "N/A" in a (ms) column) must not be silently coerced
+                # to null with no trace — record it in _cast_errors so data-quality
+                # issues are visible in the bronze table, not masked.
+                casted, cast_ok = _cast_value(val, col_type)
+                row[delta_name] = casted
+                if not cast_ok:
+                    cast_errors.append(
+                        {"column": delta_name, "raw_value": val,
+                         "target_type": type(col_type).__name__}
+                    )
             else:
                 # Unknown column — preserve in _extra_cols
                 extra_cols[header] = val
@@ -263,6 +274,8 @@ def parse_csv_schema_adaptive(
                 row[delta_name] = None
 
         row["_extra_cols"] = extra_cols if extra_cols else {}
+        # U14: sidecar of quarantined cast failures (empty list when the row is clean).
+        row["_cast_errors"] = cast_errors
         row["_source_file"] = source_file
         row["_log_type"] = log_type
         row["_gateway_host"] = host
@@ -274,28 +287,35 @@ def parse_csv_schema_adaptive(
 
 
 def _cast_value(val: str, col_type):
-    """Best-effort type casting. Returns None on failure (never raises)."""
+    """Best-effort type casting. Never raises.
+
+    U14: returns a (value, cast_ok) tuple so the caller can distinguish a genuine
+    null/empty (cast_ok=True, value=None) from an UNPARSEABLE value that was coerced
+    to null (cast_ok=False). The latter is quarantined into the row's _cast_errors
+    so silent data-quality loss becomes visible.
+    """
     if (
         val is None
         or val.strip() == ""
         or val.strip().lower() in ("null", "nan", "none")
     ):
-        return None
+        return None, True  # legitimate null — not an error
     try:
         if isinstance(col_type, LongType):
-            return int(float(val))  # float() first handles "0.0" strings
+            return int(float(val)), True  # float() first handles "0.0" strings
         elif isinstance(col_type, DoubleType):
-            return float(val)
+            return float(val), True
         elif isinstance(col_type, BooleanType):
-            return val.strip().lower() in ("true", "1", "yes")
+            return val.strip().lower() in ("true", "1", "yes"), True
         elif isinstance(col_type, TimestampType):
             # Gateway timestamps are UTC ISO8601 or "YYYY-MM-DD HH:MM:SS"
             # Return as string; Spark timestamp cast handles both formats
-            return val
+            return val, True
         else:
-            return val
+            return val, True
     except (ValueError, TypeError):
-        return None  # Do not raise — return null for unparseable values
+        # Unparseable for the target type — coerce to null but FLAG it (U14).
+        return None, False
 
 
 def parse_evaluation_context(df):

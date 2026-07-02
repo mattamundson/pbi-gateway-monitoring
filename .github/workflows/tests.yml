@@ -37,6 +37,9 @@ jobs:
       - name: Run Tier 1 tenant preflight test (tenant_doctor)
         run: python starter/tests/test_tenant_doctor.py
 
+      - name: Run Tier 1 cast-quarantine + capacity-bridge test (U14 + M6)
+        run: python starter/tests/test_cast_and_bridge.py
+
   tier2-spark:
     name: Tier 2 medallion (PySpark + JDK 17)
     runs-on: ubuntu-latest

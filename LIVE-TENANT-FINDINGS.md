@@ -183,6 +183,17 @@ workspace, and (b) a `RequestId` copied from the **gateway host** `QueryStartRep
 is not the client machine). All three (F2+ capacity + gateway-routed refresh + gateway RequestId)
 must be present at once for a green run — best assembled in the real pilot environment.
 
+## 2026-07-02 — Session 8 (pre-pilot code completion: M6 CU bridge + U14 quarantine)
+
+Finished the two pure-code items so the F2 pilot exercises the COMPLETE tool.
+- **M6 — live CU bridge implemented.** `04_capacity_bridge.bridge_capacity_metrics_xmla` was a `NotImplementedError`; it now runs DAX against the Fabric Capacity Metrics semantic model via the Power BI REST **executeQueries** endpoint (no XMLA client lib; works from any Fabric notebook over HTTPS). Response keys (`Capacities[Capacity Id]`, `[CU_s]`, …) are normalized to the `gold_capacities` schema with a rename-tolerant `pick()`. Config gains `datasetId/groupId/token/dax`. **[Unverified]** live: needs the Metrics app installed, the 'Dataset Execute Queries REST API' tenant setting, and confirmation of the app's DAX column names.
+- **U14 — cast-error quarantine.** `_cast_value` now returns `(value, cast_ok)`; a bad numeric (e.g. `"N/A"` in a `(ms)` column) is coerced to null but FLAGGED into a per-row `_cast_errors` column, while genuine empties/`null` sentinels are not flagged. Silent data-quality loss is now visible in bronze.
+- **Tests/CI:** new Spark-free `test_cast_and_bridge.py` (M6 executeQueries normalization with monkeypatched requests; U14 skips gracefully off-cluster) wired into `tier1-parser`; U14 typing checks added to `test_tenant_spark.py` (JDK-17 tier). All Spark-free suites pass.
+
+No live tenant run this session. Remaining MVP work is validation (M1) + report finalize (M7) + deploy-in-Fabric (M8).
+
+---
+
 ## 2026-07-02 — Session 7 (MVP roadmap + U15 event-log arm + tenant Spark test)
 
 - **`docs/MVP-ROADMAP.md`**: exhaustive path-to-MVP task list (M1–M10) mapped to GitHub milestones #1–#10, with an explicit MVP acceptance definition. Records that ~80% of remaining work is gated on one live F2 pilot (M1).

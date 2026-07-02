@@ -101,6 +101,24 @@ def main():
     check("fan-out collapsed to 1 row (U15)", out_rows == 1)
     check("kept the NEAREST NIC sample (1002, gap 2)", nearest == 1002)
 
+    # 3) U14 cast quarantine (needs real pyspark types) — bad numeric flagged,
+    #    legitimate null NOT flagged.
+    print("Tier 2: U14 cast-error quarantine")
+    try:
+        import importlib.util as _il
+        _s = _il.spec_from_file_location("bi", os.path.join(HERE, "..", "notebooks", "01_bronze_ingest.py"))
+        _bi = _il.module_from_spec(_s); _s.loader.exec_module(_bi)
+        from pyspark.sql.types import DoubleType
+        _dbl = DoubleType()
+        _v, _ok = _bi._cast_value("N/A", _dbl)
+        check("bad numeric flagged (cast_ok=False)", _v is None and _ok is False)
+        _v, _ok = _bi._cast_value("3.14", _dbl)
+        check("good numeric parses, not flagged", _v == 3.14 and _ok is True)
+        _v, _ok = _bi._cast_value("", _dbl)
+        check("empty is legitimate null, not flagged", _v is None and _ok is True)
+    except Exception as e:  # noqa: BLE001
+        check(f"U14 cast checks loadable ({e})", False)
+
     spark.stop()
     if FAILS:
         print(f"\nRESULT: {len(FAILS)} FAILED: {FAILS}")
