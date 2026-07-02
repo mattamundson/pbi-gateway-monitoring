@@ -1,0 +1,36 @@
+table gold_capacities
+	column 'CapacityId'
+		dataType: string
+		sourceColumn: CapacityId
+		summarizeBy: none
+
+	column 'CapacityName'
+		dataType: string
+		sourceColumn: CapacityName
+		summarizeBy: none
+
+	column 'Region'
+		dataType: string
+		sourceColumn: Region
+		summarizeBy: none
+
+	column 'Sku'
+		dataType: string
+		sourceColumn: Sku
+		summarizeBy: none
+
+	column 'cu_seconds'
+		dataType: double
+		sourceColumn: cu_seconds
+		summarizeBy: none
+
+	column '_partition_date'
+		dataType: dateTime
+		sourceColumn: _partition_date
+		summarizeBy: none
+
+	partition gold_capacities = entity
+		mode: directLake
+		source
+			entityName: gold_capacities
+			expressionSource: DatabaseQuery

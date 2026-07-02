@@ -1,0 +1,71 @@
+table gold_query_performance
+	column 'hour_utc'
+		dataType: dateTime
+		sourceColumn: hour_utc
+		summarizeBy: none
+
+	column 'DataSource'
+		dataType: string
+		sourceColumn: DataSource
+		summarizeBy: none
+
+	column 'QueryType'
+		dataType: string
+		sourceColumn: QueryType
+		summarizeBy: none
+
+	column 'query_count'
+		dataType: int64
+		sourceColumn: query_count
+		summarizeBy: none
+
+	column 'error_count'
+		dataType: int64
+		sourceColumn: error_count
+		summarizeBy: none
+
+	column 'error_rate_pct'
+		dataType: double
+		sourceColumn: error_rate_pct
+		summarizeBy: none
+
+	column 'duration_avg_ms'
+		dataType: double
+		sourceColumn: duration_avg_ms
+		summarizeBy: none
+
+	column 'duration_p95_ms'
+		dataType: double
+		sourceColumn: duration_p95_ms
+		summarizeBy: none
+
+	column 'duration_max_ms'
+		dataType: double
+		sourceColumn: duration_max_ms
+		summarizeBy: none
+
+	column 'spool_total_bytes_sum'
+		dataType: int64
+		sourceColumn: spool_total_bytes_sum
+		summarizeBy: none
+
+	column 'spool_writing_ms_avg'
+		dataType: double
+		sourceColumn: spool_writing_ms_avg
+		summarizeBy: none
+
+	column 'spooled_pct'
+		dataType: double
+		sourceColumn: spooled_pct
+		summarizeBy: none
+
+	column 'artifact_id'
+		dataType: string
+		sourceColumn: artifact_id
+		summarizeBy: none
+
+	partition gold_query_performance = entity
+		mode: directLake
+		source
+			entityName: gold_query_performance
+			expressionSource: DatabaseQuery

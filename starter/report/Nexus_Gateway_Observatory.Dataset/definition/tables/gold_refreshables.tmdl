@@ -1,0 +1,36 @@
+table gold_refreshables
+	column 'DatasetId'
+		dataType: string
+		sourceColumn: DatasetId
+		summarizeBy: none
+
+	column 'DatasetName'
+		dataType: string
+		sourceColumn: DatasetName
+		summarizeBy: none
+
+	column 'WorkspaceId'
+		dataType: string
+		sourceColumn: WorkspaceId
+		summarizeBy: none
+
+	column 'Status'
+		dataType: string
+		sourceColumn: Status
+		summarizeBy: none
+
+	column 'duration_seconds'
+		dataType: double
+		sourceColumn: duration_seconds
+		summarizeBy: none
+
+	column 'RefreshDate'
+		dataType: dateTime
+		sourceColumn: RefreshDate
+		summarizeBy: none
+
+	partition gold_refreshables = entity
+		mode: directLake
+		source
+			entityName: gold_refreshables
+			expressionSource: DatabaseQuery

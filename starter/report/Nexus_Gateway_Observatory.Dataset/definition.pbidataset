@@ -1,0 +1,4 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/pbidataset/1.0.0/schema.json",
+  "version": "4.2"
+}

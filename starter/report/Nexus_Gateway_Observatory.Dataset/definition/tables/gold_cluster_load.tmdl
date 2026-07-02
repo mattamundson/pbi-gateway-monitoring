@@ -1,0 +1,26 @@
+table gold_cluster_load
+	column 'GatewayClusterName'
+		dataType: string
+		sourceColumn: GatewayClusterName
+		summarizeBy: none
+
+	column 'queries_per_node_cv'
+		dataType: double
+		sourceColumn: queries_per_node_cv
+		summarizeBy: none
+
+	column 'hottest_node_query_pct'
+		dataType: double
+		sourceColumn: hottest_node_query_pct
+		summarizeBy: none
+
+	column 'node_count'
+		dataType: int64
+		sourceColumn: node_count
+		summarizeBy: none
+
+	partition gold_cluster_load = entity
+		mode: directLake
+		source
+			entityName: gold_cluster_load
+			expressionSource: DatabaseQuery

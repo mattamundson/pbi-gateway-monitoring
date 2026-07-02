@@ -1,0 +1,36 @@
+table gold_gateway_datasources
+	column 'DatasourceId'
+		dataType: string
+		sourceColumn: DatasourceId
+		summarizeBy: none
+
+	column 'DatasourceName'
+		dataType: string
+		sourceColumn: DatasourceName
+		summarizeBy: none
+
+	column 'DatasourceType'
+		dataType: string
+		sourceColumn: DatasourceType
+		summarizeBy: none
+
+	column 'GatewayClusterName'
+		dataType: string
+		sourceColumn: GatewayClusterName
+		summarizeBy: none
+
+	column 'Status'
+		dataType: string
+		sourceColumn: Status
+		summarizeBy: none
+
+	column 'LastUpdated'
+		dataType: dateTime
+		sourceColumn: LastUpdated
+		summarizeBy: none
+
+	partition gold_gateway_datasources = entity
+		mode: directLake
+		source
+			entityName: gold_gateway_datasources
+			expressionSource: DatabaseQuery

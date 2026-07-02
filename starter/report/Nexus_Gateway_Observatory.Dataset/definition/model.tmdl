@@ -1,0 +1,7 @@
+model Model
+	culture: en-US
+	defaultPowerBIDataSourceVersion: powerBI_V3
+	discourageImplicitMeasures
+
+	// Measures live in ../../starter/semantic-model/measures.dax — import via
+	// Desktop/Tabular Editor, or paste into a measures table on first open.

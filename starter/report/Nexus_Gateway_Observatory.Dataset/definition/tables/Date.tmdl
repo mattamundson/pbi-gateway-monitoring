@@ -1,0 +1,28 @@
+table Date
+	dataCategory: Time
+
+	column Date
+		dataType: dateTime
+		isKey: true
+		sourceColumn: Date
+		summarizeBy: none
+
+	column Year
+		dataType: int64
+		sourceColumn: Year
+		summarizeBy: none
+
+	column Month
+		dataType: string
+		sourceColumn: Month
+		summarizeBy: none
+
+	column 'Year-Month'
+		dataType: string
+		sourceColumn: Year-Month
+		summarizeBy: none
+
+	// [Unverified] Mark-as-date-table + calculated Date range must be set in Desktop.
+	partition Date = calculated
+		mode: import
+		source = Calendar(DATE(2024,1,1), DATE(2026,12,31))

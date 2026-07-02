@@ -1,0 +1,79 @@
+{
+  "name": "NexusGatewayObservatory",
+  "dataColors": [
+    "#00B3A4",
+    "#4C8DFF",
+    "#2FBF71",
+    "#F4A83B",
+    "#E5484D",
+    "#9B7BF0",
+    "#00D4C0",
+    "#7A93A3"
+  ],
+  "background": "#0B1F2A",
+  "foreground": "#E8F1F2",
+  "tableAccent": "#00B3A4",
+  "good": "#2FBF71",
+  "neutral": "#F4A83B",
+  "bad": "#E5484D",
+  "visualStyles": {
+    "*": {
+      "*": {
+        "background": [
+          {
+            "color": {
+              "solid": {
+                "color": "#102A38"
+              }
+            },
+            "transparency": 0
+          }
+        ],
+        "border": [
+          {
+            "color": {
+              "solid": {
+                "color": "#243B47"
+              }
+            },
+            "show": true
+          }
+        ],
+        "title": [
+          {
+            "fontColor": {
+              "solid": {
+                "color": "#E8F1F2"
+              }
+            },
+            "fontSize": 11,
+            "fontFamily": "Segoe UI Semibold"
+          }
+        ],
+        "labels": [
+          {
+            "color": {
+              "solid": {
+                "color": "#E8F1F2"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "page": {
+      "*": {
+        "background": [
+          {
+            "color": {
+              "solid": {
+                "color": "#0B1F2A"
+              }
+            },
+            "transparency": 0
+          }
+        ]
+      }
+    }
+  }
+}

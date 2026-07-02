@@ -1,0 +1,31 @@
+table gold_mashup_health
+	column 'GatewayObjectId'
+		dataType: string
+		sourceColumn: GatewayObjectId
+		summarizeBy: none
+
+	column 'HostName'
+		dataType: string
+		sourceColumn: HostName
+		summarizeBy: none
+
+	column 'peak_working_set_mb'
+		dataType: double
+		sourceColumn: peak_working_set_mb
+		summarizeBy: none
+
+	column 'avg_working_set_mb'
+		dataType: double
+		sourceColumn: avg_working_set_mb
+		summarizeBy: none
+
+	column 'runaway_container'
+		dataType: boolean
+		sourceColumn: runaway_container
+		summarizeBy: none
+
+	partition gold_mashup_health = entity
+		mode: directLake
+		source
+			entityName: gold_mashup_health
+			expressionSource: DatabaseQuery

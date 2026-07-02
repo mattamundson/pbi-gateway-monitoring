@@ -1,0 +1,36 @@
+table gold_activities
+	column 'ActivityId'
+		dataType: string
+		sourceColumn: ActivityId
+		summarizeBy: none
+
+	column 'UserId'
+		dataType: string
+		sourceColumn: UserId
+		summarizeBy: none
+
+	column 'Operation'
+		dataType: string
+		sourceColumn: Operation
+		summarizeBy: none
+
+	column 'WorkspaceId'
+		dataType: string
+		sourceColumn: WorkspaceId
+		summarizeBy: none
+
+	column 'CapacityId'
+		dataType: string
+		sourceColumn: CapacityId
+		summarizeBy: none
+
+	column 'ActivityDate'
+		dataType: dateTime
+		sourceColumn: ActivityDate
+		summarizeBy: none
+
+	partition gold_activities = entity
+		mode: directLake
+		source
+			entityName: gold_activities
+			expressionSource: DatabaseQuery

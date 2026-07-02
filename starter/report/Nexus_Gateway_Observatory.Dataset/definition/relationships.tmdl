@@ -1,0 +1,30 @@
+relationship rel1
+	fromColumn: gold_gateway_health.GatewayObjectId
+	toColumn: gold_dim_gateway.GatewayObjectId
+	crossFilteringBehavior: oneDirection
+
+relationship rel2
+	fromColumn: gold_mashup_health.GatewayObjectId
+	toColumn: gold_dim_gateway.GatewayObjectId
+	crossFilteringBehavior: oneDirection
+
+relationship rel3
+	fromColumn: gold_query_performance.hour_utc
+	toColumn: Date.Date
+	crossFilteringBehavior: oneDirection
+
+relationship rel4
+	fromColumn: gold_activities.ActivityDate
+	toColumn: Date.Date
+	crossFilteringBehavior: oneDirection
+
+relationship rel5
+	fromColumn: gold_refreshables.RefreshDate
+	toColumn: Date.Date
+	crossFilteringBehavior: oneDirection
+
+relationship rel6
+	fromColumn: gold_capacities._partition_date
+	toColumn: Date.Date
+	crossFilteringBehavior: oneDirection
+

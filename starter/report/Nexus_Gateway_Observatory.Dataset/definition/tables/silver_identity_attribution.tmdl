@@ -1,0 +1,31 @@
+table silver_identity_attribution
+	column 'RequestId'
+		dataType: string
+		sourceColumn: RequestId
+		summarizeBy: none
+
+	column 'artifact_id'
+		dataType: string
+		sourceColumn: artifact_id
+		summarizeBy: none
+
+	column 'attribution_confidence'
+		dataType: string
+		sourceColumn: attribution_confidence
+		summarizeBy: none
+
+	column 'ExecutingUser'
+		dataType: string
+		sourceColumn: ExecutingUser
+		summarizeBy: none
+
+	column 'ItemName'
+		dataType: string
+		sourceColumn: ItemName
+		summarizeBy: none
+
+	partition silver_identity_attribution = entity
+		mode: directLake
+		source
+			entityName: silver_identity_attribution
+			expressionSource: DatabaseQuery

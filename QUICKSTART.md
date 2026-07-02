@@ -6,6 +6,8 @@ ticket number (`RequestId`) matches a Fabric Workspace Monitoring record that kn
 
 > Full hand-holding version: [`docs/PILOT-GUIDE-START-HERE.md`](docs/PILOT-GUIDE-START-HERE.md).
 > This is the condensed path. **Requires:** Fabric admin, F2+ capacity for the identity-join
+> (trial capacity can't provision the Workspace Monitoring Eventhouse — see the
+> step-by-step [`docs/RUNBOOK-F2-capacity-for-match-rate.md`](docs/RUNBOOK-F2-capacity-for-match-rate.md) to rent F2 for ~1 hour and pause it right after).
 > test; F8+ only for the optional Activator/alerting step.
 
 ---
@@ -49,6 +51,17 @@ PowerBIDatasetsWorkspace
 
 **6. Report the result** — ✅ matched (user + dataset shown) / ⚠️ data exists but RequestId
 returned nothing / ❌ empty or error (include the message).
+
+**7. Get the flagship NUMBER (the match rate)** — steps 5–6 prove the join *works* on a
+sample; this quantifies it across all queries. Land the gateway logs first
+(`starter/notebooks/01_bronze_ingest.py`, which now routes through the sanitizing
+`gateway_bronze_lib` — **don't** use Fabric Load-to-Tables on the raw CSV), then run
+[`starter/kql/04_identity_match_rate.kql`](starter/kql/04_identity_match_rate.kql):
+- **Block A** → `total_gateway_queries`, `attributed_queries`, **`match_rate_pct`** ← the number.
+- **Block B** → the Refresh-vs-DirectQuery split (DirectQuery coverage is the open question).
+- **Block C** → sample unattributed queries if the rate is low.
+The filters (`lookback` / `workspace_filter`) are pushed down before the join, so keep
+`15m` + one workspace on a throttled capacity. Paste the numbers into the pilot issue.
 
 ---
 
