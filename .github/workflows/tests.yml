@@ -73,6 +73,11 @@ jobs:
           JAVA_HOME: ${{ env.JAVA_HOME_17_X64 }}
         run: python starter/deploy/run_local_smoke.py
 
+      - name: Run Tier 2 tenant-pipeline Spark test (transforms + U15 fan-out guardrail)
+        env:
+          JAVA_HOME: ${{ env.JAVA_HOME_17_X64 }}
+        run: python starter/tests/test_tenant_spark.py
+
   tenant-harness:
     name: Tenant-extract harness (mock, Spark-free)
     runs-on: ubuntu-latest

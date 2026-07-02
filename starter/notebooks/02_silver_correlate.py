@@ -303,6 +303,12 @@ def build_silver_triage():
 
         # Left join: event log ±EVENT_LOG_TIME_WINDOW_SECS around qe_end_time
         # [BEST-EFFORT] Host-level only; no GatewayObjectId correlation
+        # U15 (event-log arm): a single triage row can fall within ±window of MANY
+        # OS events, fanning one query into N rows and double-counting failures.
+        # Keep only the NEAREST-in-time OS event per triage query (row_number over
+        # the query's RequestId by |Δt|, nulls_last so no-match stays one row).
+        # Structurally guarantees output row-count <= input for this arm too.
+        # [Fabric-verify-pending: compile-checked here; window semantics run in Spark.]
         triage_with_events = (
             refresh_triage.alias("tr")
             .join(
@@ -313,6 +319,20 @@ def build_silver_triage():
                 <= EVENT_LOG_TIME_WINDOW_SECS,
                 how="left",
             )
+            .withColumn(
+                "_evt_gap",
+                F.abs(F.unix_timestamp("tr.qe_end_time") - F.unix_timestamp("el.evt_time")),
+            )
+            .withColumn(
+                "_evt_rank",
+                F.row_number().over(
+                    Window.partitionBy(F.col("tr.RequestId")).orderBy(
+                        F.col("_evt_gap").asc_nulls_last()
+                    )
+                ),
+            )
+            .filter(F.col("_evt_rank") == 1)
+            .drop("_evt_rank", "_evt_gap")
             .withColumn("failure_layer_os_event", F.col("el.EventId").isNotNull())
             .select(
                 "tr.*",
@@ -340,6 +360,18 @@ def build_silver_triage():
         .when(F.col("ErrorMessage").isNotNull(), F.lit("GATEWAY_LOG_ERROR"))
         .otherwise(F.lit("UNKNOWN")),
     ).withColumn("_partition_date", F.to_date(F.col("qe_end_time")))
+
+    # U15 guardrail: the silver triage row-count must never exceed the number of
+    # failed gateway queries we started from. The three time-window arms above are
+    # each nearest-match-deduped; this assertion makes the invariant explicit and
+    # fails loudly if a future edit reintroduces fan-out.
+    _in = failed_qe.count()
+    _out = triage_final.count()
+    assert _out <= _in, (
+        f"silver_triage fan-out detected: {_out} output rows > {_in} failed input queries. "
+        "A time-window join lost its nearest-match dedup (U15)."
+    )
+    print(f"[U15] silver_triage rows {_out} <= failed input {_in} (no fan-out)")
 
     write_silver(triage_final, "silver_triage", partition_cols=["_partition_date"])
 

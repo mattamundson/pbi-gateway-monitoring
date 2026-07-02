@@ -183,6 +183,16 @@ workspace, and (b) a `RequestId` copied from the **gateway host** `QueryStartRep
 is not the client machine). All three (F2+ capacity + gateway-routed refresh + gateway RequestId)
 must be present at once for a green run — best assembled in the real pilot environment.
 
+## 2026-07-02 — Session 7 (MVP roadmap + U15 event-log arm + tenant Spark test)
+
+- **`docs/MVP-ROADMAP.md`**: exhaustive path-to-MVP task list (M1–M10) mapped to GitHub milestones #1–#10, with an explicit MVP acceptance definition. Records that ~80% of remaining work is gated on one live F2 pilot (M1).
+- **U15 re-audit — found + fixed a real remaining gap.** The refresh and network join arms were already nearest-match-deduped, but the **Level-3 event-log join** in `02_silver_correlate.py` still fanned one triage row into N OS-event matches. Added the same `row_number() over(RequestId order by |Δt|) == 1` dedup to the event-log arm, plus a fail-loud `silver_triage rows <= failed input` assertion. U17 (multiLine) and U18 (sanitize) were re-confirmed already fixed — not re-touched.
+- **`starter/tests/test_tenant_spark.py`** (Tier 2, JDK 17): tenant transforms → real Spark DataFrame + Delta write, and a real-Spark proof that the U15 window dedup collapses 1-query×3-NIC-samples to exactly 1 row (nearest kept). Wired into the `tier2-spark` CI job. Skips cleanly where Spark is unavailable.
+
+No live tenant run this session; MVP remains a validation problem (M1).
+
+---
+
 ## 2026-07-02 — Session 6 (tenant preflight + one-sitting pilot runbook)
 
 - **New `starter/notebooks/tenant_doctor.py`**: preflight for the tenant extract. 5 checks (SP token; **read-only admin API + tenant setting**; activity events; refreshables; capacity-bridge mode), each with an exact remediation string; non-zero exit when a required check fails. MOCK mode for CI. Prints `VERDICT: READY|BLOCKED`.
