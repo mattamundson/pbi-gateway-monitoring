@@ -183,6 +183,34 @@ workspace, and (b) a `RequestId` copied from the **gateway host** `QueryStartRep
 is not the client machine). All three (F2+ capacity + gateway-routed refresh + gateway RequestId)
 must be present at once for a green run — best assembled in the real pilot environment.
 
+## 2026-07-02 — Session 4 (off-tenant code follow-up: G3 match-rate + G4 notebook routing)
+
+Off-tenant engineering follow-up turning the standing G3/G4 findings into runnable artifacts. No new tenant run; items remain infra-gated for `[Verified]`.
+
+### Pain #3 (G3) — match-rate measurement now a first-class, throttle-safe artifact
+
+- **New file `starter/kql/04_identity_match_rate.kql`.** `01_identity_join.kql` proved the join *returns rows*; it never quantified the attribution rate. This computes `attributed_queries / total_gateway_queries = match_rate_pct` (Block A), a Refresh-vs-DirectQuery split (Block B), and an unattributed-sample diagnostic (Block C). Every block pushes `lookback` + `workspace_filter` down **before** the join, so it survives the trial Spark/KQL throttle (Session 1/3) at `lookback = 15m` + a single workspace GUID.
+- **Status unchanged for `[Verified]`:** still requires a working Workspace Monitoring Eventhouse (F2+; trial-blocked per Session 3). The *measurement path* is now ready so the very first green run yields the U11 number instead of just "rows came back."
+
+### Pain #4 (G4) — notebook now routes through the sanitizing lib (gap from Session 2 closed)
+
+- **Root of the remaining exposure:** Session 2 fixed `read_gateway_csv` (`_sanitize_columns`) and proved it on real Spark, but `01_bronze_ingest.py` still ran its **own driver-side parser** (`parse_csv_schema_adaptive`) that never called `_sanitize_columns` — so the notebook path was *not* actually protected against new `(ms)`/`(bytes)` headers.
+- **Fix:** added `ingest_gateway_logs_via_lib()` and made `ingest_gateway_logs()` call it first — reading raw `QueryExecutionReport*.csv` / `QueryStartReport*.csv` through `read_gateway_csv` (native Spark, column-name-based, `_sanitize_columns`-protected) + `cast_query_execution` + `add_artifact_identity`. The driver-side parser is retained as an explicit **fallback** for the JSON-staged `RawCsvContent` form and odd dialects. Import is guarded so the notebook still loads without the lib.
+- **Net:** the primary notebook ingest path is now immune to both the positional `DataFormat.Error` (PBIT template failure) **and** the `InvalidColumnName` failure on new unit-suffixed headers. `py_compile` clean. Fabric Load-to-Tables remains procedurally excluded (unchanged).
+
+### Pilot template — G3 run steps added
+
+- `.github/ISSUE_TEMPLATE/pilot-report.yml` now includes an ordered, ~20-min G3 runbook (prereqs incl. the F2+ Eventhouse gate, enable monitoring → land logs → refresh → confirm rows → run `04_identity_match_rate.kql` Block A/B/C), a match-rate field wired to the new file, and an explicit capacity-SKU field (trial-vs-F2+ provisioning).
+
+## Tally After Session 4
+
+| Pain # | Prior status | Post-session status | Change |
+|---|---|---|---|
+| #3 (G3) | 🟠 Built / Unverified; trial-blocked | 🟠 Built / Unverified — **match-rate measurement now runnable + throttle-safe** | New `04_identity_match_rate.kql`; still needs F2+ for live proof |
+| #4 (G4) | 🟡 Proven (local) / ⚠️ notebook path unprotected | 🟢 **Notebook routed through sanitizing lib** (syntax-verified) | Session 2 gap closed; live Fabric run still pending |
+
+---
+
 ## Tally After Session 3
 
 | Pain # | Prior status | Post-session status | Change |

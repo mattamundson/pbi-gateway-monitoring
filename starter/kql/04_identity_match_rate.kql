@@ -1,0 +1,96 @@
+// =============================================================================
+// 04_identity_match_rate.kql  |  Label: [NET-NEW]
+//
+// Pain #3 (FLAGSHIP) — MEASURE THE MATCH RATE, throttle-safe.
+//
+// WHY THIS FILE EXISTS
+//   01_identity_join.kql PROVES the join returns rows. It does NOT quantify how
+//   MANY gateway queries actually got an owner — the one number the repo cannot
+//   produce without a live tenant (phase5 U11 / U19; PAIN-POINT-COVERAGE.md #3).
+//   This file computes: (# gateway queries with ExecutingUser) / (# gateway
+//   queries in the window) = the attribution match rate, broken down by
+//   QueryType so DirectQuery-vs-Refresh coverage is visible separately (the
+//   open question in 01_identity_join.kql's header).
+//
+// THROTTLE-SAFE BY CONSTRUCTION (Session 1/3 blocker: trial Spark/KQL throttle)
+//   Every block below pushes `lookback` + `workspace_filter` down BEFORE the join,
+//   exactly like 01_identity_join.kql, so a throttled trial capacity scans a tiny
+//   slice. Start at 15m + a single workspace GUID; widen only once it returns.
+//   On F2+ you can set lookback = 24h and empty the workspace filter.
+//
+// PREREQUISITES (same as 01_identity_join.kql — all must hold or match rate = 0
+// for a boring reason, not a real miss):
+//   - Workspace Monitoring ON for the workspace(s) whose models refresh through
+//     the gateway, and its Eventhouse actually provisioned (blocked on trial —
+//     see LIVE-TENANT-FINDINGS.md 2026-07-02; needs F2+).
+//   - Gateway QueryExecution logs landed into THIS Eventhouse as
+//     bronze_query_execution (via 01_bronze_ingest.py) OR reachable via a OneLake
+//     shortcut / externaldata. Without the gateway side there is no denominator.
+//   - At least one real gateway-routed refresh/query in the window.
+//
+// HOW TO READ THE RESULT
+//   match_rate_pct is the flagship number. Report it in the pilot issue
+//   (field "Attribution match rate (U11)"). Also report the per-QueryType split:
+//   Refresh is expected high; DirectQuery is the genuinely-unknown case.
+// =============================================================================
+
+// ---- tunables (identical semantics to 01_identity_join.kql) -----------------
+let lookback = 15m;                    // START here on a throttled trial; widen on F2+
+let workspace_filter = dynamic([]);    // e.g. dynamic(["<workspace-guid>"]) under throttle
+
+// ---- gateway side (denominator): every gateway query in the window ----------
+let gw =
+    bronze_query_execution
+    | where QueryExecutionEndTimeUTC > ago(lookback)
+    | project RequestId, QueryType, GatewayObjectId,
+              QueryExecutionEndTimeUTC;
+
+// ---- monitoring side: identities available in the window --------------------
+let ids =
+    PowerBIDatasetsWorkspace
+    | where Timestamp > ago(lookback)
+    | where array_length(workspace_filter) == 0 or WorkspaceId in (workspace_filter)
+    | where OperationName in ("QueryEnd", "ExecutionMetrics", "RefreshEnd")
+    | project OperationId, ExecutingUser, ItemName;
+
+// =============================================================================
+// BLOCK A — HEADLINE MATCH RATE (the one number)
+// =============================================================================
+gw
+| join kind=leftouter ids on $left.RequestId == $right.OperationId
+| summarize
+    total_gateway_queries   = count(),
+    attributed_queries      = countif(isnotempty(ExecutingUser)),
+    distinct_users          = dcountif(ExecutingUser, isnotempty(ExecutingUser)),
+    distinct_datasets       = dcountif(ItemName, isnotempty(ItemName))
+| extend match_rate_pct = round(100.0 * attributed_queries / total_gateway_queries, 1)
+| project total_gateway_queries, attributed_queries, match_rate_pct,
+          distinct_users, distinct_datasets
+
+// =============================================================================
+// BLOCK B — MATCH RATE BY QUERY TYPE (Refresh vs DirectQuery = the open question)
+// Run separately: comment out Block A, uncomment below.
+// =============================================================================
+// gw
+// | join kind=leftouter ids on $left.RequestId == $right.OperationId
+// | summarize
+//     total     = count(),
+//     attributed = countif(isnotempty(ExecutingUser))
+//     by QueryType
+// | extend match_rate_pct = round(100.0 * attributed / total, 1)
+// | order by total desc
+
+// =============================================================================
+// BLOCK C — UNATTRIBUTED SAMPLE (diagnose misses)
+// The gateway queries that got NO owner. If this is large, check: is Workspace
+// Monitoring on the RIGHT workspace? Is the window wide enough to contain the
+// monitoring row (engine event can land minutes after the gateway row)? Is the
+// query a Dataflow Gen1 / Paginated Report (confirmed-not-covered)?
+// Run separately: comment out Block A, uncomment below.
+// =============================================================================
+// gw
+// | join kind=leftouter ids on $left.RequestId == $right.OperationId
+// | where isempty(ExecutingUser)
+// | project QueryExecutionEndTimeUTC, RequestId, QueryType, GatewayObjectId
+// | order by QueryExecutionEndTimeUTC desc
+// | take 25
