@@ -58,7 +58,7 @@ No gateway diagnostics tool surfaces network bandwidth or latency. This collecto
 
 ## Pain points addressed
 
-All 10 operator pain points from [`research/phase3_painpoints.md`](research/phase3_painpoints.md) are addressed by design. Detailed evidence and status for each item: [`PAIN-POINT-COVERAGE.md`](PAIN-POINT-COVERAGE.md).
+All 10 operator pain points from [`research/phase3_painpoints.md`](research/phase3_painpoints.md) are addressed by design. Detailed evidence and status for each item: [`PAIN-POINT-COVERAGE.md`](PAIN-POINT-COVERAGE.md). For the merged operator-vs-developer view — and the two cross-track overlap themes that validate this build's direction — see the [`research/MASTER-PAINPOINT-REGISTER.md`](research/MASTER-PAINPOINT-REGISTER.md).
 
 | # | Pain point | Artifact | Honest status |
 |---|---|---|---|
