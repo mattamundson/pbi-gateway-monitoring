@@ -150,10 +150,16 @@ See **`docs/REPORT-BUILDOUT-PLAN.md`** for the full page inventory, per-page spe
 formats, and the honest CAN/CANNOT + headwinds (notably: `.pbix` is a Power BI Desktop step).
 
 New in v2:
+- **`gateway_monitor_v2.report.json`** — the full branded report: **14 pages / 105 visuals** (existing
+  4 rebranded + 10 new: Executive Overview, Historical Trends, Mashups Profiles, Mashups Logs, Logs
+  Explorer, Requests, Counters Deep-Dive, Gateway Profile, Alerting State, Tenant Breadth). This is
+  the drop-in report; open it in Desktop against the model below.
 - `theme/gwmon-brand.theme.json` — custom brand theme (import: *View > Themes > Browse for themes*).
-- `pages_v2/executive_overview.page.json` — new fuam-style landing page (15 visuals, PBIR). Drop into
-  the `pages[]` array of `gateway_monitor.report.json` (or assemble in Desktop).
+- `pages_v2/executive_overview.page.json` — standalone Exec Overview page source.
 - `../semantic-model/measures_v2.dax` — exec/historical/mashup/tenant measures (`[Unverified]`).
+- **`build/build_pbit.py` + `dist/gwmon_model.pbit`** — a **headless-built DirectLake model template**
+  (12 tables, 50 measures). A model-bearing `.pbix` is categorically Desktop-only; `.pbit` is the
+  producible-without-Desktop artifact. See `build/README.md`.
 
 All v2 artifacts are `[Unverified]` until one Power BI Desktop pass finalizes bindings + `dim_date`.
 
