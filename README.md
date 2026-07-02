@@ -229,21 +229,23 @@ a parallel 🟢/🟡/🟠/🔴/⚠️ emoji shorthand for at-a-glance scanning �
 
 ## Known gaps (internal testers read this)
 
-Two known follow-ups that are collected today but not yet wired all the way through.
-Flagging these for transparency, not asking you to fix them during the pilot:
+One known follow-up remains. Flagging it for transparency, not asking you to fix it
+during the pilot:
 
-1. **Mashup-process and gateway-inventory `Datasources` data are collected but not yet
-   ingested.** `Collect-MashupProcesses.ps1` and `Get-GatewayInventory.ps1` (which includes a
-   `Datasources` field per node) both write landing JSON, but `starter/notebooks/01_bronze_ingest.py`
-   has no `ingest_mashup_processes()` step, and its `ingest_gateway_inventory()` only reads
-   `DatasourceCount`, not the `Datasources` array itself. The collected files land safely; they
-   just don't flow into the medallion pipeline yet.
-2. **`01_bronze_ingest.py` keeps its own parser instead of importing `gateway_bronze_lib`.**
+1. **`01_bronze_ingest.py` keeps its own parser instead of importing `gateway_bronze_lib`.**
    `starter/notebooks/gateway_bronze_lib.py` holds the schema-adaptive `read_gateway_csv()` +
    `_sanitize_columns()` logic referenced elsewhere in this repo (including the Pain #4 fix in
    [`LIVE-TENANT-FINDINGS.md`](LIVE-TENANT-FINDINGS.md)), but `01_bronze_ingest.py`'s own
    `ingest_gateway_logs()` has a separate, hand-rolled parsing path rather than importing that
-   library. Both are locally tested; they just haven't been consolidated.
+   library. Both are locally tested; they just haven't been consolidated. (The notebook header
+   now states this honestly instead of claiming the lib is the primary path.)
+
+**Resolved 2026-07-02:** mashup-process + gateway-inventory `Datasources` ingestion is now
+wired into `01_bronze_ingest.py` — new `ingest_mashup_processes()` (→ `bronze_mashup_processes`,
+Pain #5) and `ingest_gateway_datasources()` (→ `bronze_gateway_datasources`, the credential-drift
+signal, Pain #10), both called from the entry point. Their transforms mirror the tested
+`gateway_bronze_lib.read_mashup_processes` and the existing explode-and-select pattern; like the
+rest of this notebook they are **[Unverified] in live Fabric** until the pilot run.
 
 ---
 

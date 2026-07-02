@@ -12,22 +12,25 @@
 #   positional), which means adding a new column to a gateway log file does
 #   NOT cause DataFormat.Error.
 #
-# PRIMARY PATH (v2, verified): native Spark distributed CSV via the shared module
-#   gateway_bronze_lib.read_gateway_csv() -- PERMISSIVE mode, _corrupt_record
-#   capture, RFC-4180 quoting, mergeSchema. This scales (parses on executors, not
-#   the driver) and is column-NAME based, so mid-schema column additions do NOT
-#   cause the DataFormat.Error that breaks the Microsoft PBIT template (pain #4).
-#   The identity extraction (add_artifact_identity) is UDF-FREE native Spark SQL.
-#   Both tiers of starter/tests/ exercise this exact code and PASS against a real
-#   Spark engine (see tests/README.md).
+# PARSER STATUS (read this before trusting the header):
+#   The scalable, column-NAME-based, native-Spark parser lives in the shared
+#   module gateway_bronze_lib.read_gateway_csv() -- PERMISSIVE mode,
+#   _corrupt_record capture, RFC-4180 quoting, mergeSchema; identity extraction
+#   (add_artifact_identity) via UDF-FREE native Spark SQL. BOTH starter/tests
+#   tiers exercise THAT LIB and it PASSES against a real Spark engine
+#   (see tests/README.md).
 #
-# Schema-adaptivity design:
+#   This notebook, however, still runs its OWN driver-side Python parser
+#   (parse_csv_schema_adaptive, below) instead of importing the lib -- so the
+#   tests do NOT yet exercise the notebook's parse path. Unifying the notebook
+#   onto gateway_bronze_lib is a tracked follow-up (see README "Known gaps").
+#   The driver-side parser is still column-NAME based (immune to the positional
+#   DataFormat.Error that breaks the Microsoft PBIT template, pain #4).
+#
+# Schema-adaptivity design (driver-side parser below):
 #   - Known columns are mapped/renamed by name (never by position)
 #   - Unknown/new columns flow through via mergeSchema on write
 #   - Malformed rows captured in _corrupt_record instead of failing the job
-#
-# The driver-side Python parser below is retained as a documented FALLBACK for
-# non-standard dialects and as the portable (Spark-free) test target.
 #
 # Adapted from:
 #   FPM log schema mappings:
@@ -639,6 +642,57 @@ def ingest_gateway_inventory():
     )
 
 
+def ingest_gateway_datasources():
+    """Ingest the per-datasource records from Get-GatewayInventory.ps1 (the
+    ``Datasources`` array) into bronze_gateway_datasources -- the credential-drift
+    signal (Pain #10).
+
+    The inventory JSON carries two arrays: ``Inventory`` (nodes, handled by
+    ingest_gateway_inventory) and ``Datasources`` (per-datasource Status/type).
+    The node path keeps only DatasourceCount; this surfaces the individual
+    datasource Status values that credential-drift alerting keys on. The array is
+    only present when the collector ran with -CheckDatasourceStatus (default on).
+    """
+    try:
+        df = spark.read.option("multiLine", True).json(
+            f"{LANDING_PATH}/gateway_inventory_*.json"
+        )
+    except Exception as e:
+        print(f"[WARN] No gateway inventory files: {e}")
+        return
+
+    if "Datasources" not in df.columns:
+        print(
+            "[WARN] gateway inventory has no Datasources array "
+            "(CheckDatasourceStatus off?) -- skipping bronze_gateway_datasources"
+        )
+        return
+
+    df_ds = (
+        df.select(
+            F.col("CollectedAtUtc").cast(TimestampType()).alias("CollectedAtUTC"),
+            F.explode_outer(F.col("Datasources")).alias("ds"),
+        )
+        .select(
+            "CollectedAtUTC",
+            F.col("ds.GatewayClusterId"),
+            F.col("ds.GatewayClusterName"),
+            F.col("ds.DatasourceId"),
+            F.col("ds.DatasourceName"),
+            F.col("ds.DatasourceType"),
+            F.col("ds.ConnectionDetails"),  # JSON string (ConvertTo-Json -Compress)
+            F.col("ds.Status"),  # Live / Unknown / Error -- drives cred-drift alert
+            F.col("ds.LastUpdated"),
+        )
+        # explode_outer emits a null ds for inventories with an empty array; drop them
+        .filter(F.col("DatasourceId").isNotNull())
+        .withColumn("_partition_date", F.to_date(F.col("CollectedAtUTC")))
+    )
+    _write_bronze_delta(
+        df_ds, "bronze_gateway_datasources", partition_cols=["_partition_date"]
+    )
+
+
 def ingest_refresh_history():
     """Ingest Power BI Service refresh history JSON from Collect-RefreshHistory.ps1.
 
@@ -682,6 +736,43 @@ def ingest_refresh_history():
     )
 
 
+def ingest_mashup_processes():
+    """Ingest per-process mashup telemetry (NDJSON) from Collect-MashupProcesses.ps1
+    into bronze_mashup_processes -- per-container memory/CPU visibility (Pain #5).
+
+    Unlike the other collectors, the mashup collector emits newline-delimited JSON
+    (one flat record per line, no wrapper), so this reads with multiLine=False and
+    does NOT explode. Column casts mirror gateway_bronze_lib.read_mashup_processes
+    (the tested reference exercised by run_local_smoke STEP 6).
+    """
+    try:
+        df = spark.read.option("multiLine", False).json(
+            f"{LANDING_PATH}/MashupProcesses_*.json"
+        )
+    except Exception as e:
+        print(f"[WARN] No mashup process files: {e}")
+        return
+
+    for c, t in [
+        ("ProcessId", "long"),
+        ("WorkingSetMB", "double"),
+        ("PrivateBytesMB", "double"),
+        ("CpuPercent", "double"),
+        ("ThreadCount", "int"),
+        ("HandleCount", "int"),
+        ("LogicalCores", "int"),
+    ]:
+        if c in df.columns:
+            df = df.withColumn(c, F.col(c).cast(t))
+
+    df_mashup = df.withColumn(
+        "CollectedAtUTC", F.col("CollectedAtUtc").cast(TimestampType())
+    ).withColumn("_partition_date", F.to_date(F.col("CollectedAtUTC")))
+    _write_bronze_delta(
+        df_mashup, "bronze_mashup_processes", partition_cols=["_partition_date"]
+    )
+
+
 # ── OPTIONAL FPM BRIDGE ───────────────────────────────────────────────────────
 def ingest_fpm_bridge():
     """
@@ -715,7 +806,9 @@ if __name__ == "__main__" or True:  # True: runs in Fabric notebook context
     ingest_event_log()
     ingest_disk_spool()
     ingest_gateway_inventory()
+    ingest_gateway_datasources()
     ingest_refresh_history()
+    ingest_mashup_processes()
     if USE_FPM_BRIDGE:
         ingest_fpm_bridge()
     print("=== 01_bronze_ingest.py complete ===")
