@@ -93,3 +93,38 @@ logic itself remains unexecuted against real data.
 ---
 
 *Add new sessions below this line, newest last.*
+
+---
+
+## 2026-07-01 — Session 2 (code follow-up to Session 1 findings)
+
+Off-tenant follow-up: turned the Session 1 findings into code/doc fixes and executed
+what could be executed locally (isolated conda PySpark 3.5.8 harness — see
+`research/phase5_validation.md` → "Local Spark smoke harness").
+
+### Pain #4 — FIXED (notebook path) + guarded
+
+- **Code fix (U18):** `read_gateway_csv` only renamed *known* columns; unknown/new
+  unit-suffixed headers (the gateway-upgrade case) flowed through with `( ) /` intact
+  and would break the Delta write. Added `_safe_col_name()` + `_sanitize_columns()`
+  (runs after `rename_map`) — the `_sanitize_columns()` the Session 1 fix path referenced
+  now actually exists. **Proven on real Spark:** unknown `UpgradeMetric(ms)`/`NewSize(bytes)`
+  columns read clean and a Parquet write succeeded (raises `InvalidColumnName` without it).
+- **Session 1 action items:**
+  - [x] `_sanitize_columns()` coverage for `(ms)`/`(bytes)` — 6 assertions in `test_parser.py` Test group 4.
+  - [x] QUICKSTART.md warning not to use Load-to-Tables for the raw CSV — added.
+  - [x] Pre-ingest rename in the deploy path — already covered: `Deploy_GatewayMonitor.ipynb`
+        orchestrates `01_bronze_ingest.py` → `read_gateway_csv` (now sanitizing); its own
+        `spark.read.format("delta").load(...)` only reads *back* written tables, not the raw CSV.
+- **Unchanged (platform, not code):** Fabric **Load-to-Tables** still fails at platform
+  schema-inference before our code runs. Fix remains procedural: use the notebook path.
+
+### Pain #3 — throttle-survival workaround added (still infra-gated for [Verified])
+
+The blocker (trial Spark/KQL throttle) is infrastructure, not a code bug, so the join
+stays UNPROVEN on a paid capacity. But Session 1's recommended workaround ("narrow the
+window / single workspace") is now built into `starter/kql/01_identity_join.kql`:
+`lookback` is documented as narrowable (e.g. `15m`) and a new `workspace_filter`
+(`dynamic([...])`) is pushed down **before** the join so the throttled engine scans far
+fewer rows. Empty filter = all workspaces (unchanged default). Validate on F2+ or a
+narrow-window trial run per Session 1.

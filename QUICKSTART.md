@@ -71,6 +71,18 @@ Monitoring likely hasn't captured activity yet — wait 10–15 min after a refr
 before concluding it failed. The `RequestId == OperationId` join is confirmed in Microsoft
 docs but **[Unverified] in your specific tenant** — that's exactly what this test resolves.
 
+## ⚠️ When you ingest the gateway CSV — do NOT use Fabric "Load to Tables"
+The raw gateway performance CSV has headers with unit suffixes —
+`QueryExecutionDuration(ms)`, `SpoolingTotalDataSize(bytes)`, `DiskRead(byte/sec)`.
+Fabric's **Load to Tables** shortcut rejects them at schema-inference with
+`AnalysisException: InvalidColumnName` (Spark/Delta forbid `( ) / , ; { } =` in column
+names) — this happens **before** any of our parsing code runs, so it can't be caught there.
+
+**Route the CSV through the notebook path instead:** `starter/notebooks/01_bronze_ingest.py`
+→ `read_gateway_csv()`, which auto-sanitizes those headers (`(ms)`→`_ms`, `(bytes)`→`_bytes`)
+for both known *and* new/unknown columns. Confirmed on a live tenant 2026-07-01 —
+see [`LIVE-TENANT-FINDINGS.md`](LIVE-TENANT-FINDINGS.md) → Pain #4.
+
 ## What happens next
 Paste the results (even an error) back to the assistant. That flips the biggest
 `[Unverified]` labels to verified and unblocks finalizing the report + one-click bundle.

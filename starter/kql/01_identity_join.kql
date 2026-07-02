@@ -55,7 +55,14 @@
 //
 // ---- Core join: attach identity to every gateway query -----------------------
 //
-let lookback = 24h;
+// [Throttled trial capacity? -- see LIVE-TENANT-FINDINGS.md, Pain #3] On a trial
+//   (throttled) Fabric capacity the full 24h x all-workspaces join can queue
+//   indefinitely or be killed before it completes. To stay under the throttle,
+//   NARROW the scan: shrink `lookback` (e.g. 15m) and set `workspace_filter` to a
+//   single workspace GUID. Both filters are pushed down BEFORE the join so the
+//   engine scans far fewer rows. An empty `workspace_filter` = all workspaces.
+let lookback = 24h;                    // narrow to 15m on a throttled trial capacity
+let workspace_filter = dynamic([]);    // e.g. dynamic(["<workspace-guid>"]) under throttle
 let gw =
     bronze_query_execution
     | where QueryExecutionEndTimeUTC > ago(lookback)
@@ -64,6 +71,7 @@ let gw =
               QueryExecutionEndTimeUTC;
 PowerBIDatasetsWorkspace
 | where Timestamp > ago(lookback)
+| where array_length(workspace_filter) == 0 or WorkspaceId in (workspace_filter)
 | where OperationName in ("QueryEnd", "ExecutionMetrics", "RefreshEnd")
 | project Timestamp, OperationId, ExecutingUser, ItemId, ItemName,
           WorkspaceId, CapacityId, CpuTimeMs, DurationMs,
