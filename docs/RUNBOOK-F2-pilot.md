@@ -1,6 +1,10 @@
-# Runbook — Stand up an F2 pay-as-you-go capacity to measure the flagship match rate
+# Runbook — One F2 sitting: flagship match rate **+** tenant extract
 
-**Goal:** get the one number the repo cannot produce off-tenant — the **query→identity attribution match rate** (pain #3 / U11) — by renting a Fabric **F2** capacity for ~1 hour, running the flagship pilot, then pausing the capacity so you stop paying.
+**Goal:** in a single ~60–90 min rental of a Fabric **F2** capacity, produce BOTH live results the repo cannot generate off-tenant, then pause the capacity so you stop paying:
+- **Track A — flagship match rate** (pain #3 / U11): the query→identity attribution %.
+- **Track B — tenant extract** (Nexus report breadth): populate `gold_inventory / gold_activities / gold_refreshables / gold_capacities` so the Tenant Overview, Timeline, Refresh Analytics, and CU pages light up with real data.
+
+Both tracks share the **same capacity, same service principal, and same sitting** — do them back to back. Run the **preflights first** (Step 0) so you don't discover a missing permission after the meter is running.
 
 **Why F2 at all:** Session 3 field-confirmed that Workspace Monitoring's Eventhouse **fails to provision on trial capacity** (`LIVE-TENANT-FINDINGS.md`, 2026-07-02). The identity join reads `PowerBIDatasetsWorkspace`, which only exists once that Eventhouse provisions. **F2 is the smallest paid SKU that clears the blocker.** `[Unverified]` whether an even cheaper path exists; F2 is the documented-minimum in this repo's own findings.
 
@@ -17,8 +21,24 @@
 | 3 | A **workspace** whose semantic model **refreshes through your on-prem gateway** (real gateway traffic). | Workspace → dataset → Settings → Gateway connection. |
 | 4 | **Access to the gateway host** file system (to copy a `RequestId`). Usually a server, not your laptop. | RDP/console to the gateway machine. |
 | 5 | Repo cloned; you can open the Fabric portal and a KQL Queryset. | — |
+| 6 | *(Track B)* A **service principal** with admin read scopes, its client secret in Key Vault, and the SP added to the security group used by the tenant setting **"Allow service principals to use read-only admin APIs."** | Preflight in Step 0B tells you exactly. |
 
-If #3 or #4 is missing, provisioning F2 will burn money without producing a match rate. Line them up first.
+If #3 or #4 is missing, provisioning F2 will burn money without producing a match rate. If #6 is missing, Track B returns 401/403. Line them all up first.
+
+---
+
+## Step 0 — Preflights (run BEFORE provisioning — free, ~2 min)
+
+The meter isn't running yet, so validate permissions now.
+
+**Step 0A — Track A sanity:** confirm you can reach the gateway host (Prereq 4) and that the target model refreshes through the gateway (Prereq 3). No script needed.
+
+**Step 0B — Track B preflight (`tenant_doctor`):** point it at your `config.json` (with the SP + Key Vault secret resolved) and run:
+```bash
+CONFIG_PATH=starter/config/config.json python starter/notebooks/tenant_doctor.py
+```
+It runs 5 checks (SP token, **read-only admin API + tenant setting**, activity events, refreshables, capacity-bridge mode) and prints `VERDICT: READY` or `BLOCKED` with the **exact fix** for each failure. Do not start Track B until this says **READY**. (Exit code is non-zero when blocked, so it also gates CI/automation.)
+> Rehearse the report format with no tenant: `TENANT_DOCTOR_MOCK=1 python starter/notebooks/tenant_doctor.py`.
 
 ---
 
@@ -76,6 +96,19 @@ Open **`starter/kql/04_identity_match_rate.kql`**:
 3. Run **Block B** → the **Refresh vs DirectQuery** split (DirectQuery coverage is the genuinely-open question).
 4. If the rate is low, run **Block C** → sample unattributed queries; likely causes: wrong workspace, window too narrow (engine event lands after the gateway row → widen `lookback`), or Dataflow Gen1 / Paginated (confirmed not covered).
 
+## Step 6B — (Track B) Run the tenant extract while the capacity is up (~10 min)
+
+Do this in the **same sitting**, right after Step 6. Track B uses the admin REST APIs (not Workspace Monitoring), but running it now reuses the SP you already validated and keeps everything in one window.
+
+1. Ensure Step 0B printed **READY**. In `config.json` set `features.collectInventory`, `features.collectActivityEvents`, `features.collectRefreshables` → `true`.
+2. Run the pipeline live (Deploy notebook or shell):
+   ```bash
+   CONFIG_PATH=starter/config/config.json python starter/notebooks/00_tenant_extract.py
+   CONFIG_PATH=starter/config/config.json python starter/notebooks/01a_tenant_silver_gold.py
+   ```
+3. **Capacity CU (optional):** set `config.capacityBridge.mode` to `fpm_eventhouse` (+ `eventhouseDeltaPath`) if you run Microsoft's FPM accelerator, or `capacity_metrics_xmla` (+ `xmlaEndpoint`/`dataset`) to query the Fabric Capacity Metrics model, then run `04_capacity_bridge.py`. Leave `mock` to skip live CU.
+4. Confirm four gold tables now have rows: `gold_inventory`, `gold_activities`, `gold_refreshables`, `gold_capacities`. Open the Nexus report — Tenant Overview / Timeline / Refresh Analytics should populate.
+
 ## Step 7 — PAUSE the capacity (stop billing) (~1 min)
 
 **Do this the moment you have the number.** Azure portal → `gw-pilot-f2` → **Pause**. Billing stops while paused. (Delete it entirely if you're done: **Delete**.)
@@ -83,7 +116,9 @@ Open **`starter/kql/04_identity_match_rate.kql`**:
 
 ## Step 8 — Report it back
 
-File a **Pilot report** issue (`.github/ISSUE_TEMPLATE/pilot-report.yml`). Paste the Block A counts + `match_rate_pct`, the Block B split, the capacity SKU (F2), and any schema drift from Step 5 Block 3. That single number upgrades pain #3 in `PAIN-POINT-COVERAGE.md` from 🟠 Built/Unverified toward 🟢 Proven and resolves phase5 **U19**.
+File a **Pilot report** issue (`.github/ISSUE_TEMPLATE/pilot-report.yml`).
+- **Track A:** paste the Block A counts + `match_rate_pct`, the Block B split, the capacity SKU (F2), and any schema drift from Step 5 Block 3. That number upgrades pain #3 in `PAIN-POINT-COVERAGE.md` from 🟠 Built/Unverified toward 🟢 Proven and resolves phase5 **U19**.
+- **Track B:** note the `tenant_doctor` verdict, the four gold-table row counts, and which `capacityBridge.mode` you used (and whether CU populated). That upgrades the tenant-report feed from mock-tested toward live-verified.
 
 ---
 
@@ -94,6 +129,7 @@ File a **Pilot report** issue (`.github/ISSUE_TEMPLATE/pilot-report.yml`). Paste
 | Monitoring Eventhouse still errors on F2 (`KustoWebV2` / `Access error`) | Region mismatch, or provisioning lag | Confirm capacity + workspace share a region; wait 10–15 min; capture Activity + Kusto error IDs (as in `LIVE-TENANT-FINDINGS.md` 2026-07-02) for MS support. |
 | `PowerBIDatasetsWorkspace` empty after refresh | Engine events not landed yet, or model not in the monitored workspace | Wait longer; verify the refreshed model lives in the monitored workspace (Log Analytics/monitoring is per-workspace). |
 | Block 2 returns no match for a real `RequestId` | Window too narrow, or query type not covered | Widen `lookback`; check it wasn't Dataflow Gen1 / Paginated (not covered). |
+| Track B: 401/403 on admin APIs | SP missing read-only-admin-API tenant setting / group membership | Re-run `tenant_doctor` (Step 0B); apply its D2 fix. |
 | Match rate lower than expected | DirectQuery share, or fuzzy timing | Use Block B to separate Refresh vs DirectQuery; report both — the split *is* the finding. |
 
 ## Alternative that avoids Fabric Eventhouse entirely

@@ -34,6 +34,9 @@ jobs:
       - name: Run Tier 1 tenant-extract test (mock, no Spark, no network)
         run: python starter/tests/test_tenant_extract.py
 
+      - name: Run Tier 1 tenant preflight test (tenant_doctor)
+        run: python starter/tests/test_tenant_doctor.py
+
   tier2-spark:
     name: Tier 2 medallion (PySpark + JDK 17)
     runs-on: ubuntu-latest
@@ -86,6 +89,12 @@ jobs:
       # producing gold_inventory / gold_activities / gold_refreshables / gold_capacities
       # so the Nexus tenant report pages + CU measures have a deterministic feed to
       # bind against without a live tenant. Live runs need an admin-scoped SP.
+      - name: Preflight (tenant_doctor, mock) — gates the chain
+        env:
+          TENANT_DOCTOR_MOCK: '1'
+          CAPACITY_BRIDGE_MODE: mock
+        run: python starter/notebooks/tenant_doctor.py
+
       - name: Run full tenant mock chain (00 extract -> 01a silver/gold -> 04 capacity bridge)
         env:
           TENANT_EXTRACT_MOCK: '1'

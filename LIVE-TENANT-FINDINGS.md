@@ -183,6 +183,17 @@ workspace, and (b) a `RequestId` copied from the **gateway host** `QueryStartRep
 is not the client machine). All three (F2+ capacity + gateway-routed refresh + gateway RequestId)
 must be present at once for a green run — best assembled in the real pilot environment.
 
+## 2026-07-02 — Session 6 (tenant preflight + one-sitting pilot runbook)
+
+- **New `starter/notebooks/tenant_doctor.py`**: preflight for the tenant extract. 5 checks (SP token; **read-only admin API + tenant setting**; activity events; refreshables; capacity-bridge mode), each with an exact remediation string; non-zero exit when a required check fails. MOCK mode for CI. Prints `VERDICT: READY|BLOCKED`.
+- **New `starter/tests/test_tenant_doctor.py`** (Spark-free): READY path, non-required FAIL stays READY, D1 token-failure short-circuit → BLOCKED, remediation coverage. **PASS 4/4.**
+- **CI**: preflight test added to `tier1-parser`; `tenant-harness` job now runs `tenant_doctor` (mock) as a gate before the mock chain.
+- **Runbook** renamed `docs/RUNBOOK-F2-pilot.md` and restructured into **one F2 sitting, two tracks**: Track A (match rate) + Track B (tenant extract), with a free Step 0 preflight (0A gateway sanity, 0B `tenant_doctor`), a Track B extract step (6B) reusing the same SP/capacity, dual report-back, and a Track B 401/403 troubleshooting row. QUICKSTART reference updated.
+
+Net: a piloter validates BOTH permission paths before the meter starts and produces both live results (match rate + populated tenant gold) in a single rental. Live numbers still gated on the real SP + tenant setting.
+
+---
+
 ## 2026-07-02 — Session 5 (tenant-extract pipeline + Capacity Metrics bridge + CI harness)
 
 Off-tenant engineering. Turns the enhanced report's biggest headwind — "tenant pages render empty" — into a wired, CI-tested feed. No live tenant run; live numbers still gated on an admin-scoped SP.

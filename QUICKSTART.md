@@ -7,7 +7,7 @@ ticket number (`RequestId`) matches a Fabric Workspace Monitoring record that kn
 > Full hand-holding version: [`docs/PILOT-GUIDE-START-HERE.md`](docs/PILOT-GUIDE-START-HERE.md).
 > This is the condensed path. **Requires:** Fabric admin, F2+ capacity for the identity-join
 > (trial capacity can't provision the Workspace Monitoring Eventhouse — see the
-> step-by-step [`docs/RUNBOOK-F2-capacity-for-match-rate.md`](docs/RUNBOOK-F2-capacity-for-match-rate.md) to rent F2 for ~1 hour and pause it right after).
+> step-by-step [`docs/RUNBOOK-F2-pilot.md`](docs/RUNBOOK-F2-pilot.md) to rent F2 for ~1 hour and pause it right after).
 > test; F8+ only for the optional Activator/alerting step.
 
 ---
