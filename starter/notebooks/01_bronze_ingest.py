@@ -20,12 +20,22 @@
 #   tiers exercise THAT LIB and it PASSES against a real Spark engine
 #   (see tests/README.md).
 #
-#   This notebook, however, still runs its OWN driver-side Python parser
-#   (parse_csv_schema_adaptive, below) instead of importing the lib -- so the
-#   tests do NOT yet exercise the notebook's parse path. Unifying the notebook
-#   onto gateway_bronze_lib is a tracked follow-up (see README "Known gaps").
-#   The driver-side parser is still column-NAME based (immune to the positional
-#   DataFormat.Error that breaks the Microsoft PBIT template, pain #4).
+#   As of 2026-07-02 (U19 follow-up) this notebook now ROUTES its gateway-log
+#   ingest THROUGH gateway_bronze_lib.read_gateway_csv() -- the native-Spark,
+#   column-name-based, _sanitize_columns()-protected path that the tests exercise
+#   and that is PROVEN on real Spark. This closes the pain #4 live-tenant gap:
+#   the notebook path is now immune to BOTH the positional DataFormat.Error (that
+#   breaks the Microsoft PBIT template) AND the InvalidColumnName failure on new
+#   unit-suffixed headers like `Something(ms)` (confirmed on a real tenant via
+#   Load-to-Tables -- see LIVE-TENANT-FINDINGS.md 2026-07-01). The legacy
+#   driver-side parser (parse_csv_schema_adaptive, below) is RETAINED only as a
+#   documented FALLBACK for the JSON-staged (RawCsvContent) collector format and
+#   for non-standard dialects; the primary path is the lib.
+#
+#   IMPORTANT (pain #4 procedural fix, unchanged): do NOT ingest the raw gateway
+#   CSV via Fabric's Load-to-Tables shortcut -- that platform path fails at schema
+#   inference on `(ms)`/`(bytes)` headers BEFORE any of our code runs. Always
+#   route through this notebook.
 #
 # Schema-adaptivity design (driver-side parser below):
 #   - Known columns are mapped/renamed by name (never by position)
@@ -105,6 +115,28 @@ spark.conf.set("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension"
 spark.conf.set(
     "spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog"
 )
+
+# ── Shared bronze lib: single source of truth for the schema-adaptive,
+#    column-name-sanitizing gateway CSV reader (the tested, real-Spark-proven
+#    pain #4 fix). The notebook's gateway-log path routes through this. ──
+# In Fabric, %run the lib notebook first, OR (local/CI) import it from the same
+# folder. Guarded so the notebook still loads if the lib isn't importable, in
+# which case ingest_gateway_logs() falls back to the driver-side parser.
+try:
+    from gateway_bronze_lib import (
+        read_gateway_csv,
+        cast_query_execution,
+        add_artifact_identity,
+        QUERY_EXECUTION_RENAME,
+    )
+
+    _BRONZE_LIB_AVAILABLE = True
+except ImportError:
+    _BRONZE_LIB_AVAILABLE = False
+    print(
+        "[WARN] gateway_bronze_lib not importable -- gateway-log ingest will use "
+        "the driver-side fallback parser. In Fabric, %run the lib notebook first."
+    )
 
 # ── KNOWN COLUMN SCHEMA — sourced from MS docs, not invented ───────────────
 # Source: https://learn.microsoft.com/en-us/data-integration/gateway/service-gateway-performance
@@ -352,12 +384,81 @@ def add_partition_date(df, ts_col: str):
 # ── MAIN INGEST LOGIC ────────────────────────────────────────────────────────
 
 
+def ingest_gateway_logs_via_lib():
+    """PRIMARY gateway-log path (U19): read the raw gateway CSVs directly with
+    gateway_bronze_lib.read_gateway_csv -- native distributed Spark, column-NAME
+    based (positional-drift immune, pain #4) AND _sanitize_columns-protected so
+    new `(ms)`/`(bytes)` headers can't break the Delta write with
+    InvalidColumnName (the live-tenant failure, LIVE-TENANT-FINDINGS.md).
+
+    Reads QueryExecutionReport / QueryStartReport CSVs staged in LANDING_PATH.
+    Returns True if it handled ingest, False to signal the caller to fall back
+    to the JSON-staged driver-side parser.
+    """
+    if not _BRONZE_LIB_AVAILABLE:
+        return False
+
+    handled_any = False
+
+    # QueryExecution: the table the identity join + triage depend on.
+    try:
+        qe = read_gateway_csv(
+            spark,
+            f"{LANDING_PATH}/QueryExecutionReport*.csv",
+            rename_map=QUERY_EXECUTION_RENAME,
+        )
+        if not qe.rdd.isEmpty():
+            qe = cast_query_execution(qe)
+            if "QueryExecutionEndTimeUTC" in qe.columns:
+                qe = add_partition_date(qe, "QueryExecutionEndTimeUTC")
+                _write_bronze_delta(
+                    qe, "bronze_query_execution", partition_cols=["_partition_date"]
+                )
+            else:
+                _write_bronze_delta(qe, "bronze_query_execution", partition_cols=[])
+            handled_any = True
+    except Exception as e:  # noqa: BLE001 -- never let one file form halt ingest
+        print(f"[INFO] lib path: no readable QueryExecution CSVs ({e})")
+
+    # QueryStart: carries EvaluationContext -> artifact identity fallback.
+    try:
+        qs = read_gateway_csv(spark, f"{LANDING_PATH}/QueryStartReport*.csv")
+        if not qs.rdd.isEmpty():
+            if "QueryStartTimeUTC" in qs.columns:
+                qs = qs.withColumn(
+                    "QueryStartTimeUTC", F.to_timestamp(F.col("QueryStartTimeUTC"))
+                )
+            qs = add_artifact_identity(qs)  # UDF-free, both encodings
+            if "QueryStartTimeUTC" in qs.columns:
+                qs = add_partition_date(qs, "QueryStartTimeUTC")
+                _write_bronze_delta(
+                    qs, "bronze_query_start", partition_cols=["_partition_date"]
+                )
+            else:
+                _write_bronze_delta(qs, "bronze_query_start", partition_cols=[])
+            handled_any = True
+    except Exception as e:  # noqa: BLE001
+        print(f"[INFO] lib path: no readable QueryStart CSVs ({e})")
+
+    return handled_any
+
+
 def ingest_gateway_logs():
     """
-    Main ingest: reads staged JSON from Collect-GatewayLogs.ps1 output,
-    parses schema-adaptively, writes to Bronze Delta tables.
+    Gateway log ingest. PRIMARY path is the shared lib (ingest_gateway_logs_via_lib,
+    reading raw CSVs). This function is the FALLBACK for the JSON-staged form
+    (Collect-GatewayLogs.ps1 wraps CSV text in RawCsvContent) and for dialects the
+    Spark reader mishandles; it uses the driver-side column-NAME parser.
     """
-    print(f"[01_bronze_ingest] Starting gateway log ingest from: {LANDING_PATH}")
+    # Try the tested, sanitizing lib path first (raw CSVs).
+    if ingest_gateway_logs_via_lib():
+        print(
+            "[01_bronze_ingest] gateway logs ingested via gateway_bronze_lib "
+            "(schema-adaptive + column-name-sanitized). Skipping driver-side fallback."
+        )
+        return
+
+    print(f"[01_bronze_ingest] lib path found no raw CSVs; using JSON-staged fallback from: {LANDING_PATH}")
 
     # Read all staged gateway log JSON files
     # [Assumption] Fabric Lakehouse Files/ is accessible via ABFSS path

@@ -1,0 +1,36 @@
+table gold_dim_gateway
+	column 'GatewayObjectId'
+		dataType: string
+		sourceColumn: GatewayObjectId
+		summarizeBy: none
+
+	column 'GatewayClusterId'
+		dataType: string
+		sourceColumn: GatewayClusterId
+		summarizeBy: none
+
+	column 'GatewayClusterName'
+		dataType: string
+		sourceColumn: GatewayClusterName
+		summarizeBy: none
+
+	column 'GatewayNodeName'
+		dataType: string
+		sourceColumn: GatewayNodeName
+		summarizeBy: none
+
+	column 'status_current'
+		dataType: string
+		sourceColumn: status_current
+		summarizeBy: none
+
+	column 'Version'
+		dataType: string
+		sourceColumn: Version
+		summarizeBy: none
+
+	partition gold_dim_gateway = entity
+		mode: directLake
+		source
+			entityName: gold_dim_gateway
+			expressionSource: DatabaseQuery

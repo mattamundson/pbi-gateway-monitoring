@@ -1,0 +1,31 @@
+table silver_triage
+	column 'DataSource'
+		dataType: string
+		sourceColumn: DataSource
+		summarizeBy: none
+
+	column 'ErrorMessage'
+		dataType: string
+		sourceColumn: ErrorMessage
+		summarizeBy: none
+
+	column 'failure_layer'
+		dataType: string
+		sourceColumn: failure_layer
+		summarizeBy: none
+
+	column 'triage_confidence'
+		dataType: string
+		sourceColumn: triage_confidence
+		summarizeBy: none
+
+	column 'failure_layer_os_event'
+		dataType: boolean
+		sourceColumn: failure_layer_os_event
+		summarizeBy: none
+
+	partition silver_triage = entity
+		mode: directLake
+		source
+			entityName: silver_triage
+			expressionSource: DatabaseQuery

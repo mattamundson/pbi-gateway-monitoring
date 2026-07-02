@@ -1,0 +1,947 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/pbir/definition/report/1.0.0/schema.json",
+  "name": "Nexus Gateway & Fabric Observatory",
+  "_label": "[NET-NEW] enhanced report \u2014 12 pages, gateway depth + tenant breadth",
+  "_honesty_note": "PBIR structurally valid; open once in Desktop to finalize DirectLake bindings. No PBIX emitted (Desktop/Fabric-only). Tenant pages render empty until the tenant-extract pipeline lands gold_capacities/activities/inventory/refreshables.",
+  "version": "5.0",
+  "themeCollection": {
+    "baseTheme": {
+      "name": "nexus_theme",
+      "reportVersionAtImport": "5.0",
+      "type": "SharedResources"
+    }
+  },
+  "pages": [
+    {
+      "name": "Executive Cockpit",
+      "displayName": "Executive Cockpit",
+      "displayOption": "FitToPage",
+      "width": 1280,
+      "height": 720,
+      "_job_to_be_done": "Is anything on fire right now?",
+      "visualContainers": [
+        {
+          "x": 200,
+          "y": 40,
+          "z": 0,
+          "width": 170,
+          "height": 80,
+          "config": "{\"name\": \"Open_Risks\", \"singleVisual\": {\"visualType\": \"card\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Open Risks'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Open Risk Count]"
+        },
+        {
+          "x": 378,
+          "y": 40,
+          "z": 0,
+          "width": 170,
+          "height": 80,
+          "config": "{\"name\": \"Nodes_Offline\", \"singleVisual\": {\"visualType\": \"card\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Nodes Offline'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Nodes Offline]"
+        },
+        {
+          "x": 556,
+          "y": 40,
+          "z": 0,
+          "width": 170,
+          "height": 80,
+          "config": "{\"name\": \"Match_Rate_%\", \"singleVisual\": {\"visualType\": \"card\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Match Rate %'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Match Rate %]"
+        },
+        {
+          "x": 734,
+          "y": 40,
+          "z": 0,
+          "width": 170,
+          "height": 80,
+          "config": "{\"name\": \"Refresh_Success_%\", \"singleVisual\": {\"visualType\": \"card\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Refresh Success %'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Refresh Success %]"
+        },
+        {
+          "x": 912,
+          "y": 40,
+          "z": 0,
+          "width": 170,
+          "height": 80,
+          "config": "{\"name\": \"Gateway_Error_%\", \"singleVisual\": {\"visualType\": \"card\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Gateway Error %'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Gateway Error Rate %]"
+        },
+        {
+          "x": 1090,
+          "y": 40,
+          "z": 0,
+          "width": 170,
+          "height": 80,
+          "config": "{\"name\": \"Active_Items\", \"singleVisual\": {\"visualType\": \"card\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Active Items'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Active Items]"
+        },
+        {
+          "x": 200,
+          "y": 130,
+          "z": 0,
+          "width": 170,
+          "height": 80,
+          "config": "{\"name\": \"Top_Risk\", \"singleVisual\": {\"visualType\": \"card\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Top Risk'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Top Risk (text)]"
+        },
+        {
+          "x": 200,
+          "y": 220,
+          "z": 0,
+          "width": 535,
+          "height": 200,
+          "config": "{\"name\": \"Fleet_Status\", \"singleVisual\": {\"visualType\": \"donutChart\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Fleet Status'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "gold_dim_gateway[status_current]"
+        },
+        {
+          "x": 745,
+          "y": 220,
+          "z": 0,
+          "width": 535,
+          "height": 200,
+          "config": "{\"name\": \"Error_Rate_(7d)\", \"singleVisual\": {\"visualType\": \"lineChart\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Error Rate (7d)'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Gateway Error Rate %] by Date"
+        }
+      ]
+    },
+    {
+      "name": "Tenant Overview",
+      "displayName": "Tenant Overview",
+      "displayOption": "FitToPage",
+      "width": 1280,
+      "height": 720,
+      "_job_to_be_done": "How much is in my tenant, and where?",
+      "visualContainers": [
+        {
+          "x": 200,
+          "y": 40,
+          "z": 0,
+          "width": 170,
+          "height": 80,
+          "config": "{\"name\": \"Capacities\", \"singleVisual\": {\"visualType\": \"card\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Capacities'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Capacity Count (tenant)]"
+        },
+        {
+          "x": 378,
+          "y": 40,
+          "z": 0,
+          "width": 170,
+          "height": 80,
+          "config": "{\"name\": \"Workspaces\", \"singleVisual\": {\"visualType\": \"card\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Workspaces'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Workspace Count (tenant)]"
+        },
+        {
+          "x": 556,
+          "y": 40,
+          "z": 0,
+          "width": 170,
+          "height": 80,
+          "config": "{\"name\": \"Reports\", \"singleVisual\": {\"visualType\": \"card\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Reports'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Reports (tenant)]"
+        },
+        {
+          "x": 734,
+          "y": 40,
+          "z": 0,
+          "width": 170,
+          "height": 80,
+          "config": "{\"name\": \"Semantic_Models\", \"singleVisual\": {\"visualType\": \"card\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Semantic Models'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Semantic Models (tenant)]"
+        },
+        {
+          "x": 912,
+          "y": 40,
+          "z": 0,
+          "width": 170,
+          "height": 80,
+          "config": "{\"name\": \"Notebooks\", \"singleVisual\": {\"visualType\": \"card\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Notebooks'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Notebooks (tenant)]"
+        },
+        {
+          "x": 1090,
+          "y": 40,
+          "z": 0,
+          "width": 170,
+          "height": 80,
+          "config": "{\"name\": \"Pipelines\", \"singleVisual\": {\"visualType\": \"card\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Pipelines'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Pipelines (tenant)]"
+        },
+        {
+          "x": 200,
+          "y": 130,
+          "z": 0,
+          "width": 170,
+          "height": 80,
+          "config": "{\"name\": \"Lakehouses\", \"singleVisual\": {\"visualType\": \"card\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Lakehouses'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Lakehouses (tenant)]"
+        },
+        {
+          "x": 200,
+          "y": 220,
+          "z": 0,
+          "width": 535,
+          "height": 200,
+          "config": "{\"name\": \"Capacity_Regions\", \"singleVisual\": {\"visualType\": \"map\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Capacity Regions'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "gold_capacities[Region]"
+        },
+        {
+          "x": 745,
+          "y": 220,
+          "z": 0,
+          "width": 535,
+          "height": 200,
+          "config": "{\"name\": \"Consumption_MoM\", \"singleVisual\": {\"visualType\": \"lineClusteredColumnComboChart\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Consumption MoM'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Activities (period)] + [Activities MoM %] by Date"
+        },
+        {
+          "x": 200,
+          "y": 430,
+          "z": 0,
+          "width": 535,
+          "height": 200,
+          "config": "{\"name\": \"Active_Users_MoM\", \"singleVisual\": {\"visualType\": \"lineClusteredColumnComboChart\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Active Users MoM'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Unique Active Users] + [Active Users MoM %] by Date"
+        }
+      ]
+    },
+    {
+      "name": "Timeline",
+      "displayName": "Timeline",
+      "displayOption": "FitToPage",
+      "width": 1280,
+      "height": 720,
+      "_job_to_be_done": "What happened on a given day?",
+      "visualContainers": [
+        {
+          "x": 200,
+          "y": 130,
+          "z": 0,
+          "width": 535,
+          "height": 200,
+          "config": "{\"name\": \"Activities\", \"singleVisual\": {\"visualType\": \"lineChart\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Activities'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Activities (period)] by Date"
+        },
+        {
+          "x": 745,
+          "y": 130,
+          "z": 0,
+          "width": 535,
+          "height": 200,
+          "config": "{\"name\": \"Unique_Users\", \"singleVisual\": {\"visualType\": \"areaChart\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Unique Users'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Unique Active Users] by Date"
+        },
+        {
+          "x": 200,
+          "y": 340,
+          "z": 0,
+          "width": 535,
+          "height": 200,
+          "config": "{\"name\": \"Avg_Refresh_Duration_(min)\", \"singleVisual\": {\"visualType\": \"lineChart\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Avg Refresh Duration (min)'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Avg Refresh Duration (min)] by Date"
+        },
+        {
+          "x": 745,
+          "y": 340,
+          "z": 0,
+          "width": 535,
+          "height": 200,
+          "config": "{\"name\": \"Refresh_Activities\", \"singleVisual\": {\"visualType\": \"areaChart\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Refresh Activities'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Refresh Failure Count] by Date"
+        },
+        {
+          "x": 200,
+          "y": 550,
+          "z": 0,
+          "width": 535,
+          "height": 200,
+          "config": "{\"name\": \"Items_Created\", \"singleVisual\": {\"visualType\": \"lineChart\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Items Created'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Active Items] by Date"
+        }
+      ]
+    },
+    {
+      "name": "Fleet Overview",
+      "displayName": "Fleet Overview",
+      "displayOption": "FitToPage",
+      "width": 1280,
+      "height": 720,
+      "_job_to_be_done": "Is every gateway node alive and balanced?",
+      "visualContainers": [
+        {
+          "x": 200,
+          "y": 40,
+          "z": 0,
+          "width": 170,
+          "height": 80,
+          "config": "{\"name\": \"Node_Count\", \"singleVisual\": {\"visualType\": \"card\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Node Count'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Node Count]"
+        },
+        {
+          "x": 378,
+          "y": 40,
+          "z": 0,
+          "width": 170,
+          "height": 80,
+          "config": "{\"name\": \"Cluster_Count\", \"singleVisual\": {\"visualType\": \"card\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Cluster Count'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Cluster Count]"
+        },
+        {
+          "x": 556,
+          "y": 40,
+          "z": 0,
+          "width": 170,
+          "height": 80,
+          "config": "{\"name\": \"Avg_Gateway_CPU_%\", \"singleVisual\": {\"visualType\": \"card\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Avg Gateway CPU %'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Avg Gateway CPU %]"
+        },
+        {
+          "x": 734,
+          "y": 40,
+          "z": 0,
+          "width": 170,
+          "height": 80,
+          "config": "{\"name\": \"Load_Skew\", \"singleVisual\": {\"visualType\": \"card\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Load Skew'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Cluster Load Skew Score]"
+        },
+        {
+          "x": 912,
+          "y": 40,
+          "z": 0,
+          "width": 170,
+          "height": 80,
+          "config": "{\"name\": \"Hottest_Node_%\", \"singleVisual\": {\"visualType\": \"card\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Hottest Node %'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Hottest Node Query %]"
+        },
+        {
+          "x": 200,
+          "y": 130,
+          "z": 0,
+          "width": 535,
+          "height": 200,
+          "config": "{\"name\": \"Fleet_Status\", \"singleVisual\": {\"visualType\": \"matrix\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Fleet Status'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "gold_dim_gateway by Node/Cluster/Version/Status"
+        },
+        {
+          "x": 745,
+          "y": 130,
+          "z": 0,
+          "width": 535,
+          "height": 200,
+          "config": "{\"name\": \"Cluster_Load_Skew\", \"singleVisual\": {\"visualType\": \"clusteredBarChart\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Cluster Load Skew'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Cluster Load Skew Score] by cluster"
+        },
+        {
+          "x": 200,
+          "y": 340,
+          "z": 0,
+          "width": 535,
+          "height": 200,
+          "config": "{\"name\": \"Latency_P95\", \"singleVisual\": {\"visualType\": \"lineChart\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Latency P95'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Network Latency P95 (ms)] by Date"
+        }
+      ]
+    },
+    {
+      "name": "Query & Identity",
+      "displayName": "Query & Identity",
+      "displayOption": "FitToPage",
+      "width": 1280,
+      "height": 720,
+      "_job_to_be_done": "Who ran what, and how fast? (FLAGSHIP)",
+      "visualContainers": [
+        {
+          "x": 200,
+          "y": 40,
+          "z": 0,
+          "width": 170,
+          "height": 80,
+          "config": "{\"name\": \"Total_Queries\", \"singleVisual\": {\"visualType\": \"card\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Total Queries'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Total Queries]"
+        },
+        {
+          "x": 378,
+          "y": 40,
+          "z": 0,
+          "width": 170,
+          "height": 80,
+          "config": "{\"name\": \"Match_Rate_%\", \"singleVisual\": {\"visualType\": \"card\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Match Rate %'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Match Rate %]"
+        },
+        {
+          "x": 556,
+          "y": 40,
+          "z": 0,
+          "width": 170,
+          "height": 80,
+          "config": "{\"name\": \"Avg_Duration_(ms)\", \"singleVisual\": {\"visualType\": \"card\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Avg Duration (ms)'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Avg Query Duration (ms)]"
+        },
+        {
+          "x": 734,
+          "y": 40,
+          "z": 0,
+          "width": 170,
+          "height": 80,
+          "config": "{\"name\": \"P95_Duration_(ms)\", \"singleVisual\": {\"visualType\": \"card\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'P95 Duration (ms)'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[P95 Query Duration (ms)]"
+        },
+        {
+          "x": 912,
+          "y": 40,
+          "z": 0,
+          "width": 170,
+          "height": 80,
+          "config": "{\"name\": \"Error_Rate_%\", \"singleVisual\": {\"visualType\": \"card\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Error Rate %'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Gateway Error Rate %]"
+        },
+        {
+          "x": 200,
+          "y": 130,
+          "z": 0,
+          "width": 535,
+          "height": 200,
+          "config": "{\"name\": \"Attribution_Confidence\", \"singleVisual\": {\"visualType\": \"stackedColumnChart\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Attribution Confidence'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Attribution % Evaluation Context]/[Attribution % Fuzzy Time Window]/[Attribution % Unattributed]"
+        },
+        {
+          "x": 745,
+          "y": 130,
+          "z": 0,
+          "width": 535,
+          "height": 200,
+          "config": "{\"name\": \"Top_Users_by_Load\", \"singleVisual\": {\"visualType\": \"clusteredBarChart\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Top Users by Load'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Total Queries] by ExecutingUser"
+        },
+        {
+          "x": 200,
+          "y": 340,
+          "z": 0,
+          "width": 535,
+          "height": 200,
+          "config": "{\"name\": \"Top_Datasets\", \"singleVisual\": {\"visualType\": \"clusteredBarChart\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Top Datasets'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Total Queries] by ItemName"
+        },
+        {
+          "x": 745,
+          "y": 340,
+          "z": 0,
+          "width": 535,
+          "height": 200,
+          "config": "{\"name\": \"Query_Detail\", \"singleVisual\": {\"visualType\": \"matrix\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Query Detail'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "DataSource x QueryType x artifact_id"
+        }
+      ]
+    },
+    {
+      "name": "Failures & Triage",
+      "displayName": "Failures & Triage",
+      "displayOption": "FitToPage",
+      "width": 1280,
+      "height": 720,
+      "_job_to_be_done": "What failed, why, and which layer?",
+      "visualContainers": [
+        {
+          "x": 200,
+          "y": 40,
+          "z": 0,
+          "width": 170,
+          "height": 80,
+          "config": "{\"name\": \"Total_Errors\", \"singleVisual\": {\"visualType\": \"card\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Total Errors'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Total Errors]"
+        },
+        {
+          "x": 378,
+          "y": 40,
+          "z": 0,
+          "width": 170,
+          "height": 80,
+          "config": "{\"name\": \"Error_Rate_%\", \"singleVisual\": {\"visualType\": \"card\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Error Rate %'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Gateway Error Rate %]"
+        },
+        {
+          "x": 556,
+          "y": 40,
+          "z": 0,
+          "width": 170,
+          "height": 80,
+          "config": "{\"name\": \"Triage_Coverage_%\", \"singleVisual\": {\"visualType\": \"card\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Triage Coverage %'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Triage Coverage %]"
+        },
+        {
+          "x": 734,
+          "y": 40,
+          "z": 0,
+          "width": 170,
+          "height": 80,
+          "config": "{\"name\": \"Failures_w/_OS_Event\", \"singleVisual\": {\"visualType\": \"card\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Failures w/ OS Event'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Failures With OS Event]"
+        },
+        {
+          "x": 200,
+          "y": 130,
+          "z": 0,
+          "width": 535,
+          "height": 200,
+          "config": "{\"name\": \"Error_Rate_Trend\", \"singleVisual\": {\"visualType\": \"lineChart\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Error Rate Trend'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Gateway Error Rate %] by Date"
+        },
+        {
+          "x": 745,
+          "y": 130,
+          "z": 0,
+          "width": 535,
+          "height": 200,
+          "config": "{\"name\": \"Failure_Layer\", \"singleVisual\": {\"visualType\": \"clusteredBarChart\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Failure Layer'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "count by failure_layer"
+        },
+        {
+          "x": 200,
+          "y": 340,
+          "z": 0,
+          "width": 535,
+          "height": 200,
+          "config": "{\"name\": \"Triage_Detail\", \"singleVisual\": {\"visualType\": \"matrix\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Triage Detail'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "DataSource x ErrorMessage x layer x confidence"
+        }
+      ]
+    },
+    {
+      "name": "Capacity & Spool",
+      "displayName": "Capacity & Spool",
+      "displayOption": "FitToPage",
+      "width": 1280,
+      "height": 720,
+      "_job_to_be_done": "Are we running out of disk or CPU?",
+      "visualContainers": [
+        {
+          "x": 200,
+          "y": 40,
+          "z": 0,
+          "width": 170,
+          "height": 80,
+          "config": "{\"name\": \"Avg_CPU_%\", \"singleVisual\": {\"visualType\": \"card\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Avg CPU %'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Avg Gateway CPU %]"
+        },
+        {
+          "x": 378,
+          "y": 40,
+          "z": 0,
+          "width": 170,
+          "height": 80,
+          "config": "{\"name\": \"Avg_Mem_(MB)\", \"singleVisual\": {\"visualType\": \"card\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Avg Mem (MB)'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Avg Gateway Mem (MB)]"
+        },
+        {
+          "x": 556,
+          "y": 40,
+          "z": 0,
+          "width": 170,
+          "height": 80,
+          "config": "{\"name\": \"CPU_Gap_%\", \"singleVisual\": {\"visualType\": \"card\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'CPU Gap %'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[System CPU - Gateway CPU Gap %]"
+        },
+        {
+          "x": 734,
+          "y": 40,
+          "z": 0,
+          "width": 170,
+          "height": 80,
+          "config": "{\"name\": \"Spool_Free_%\", \"singleVisual\": {\"visualType\": \"card\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Spool Free %'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Spool Free Space %]"
+        },
+        {
+          "x": 912,
+          "y": 40,
+          "z": 0,
+          "width": 170,
+          "height": 80,
+          "config": "{\"name\": \"Spool_Status\", \"singleVisual\": {\"visualType\": \"card\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Spool Status'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Spool Disk Status]"
+        },
+        {
+          "x": 1090,
+          "y": 40,
+          "z": 0,
+          "width": 170,
+          "height": 80,
+          "config": "{\"name\": \"Data_Spooled_(GB)\", \"singleVisual\": {\"visualType\": \"card\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Data Spooled (GB)'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Total Data Spooled (GB)]"
+        },
+        {
+          "x": 200,
+          "y": 220,
+          "z": 0,
+          "width": 535,
+          "height": 200,
+          "config": "{\"name\": \"CPU_Trend\", \"singleVisual\": {\"visualType\": \"lineChart\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'CPU Trend'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Avg Gateway CPU %] by Date"
+        },
+        {
+          "x": 745,
+          "y": 220,
+          "z": 0,
+          "width": 535,
+          "height": 200,
+          "config": "{\"name\": \"Spool_Free_Trend\", \"singleVisual\": {\"visualType\": \"lineChart\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Spool Free Trend'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Spool Free Space %] by Date"
+        },
+        {
+          "x": 200,
+          "y": 430,
+          "z": 0,
+          "width": 535,
+          "height": 200,
+          "config": "{\"name\": \"Spool_vs_Duration\", \"singleVisual\": {\"visualType\": \"scatterChart\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Spool vs Duration'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Spool Throughput (MB/s)] vs [Avg Query Duration (ms)]"
+        }
+      ]
+    },
+    {
+      "name": "Mashup Health",
+      "displayName": "Mashup Health",
+      "displayOption": "FitToPage",
+      "width": 1280,
+      "height": 720,
+      "_job_to_be_done": "Which mashup container is eating the server?",
+      "visualContainers": [
+        {
+          "x": 200,
+          "y": 40,
+          "z": 0,
+          "width": 170,
+          "height": 80,
+          "config": "{\"name\": \"Peak_Working_Set_(MB)\", \"singleVisual\": {\"visualType\": \"card\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Peak Working Set (MB)'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Peak Mashup Working Set (MB)]"
+        },
+        {
+          "x": 378,
+          "y": 40,
+          "z": 0,
+          "width": 170,
+          "height": 80,
+          "config": "{\"name\": \"Runaway_Containers\", \"singleVisual\": {\"visualType\": \"card\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Runaway Containers'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Runaway Mashup Containers]"
+        },
+        {
+          "x": 556,
+          "y": 40,
+          "z": 0,
+          "width": 170,
+          "height": 80,
+          "config": "{\"name\": \"Avg_Working_Set_(MB)\", \"singleVisual\": {\"visualType\": \"card\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Avg Working Set (MB)'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Avg Mashup Working Set (MB)]"
+        },
+        {
+          "x": 200,
+          "y": 130,
+          "z": 0,
+          "width": 535,
+          "height": 200,
+          "config": "{\"name\": \"Working_Set_Trend\", \"singleVisual\": {\"visualType\": \"lineChart\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Working Set Trend'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Peak Mashup Working Set (MB)] by Date"
+        },
+        {
+          "x": 745,
+          "y": 130,
+          "z": 0,
+          "width": 535,
+          "height": 200,
+          "config": "{\"name\": \"By_Gateway\", \"singleVisual\": {\"visualType\": \"clusteredBarChart\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'By Gateway'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Peak Mashup Working Set (MB)] by GatewayObjectId"
+        }
+      ]
+    },
+    {
+      "name": "Network & Bandwidth",
+      "displayName": "Network & Bandwidth",
+      "displayOption": "FitToPage",
+      "width": 1280,
+      "height": 720,
+      "_job_to_be_done": "Is the network the real bottleneck?",
+      "visualContainers": [
+        {
+          "x": 200,
+          "y": 40,
+          "z": 0,
+          "width": 170,
+          "height": 80,
+          "config": "{\"name\": \"Network_Util_%\", \"singleVisual\": {\"visualType\": \"card\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Network Util %'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Network Utilization %]"
+        },
+        {
+          "x": 378,
+          "y": 40,
+          "z": 0,
+          "width": 170,
+          "height": 80,
+          "config": "{\"name\": \"Network_Status\", \"singleVisual\": {\"visualType\": \"card\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Network Status'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Network Status]"
+        },
+        {
+          "x": 556,
+          "y": 40,
+          "z": 0,
+          "width": 170,
+          "height": 80,
+          "config": "{\"name\": \"Latency_P95_(ms)\", \"singleVisual\": {\"visualType\": \"card\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Latency P95 (ms)'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Network Latency P95 (ms)]"
+        },
+        {
+          "x": 200,
+          "y": 130,
+          "z": 0,
+          "width": 535,
+          "height": 200,
+          "config": "{\"name\": \"Utilization_Trend\", \"singleVisual\": {\"visualType\": \"lineChart\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Utilization Trend'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Network Utilization %] by Date"
+        },
+        {
+          "x": 745,
+          "y": 130,
+          "z": 0,
+          "width": 535,
+          "height": 200,
+          "config": "{\"name\": \"Latency_Trend\", \"singleVisual\": {\"visualType\": \"lineChart\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Latency Trend'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Network Latency P95 (ms)] by Date"
+        },
+        {
+          "x": 200,
+          "y": 340,
+          "z": 0,
+          "width": 535,
+          "height": 200,
+          "config": "{\"name\": \"Spool_Size_vs_Transfer\", \"singleVisual\": {\"visualType\": \"scatterChart\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Spool Size vs Transfer'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Total Data Spooled (GB)] vs [Network Utilization %]"
+        }
+      ]
+    },
+    {
+      "name": "Credential & Datasource Health",
+      "displayName": "Credential & Datasource Health",
+      "displayOption": "FitToPage",
+      "width": 1280,
+      "height": 720,
+      "_job_to_be_done": "Which datasource credentials are drifting?",
+      "visualContainers": [
+        {
+          "x": 200,
+          "y": 40,
+          "z": 0,
+          "width": 170,
+          "height": 80,
+          "config": "{\"name\": \"Datasource_Count\", \"singleVisual\": {\"visualType\": \"card\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Datasource Count'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Datasource Count]"
+        },
+        {
+          "x": 378,
+          "y": 40,
+          "z": 0,
+          "width": 170,
+          "height": 80,
+          "config": "{\"name\": \"Datasources_In_Error\", \"singleVisual\": {\"visualType\": \"card\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Datasources In Error'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Datasources In Error]"
+        },
+        {
+          "x": 200,
+          "y": 130,
+          "z": 0,
+          "width": 535,
+          "height": 200,
+          "config": "{\"name\": \"Datasource_Status\", \"singleVisual\": {\"visualType\": \"matrix\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Datasource Status'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "gold_gateway_datasources by name/type/status/last-updated"
+        },
+        {
+          "x": 745,
+          "y": 130,
+          "z": 0,
+          "width": 535,
+          "height": 200,
+          "config": "{\"name\": \"Status_by_Gateway\", \"singleVisual\": {\"visualType\": \"clusteredBarChart\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Status by Gateway'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "count by GatewayClusterName x Status"
+        }
+      ]
+    },
+    {
+      "name": "Refresh Analytics",
+      "displayName": "Refresh Analytics",
+      "displayOption": "FitToPage",
+      "width": 1280,
+      "height": 720,
+      "_job_to_be_done": "How healthy are refreshes across the tenant?",
+      "visualContainers": [
+        {
+          "x": 200,
+          "y": 40,
+          "z": 0,
+          "width": 170,
+          "height": 80,
+          "config": "{\"name\": \"Refresh_Success_%\", \"singleVisual\": {\"visualType\": \"card\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Refresh Success %'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Refresh Success %]"
+        },
+        {
+          "x": 378,
+          "y": 40,
+          "z": 0,
+          "width": 170,
+          "height": 80,
+          "config": "{\"name\": \"Refresh_Failures\", \"singleVisual\": {\"visualType\": \"card\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Refresh Failures'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Refresh Failure Count]"
+        },
+        {
+          "x": 556,
+          "y": 40,
+          "z": 0,
+          "width": 170,
+          "height": 80,
+          "config": "{\"name\": \"Avg_Duration_(min)\", \"singleVisual\": {\"visualType\": \"card\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Avg Duration (min)'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Avg Refresh Duration (min)]"
+        },
+        {
+          "x": 200,
+          "y": 130,
+          "z": 0,
+          "width": 535,
+          "height": 200,
+          "config": "{\"name\": \"Failures_by_Dataset\", \"singleVisual\": {\"visualType\": \"clusteredBarChart\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Failures by Dataset'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Refresh Failure Count] by DatasetName"
+        },
+        {
+          "x": 745,
+          "y": 130,
+          "z": 0,
+          "width": 535,
+          "height": 200,
+          "config": "{\"name\": \"Duration_Distribution\", \"singleVisual\": {\"visualType\": \"columnChart\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Duration Distribution'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Avg Refresh Duration (min)] by DatasetName"
+        },
+        {
+          "x": 200,
+          "y": 340,
+          "z": 0,
+          "width": 535,
+          "height": 200,
+          "config": "{\"name\": \"Refresh_Detail\", \"singleVisual\": {\"visualType\": \"matrix\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Refresh Detail'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "Workspace x Dataset x Status x Duration"
+        }
+      ]
+    },
+    {
+      "name": "About \u00b7 Lineage & Honesty",
+      "displayName": "About \u00b7 Lineage & Honesty",
+      "displayOption": "FitToPage",
+      "width": 1280,
+      "height": 720,
+      "_job_to_be_done": "What is this, and how much do we trust it?",
+      "visualContainers": [
+        {
+          "x": 200,
+          "y": 40,
+          "z": 0,
+          "width": 170,
+          "height": 80,
+          "config": "{\"name\": \"Data_lineage\", \"singleVisual\": {\"visualType\": \"textbox\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Data lineage'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "collector -> bronze -> silver -> gold -> page map"
+        },
+        {
+          "x": 378,
+          "y": 40,
+          "z": 0,
+          "width": 170,
+          "height": 80,
+          "config": "{\"name\": \"Status_legend\", \"singleVisual\": {\"visualType\": \"textbox\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Status legend'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "[Verified] / [Desk-Verified] / [Unverified] / [STUB]"
+        },
+        {
+          "x": 556,
+          "y": 40,
+          "z": 0,
+          "width": 170,
+          "height": 80,
+          "config": "{\"name\": \"Attribution_methodology\", \"singleVisual\": {\"visualType\": \"textbox\", \"drillFilterOtherVisuals\": true, \"vcObjects\": {\"title\": [{\"properties\": {\"text\": {\"expr\": {\"Literal\": {\"Value\": \"'Attribution methodology'\"}}}}}]}}}",
+          "filters": "[]",
+          "_field_hint": "RequestId == XmlaRequestId; best-effort disclaimer"
+        }
+      ]
+    }
+  ],
+  "config": "{\"version\": \"5.0\", \"activePageName\": \"Executive Cockpit\"}"
+}

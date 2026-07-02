@@ -5,6 +5,8 @@
 > **Status:** Reference architecture + locally-validated starter kit. The schema-adaptive parser (pain #4) is proven on real Spark via the notebook ingestion path (Fabric's Load-to-Tables shortcut still fails at platform schema-inference — see [`LIVE-TENANT-FINDINGS.md`](LIVE-TENANT-FINDINGS.md)). All other capabilities are implemented and locally tested on synthetic data. Live-tenant validation is open to the community. This is not a certified one-click product yet.
 
 > **New here / ready to test?** Start with the hand-holding pilot guide: [`docs/PILOT-GUIDE-START-HERE.md`](docs/PILOT-GUIDE-START-HERE.md) — a plain-English, step-by-step walkthrough to validate the flagship capability in ~30 minutes. Or see the condensed path: [`QUICKSTART.md`](QUICKSTART.md).
+>
+> **Running the live pilot?** Use the one-sitting **[`docs/RUNBOOK-F2-pilot.md`](docs/RUNBOOK-F2-pilot.md)** — rent an F2 capacity once and produce BOTH live results (Track A flagship match rate + Track B tenant extract), then pause. The two orchestrator notebooks drive it end to end: [`starter/deploy/Deploy_MatchRate.ipynb`](starter/deploy/Deploy_MatchRate.ipynb) (Track A) and [`starter/deploy/Deploy_TenantExtract.ipynb`](starter/deploy/Deploy_TenantExtract.ipynb) (Track B: `tenant_doctor` → extract → gold → capacity bridge).
 
 ---
 
@@ -58,7 +60,7 @@ No gateway diagnostics tool surfaces network bandwidth or latency. This collecto
 
 ## Pain points addressed
 
-All 10 operator pain points from [`research/phase3_painpoints.md`](research/phase3_painpoints.md) are addressed by design. Detailed evidence and status for each item: [`PAIN-POINT-COVERAGE.md`](PAIN-POINT-COVERAGE.md).
+All 10 operator pain points from [`research/phase3_painpoints.md`](research/phase3_painpoints.md) are addressed by design. Detailed evidence and status for each item: [`PAIN-POINT-COVERAGE.md`](PAIN-POINT-COVERAGE.md). For the merged operator-vs-developer view — and the two cross-track overlap themes that validate this build's direction — see the [`research/MASTER-PAINPOINT-REGISTER.md`](research/MASTER-PAINPOINT-REGISTER.md).
 
 | # | Pain point | Artifact | Honest status |
 |---|---|---|---|
@@ -163,7 +165,7 @@ pbi-gateway-monitoring/
 │   ├── semantic-model/measures.dax    ← DAX measures
 │   ├── report/                        ← PBIP report skeleton
 │   ├── config/                        ← config + credential model
-│   ├── deploy/                        ← one-click deploy + teardown notebooks
+│   ├── deploy/                        ← orchestrator notebooks: Deploy_GatewayMonitor, Deploy_MatchRate (Track A), Deploy_TenantExtract (Track B), Teardown
 │   └── tests/                         ← two-tier test suite (pure-Python + Spark)
 │
 └── scripts/                           ← FPM node deploy + validate + lint (adopt-FPM path)

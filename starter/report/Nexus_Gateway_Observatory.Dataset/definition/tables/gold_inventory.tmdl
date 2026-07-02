@@ -1,0 +1,36 @@
+table gold_inventory
+	column 'ItemId'
+		dataType: string
+		sourceColumn: ItemId
+		summarizeBy: none
+
+	column 'ItemName'
+		dataType: string
+		sourceColumn: ItemName
+		summarizeBy: none
+
+	column 'ItemKind'
+		dataType: string
+		sourceColumn: ItemKind
+		summarizeBy: none
+
+	column 'WorkspaceId'
+		dataType: string
+		sourceColumn: WorkspaceId
+		summarizeBy: none
+
+	column 'WorkspaceName'
+		dataType: string
+		sourceColumn: WorkspaceName
+		summarizeBy: none
+
+	column 'CapacityId'
+		dataType: string
+		sourceColumn: CapacityId
+		summarizeBy: none
+
+	partition gold_inventory = entity
+		mode: directLake
+		source
+			entityName: gold_inventory
+			expressionSource: DatabaseQuery

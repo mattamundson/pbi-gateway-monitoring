@@ -358,3 +358,98 @@ Runaway Mashup Containers =
 
 Avg Mashup Working Set (MB) =
     AVERAGE ( gold_mashup_health[avg_working_set_mb] )
+
+
+// ═════════════════════════════════════════════════════════════════════════════
+// SECTION 11: Tenant breadth (NEW — FUAM-style; requires tenant-extract pipeline)
+// Tables: gold_inventory, gold_activities, gold_refreshables, gold_capacities,
+//         and a Date dimension marked as date table.
+// [Unverified] These render empty until the tenant-extract step lands the tables
+//   (Scanner API + Activity Events + Capacity Metrics bridge). See REPORT-DESIGN-SPEC.md.
+// ═════════════════════════════════════════════════════════════════════════════
+
+// -- Inventory counts (Item Kind Overview / Tenant Overview) --
+[Active Items] := COUNTROWS ( gold_inventory )
+[Capacity Count (tenant)] := DISTINCTCOUNT ( gold_inventory[CapacityId] )
+[Workspace Count (tenant)] := DISTINCTCOUNT ( gold_inventory[WorkspaceId] )
+
+// Generic item-kind counter; duplicate per kind for KPI cards, e.g. Reports/Semantic Models/Notebooks
+[Reports (tenant)]       := CALCULATE ( COUNTROWS ( gold_inventory ), gold_inventory[ItemKind] = "Report" )
+[Semantic Models (tenant)] := CALCULATE ( COUNTROWS ( gold_inventory ), gold_inventory[ItemKind] = "SemanticModel" )
+[Notebooks (tenant)]     := CALCULATE ( COUNTROWS ( gold_inventory ), gold_inventory[ItemKind] = "Notebook" )
+[Pipelines (tenant)]     := CALCULATE ( COUNTROWS ( gold_inventory ), gold_inventory[ItemKind] = "DataPipeline" )
+[Lakehouses (tenant)]    := CALCULATE ( COUNTROWS ( gold_inventory ), gold_inventory[ItemKind] = "Lakehouse" )
+
+// -- Activities + adoption (Timeline / Tenant Overview) --
+[Activities (period)] := COUNTROWS ( gold_activities )
+[Unique Active Users] := DISTINCTCOUNT ( gold_activities[UserId] )
+
+// Month-over-month growth (needs Date table + mark-as-date-table)
+[Activities MoM %] :=
+VAR Curr = [Activities (period)]
+VAR Prev = CALCULATE ( [Activities (period)], DATEADD ( 'Date'[Date], -1, MONTH ) )
+RETURN DIVIDE ( Curr - Prev, Prev, BLANK () ) * 100
+
+[Active Users MoM %] :=
+VAR Curr = [Unique Active Users]
+VAR Prev = CALCULATE ( [Unique Active Users], DATEADD ( 'Date'[Date], -1, MONTH ) )
+RETURN DIVIDE ( Curr - Prev, Prev, BLANK () ) * 100
+
+// -- Refresh analytics (Refresh Analytics page) --
+[Avg Refresh Duration (min)] :=
+AVERAGEX ( gold_refreshables, DIVIDE ( gold_refreshables[duration_seconds], 60.0 ) )
+
+[Refresh Success %] :=
+DIVIDE (
+    CALCULATE ( COUNTROWS ( gold_refreshables ), gold_refreshables[Status] = "Completed" ),
+    COUNTROWS ( gold_refreshables ), 0
+) * 100
+
+[Refresh Failure Count] :=
+CALCULATE ( COUNTROWS ( gold_refreshables ), gold_refreshables[Status] = "Failed" )
+
+// -- Capacity CU (Tenant Overview) — [Unverified]: requires Capacity Metrics/FUAM bridge --
+[CU Consumption (period)] := SUM ( gold_capacities[cu_seconds] )
+[CU MoM %] :=
+VAR Curr = [CU Consumption (period)]
+VAR Prev = CALCULATE ( [CU Consumption (period)], DATEADD ( 'Date'[Date], -1, MONTH ) )
+RETURN DIVIDE ( Curr - Prev, Prev, BLANK () ) * 100
+
+
+// ═════════════════════════════════════════════════════════════════════════════
+// SECTION 12: Cross-cutting — flagship match rate + executive risk (NEW)
+// ═════════════════════════════════════════════════════════════════════════════
+
+// Model-level mirror of starter/kql/04_identity_match_rate.kql (the flagship number)
+[Match Rate %] :=
+VAR Total = COUNTROWS ( silver_identity_attribution )
+VAR Attributed =
+    CALCULATE (
+        COUNTROWS ( silver_identity_attribution ),
+        NOT ( silver_identity_attribution[attribution_confidence] = "UNATTRIBUTED" )
+    )
+RETURN DIVIDE ( Attributed, Total, 0 ) * 100
+
+[Attribution Coverage %] := 100 - [Attribution % Unattributed]
+
+// Executive open-risk counter — offline nodes + critical spool + saturated net + failing datasources
+[Open Risk Count] :=
+VAR OfflineNodes = [Nodes Offline]
+VAR CritSpool = CALCULATE ( COUNTROWS ( gold_gateway_health ), gold_gateway_health[spool_free_pct] <= 5 )
+VAR SatNet = CALCULATE ( COUNTROWS ( gold_gateway_health ), gold_gateway_health[network_utilization_pct_avg] >= 80 )
+VAR BadDS = CALCULATE ( COUNTROWS ( gold_gateway_datasources ), gold_gateway_datasources[Status] = "Error" )
+RETURN OfflineNodes + CritSpool + SatNet + BadDS
+
+[Top Risk (text)] :=
+SWITCH (
+    TRUE (),
+    [Nodes Offline] > 0,                                  "Gateway node offline",
+    CALCULATE ( COUNTROWS ( gold_gateway_health ), gold_gateway_health[spool_free_pct] <= 5 ) > 0, "Spool disk critical",
+    CALCULATE ( COUNTROWS ( gold_gateway_health ), gold_gateway_health[network_utilization_pct_avg] >= 80 ) > 0, "Network saturated",
+    CALCULATE ( COUNTROWS ( gold_gateway_datasources ), gold_gateway_datasources[Status] = "Error" ) > 0, "Datasource credential error",
+    "No open risks"
+)
+
+// -- Credential drift (Credential & Datasource Health page) --
+[Datasources In Error] := CALCULATE ( COUNTROWS ( gold_gateway_datasources ), gold_gateway_datasources[Status] = "Error" )
+[Datasource Count] := DISTINCTCOUNT ( gold_gateway_datasources[DatasourceId] )

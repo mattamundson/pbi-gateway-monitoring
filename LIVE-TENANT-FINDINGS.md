@@ -183,6 +183,66 @@ workspace, and (b) a `RequestId` copied from the **gateway host** `QueryStartRep
 is not the client machine). All three (F2+ capacity + gateway-routed refresh + gateway RequestId)
 must be present at once for a green run — best assembled in the real pilot environment.
 
+## 2026-07-02 — Session 6 (tenant preflight + one-sitting pilot runbook)
+
+- **New `starter/notebooks/tenant_doctor.py`**: preflight for the tenant extract. 5 checks (SP token; **read-only admin API + tenant setting**; activity events; refreshables; capacity-bridge mode), each with an exact remediation string; non-zero exit when a required check fails. MOCK mode for CI. Prints `VERDICT: READY|BLOCKED`.
+- **New `starter/tests/test_tenant_doctor.py`** (Spark-free): READY path, non-required FAIL stays READY, D1 token-failure short-circuit → BLOCKED, remediation coverage. **PASS 4/4.**
+- **CI**: preflight test added to `tier1-parser`; `tenant-harness` job now runs `tenant_doctor` (mock) as a gate before the mock chain.
+- **Runbook** renamed `docs/RUNBOOK-F2-pilot.md` and restructured into **one F2 sitting, two tracks**: Track A (match rate) + Track B (tenant extract), with a free Step 0 preflight (0A gateway sanity, 0B `tenant_doctor`), a Track B extract step (6B) reusing the same SP/capacity, dual report-back, and a Track B 401/403 troubleshooting row. QUICKSTART reference updated.
+
+Net: a piloter validates BOTH permission paths before the meter starts and produces both live results (match rate + populated tenant gold) in a single rental. Live numbers still gated on the real SP + tenant setting.
+
+---
+
+## 2026-07-02 — Session 5 (tenant-extract pipeline + Capacity Metrics bridge + CI harness)
+
+Off-tenant engineering. Turns the enhanced report's biggest headwind — "tenant pages render empty" — into a wired, CI-tested feed. No live tenant run; live numbers still gated on an admin-scoped SP.
+
+### Tenant-extract pipeline (feeds Nexus Tenant Overview / Timeline / Refresh Analytics)
+- **New `starter/notebooks/00_tenant_extract.py`**: Scanner API (getModifiedWorkspaces → getInfo batch≤100 → poll scanStatus → scanResult), Activity Events (per-UTC-day paging + continuationToken), and Refreshables. MSAL client-credentials auth; 429/5xx backoff honoring Retry-After. Spark- and requests-optional so it is unit-testable; **MOCK mode** (`TENANT_EXTRACT_MOCK=1`) emits deterministic bronze with no network.
+- **New `starter/notebooks/01a_tenant_silver_gold.py`**: pure-Python transforms → `gold_inventory`, `gold_activities`, `gold_refreshables` (schemas match the TMDL model exactly).
+- **New `starter/notebooks/04_capacity_bridge.py`**: `gold_capacities` + CU, config-driven `capacityBridge.mode` = `mock` | `fpm_eventhouse` | `capacity_metrics_xmla`. Honest headwind captured: CU has no clean public REST endpoint, so a bridge is mandatory for live CU.
+
+### Verification
+- **New `starter/tests/test_tenant_extract.py`** (Spark-free): transforms + full mock chain → 4 gold tables. **PASS 4/4.** Existing Tier-1 parser suite still **PASS**.
+- **CI (`.github/workflows/tests.yml`)**: added the tenant test to `tier1-parser`; added a `tenant-harness` job (mock chain 00→01a→04). The `tier2-spark` job already runs the full PySpark harness on **ubuntu-latest + JDK 17** (`test_parser_spark.py` + `run_local_smoke.py`) — the JDK-25-vs-Spark-3.5 blocker from Session 4 is a local-sandbox limit only; CI pins JDK 17.
+
+### Status
+| Item | Status | Note |
+|---|---|---|
+| Tenant report feed | 🟢 **Built + CI-tested (mock)** | Live run needs admin-scoped SP + read-only admin API tenant setting |
+| `gold_capacities` / CU | 🟠 **Bridge built; live [Unverified]** | Needs `fpm_eventhouse` or `capacity_metrics_xmla` mode wired; XMLA DAX columns per app version |
+
+---
+
+## 2026-07-02 — Session 4 (off-tenant code follow-up: G3 match-rate + G4 notebook routing)
+
+Off-tenant engineering follow-up turning the standing G3/G4 findings into runnable artifacts. No new tenant run; items remain infra-gated for `[Verified]`.
+
+### Pain #3 (G3) — match-rate measurement now a first-class, throttle-safe artifact
+
+- **New file `starter/kql/04_identity_match_rate.kql`.** `01_identity_join.kql` proved the join *returns rows*; it never quantified the attribution rate. This computes `attributed_queries / total_gateway_queries = match_rate_pct` (Block A), a Refresh-vs-DirectQuery split (Block B), and an unattributed-sample diagnostic (Block C). Every block pushes `lookback` + `workspace_filter` down **before** the join, so it survives the trial Spark/KQL throttle (Session 1/3) at `lookback = 15m` + a single workspace GUID.
+- **Status unchanged for `[Verified]`:** still requires a working Workspace Monitoring Eventhouse (F2+; trial-blocked per Session 3). The *measurement path* is now ready so the very first green run yields the U11 number instead of just "rows came back."
+
+### Pain #4 (G4) — notebook now routes through the sanitizing lib (gap from Session 2 closed)
+
+- **Root of the remaining exposure:** Session 2 fixed `read_gateway_csv` (`_sanitize_columns`) and proved it on real Spark, but `01_bronze_ingest.py` still ran its **own driver-side parser** (`parse_csv_schema_adaptive`) that never called `_sanitize_columns` — so the notebook path was *not* actually protected against new `(ms)`/`(bytes)` headers.
+- **Fix:** added `ingest_gateway_logs_via_lib()` and made `ingest_gateway_logs()` call it first — reading raw `QueryExecutionReport*.csv` / `QueryStartReport*.csv` through `read_gateway_csv` (native Spark, column-name-based, `_sanitize_columns`-protected) + `cast_query_execution` + `add_artifact_identity`. The driver-side parser is retained as an explicit **fallback** for the JSON-staged `RawCsvContent` form and odd dialects. Import is guarded so the notebook still loads without the lib.
+- **Net:** the primary notebook ingest path is now immune to both the positional `DataFormat.Error` (PBIT template failure) **and** the `InvalidColumnName` failure on new unit-suffixed headers. `py_compile` clean. Fabric Load-to-Tables remains procedurally excluded (unchanged).
+
+### Pilot template — G3 run steps added
+
+- `.github/ISSUE_TEMPLATE/pilot-report.yml` now includes an ordered, ~20-min G3 runbook (prereqs incl. the F2+ Eventhouse gate, enable monitoring → land logs → refresh → confirm rows → run `04_identity_match_rate.kql` Block A/B/C), a match-rate field wired to the new file, and an explicit capacity-SKU field (trial-vs-F2+ provisioning).
+
+## Tally After Session 4
+
+| Pain # | Prior status | Post-session status | Change |
+|---|---|---|---|
+| #3 (G3) | 🟠 Built / Unverified; trial-blocked | 🟠 Built / Unverified — **match-rate measurement now runnable + throttle-safe** | New `04_identity_match_rate.kql`; still needs F2+ for live proof |
+| #4 (G4) | 🟡 Proven (local) / ⚠️ notebook path unprotected | 🟢 **Notebook routed through sanitizing lib** (syntax-verified) | Session 2 gap closed; live Fabric run still pending |
+
+---
+
 ## Tally After Session 3
 
 | Pain # | Prior status | Post-session status | Change |

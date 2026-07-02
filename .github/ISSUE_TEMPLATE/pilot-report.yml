@@ -10,6 +10,29 @@ body:
         Fill in only what you tested; leave the rest blank. See `docs/PILOT-GUIDE-START-HERE.md` and
         `research/phase5_validation.md` (the U1–U16 matrix) for context.
 
+  - type: markdown
+    attributes:
+      value: |
+        ## ▶ How to run the FLAGSHIP identity-join match rate (G3) — ~20 min
+
+        This is the single most valuable result. Follow in order; each step says what "good" looks like.
+
+        **Prerequisites (all three, or the match rate is 0 for a boring reason):**
+        1. **Paid Fabric capacity, F2 or higher.** Workspace Monitoring's Eventhouse does **not** provision on trial capacity — field-confirmed in `LIVE-TENANT-FINDINGS.md` (2026-07-02). This is the #1 reason a run comes back empty.
+        2. A **semantic model that refreshes through your on-prem gateway**, in a workspace you can enable monitoring on.
+        3. Access to the **gateway host** file system (for the `RequestId`), which is usually *not* your laptop.
+
+        **Steps:**
+        1. **Enable Workspace Monitoring** on the workspace: Workspace settings → Monitoring → **+ Eventhouse**. Wait until the `Monitoring KQL database` shows tables (no `Access error`). If it errors on trial, stop — you need F2+.
+        2. **Land the gateway logs** into that same Eventhouse (or reach them via a OneLake shortcut) as `bronze_query_execution` by running `starter/notebooks/01_bronze_ingest.py` (Deploy notebook). It now routes through `gateway_bronze_lib.read_gateway_csv`, so `(ms)`/`(bytes)` headers no longer break ingest (G4 fix).
+        3. **Trigger at least one refresh/query** through the gateway, then wait ~10–15 min for the monitoring row to land.
+        4. **Confirm rows exist** — run block (1) of `starter/kql/PILOT-identity-join-test.kql`. Empty ⇒ wait longer or check step 1.
+        5. **Measure the match rate** — open **`starter/kql/04_identity_match_rate.kql`**. Keep the throttle-safe defaults (`lookback = 15m`; set `workspace_filter` to your one workspace GUID on trial-ish capacity), then run **Block A**. It returns `total_gateway_queries`, `attributed_queries`, and **`match_rate_pct`** — that percentage is the number to report below.
+        6. **Split by query type** — run **Block B** (Refresh vs DirectQuery). DirectQuery coverage is the genuinely-open question; report both.
+        7. **(If low)** run **Block C** to sample unattributed queries and note the likely cause (wrong workspace, window too narrow, or Dataflow Gen1 / Paginated — confirmed not covered).
+
+        Redact real UPNs / dataset names if you like — we only need the **counts, the match_rate_pct, and which RequestIds matched**, not the values.
+
   - type: input
     id: environment
     attributes:
@@ -36,8 +59,17 @@ body:
     id: match-rate
     attributes:
       label: "Attribution match rate (U11) — the one number we can't get without you"
-      description: "Of gateway queries in a known window, what % got an ExecutingUser via the join?"
-      placeholder: "e.g. ~85% of refresh queries, ~0% of DirectQuery"
+      description: "From Block A of `starter/kql/04_identity_match_rate.kql`: paste total_gateway_queries, attributed_queries, and match_rate_pct. Then from Block B, the Refresh vs DirectQuery split."
+      placeholder: "e.g. Block A: 120 total / 102 attributed / 85.0%. Block B: Refresh 98%, DirectQuery 0%."
+    validations:
+      required: false
+
+  - type: input
+    id: capacity-sku
+    attributes:
+      label: "Capacity SKU used for the run (trial vs F2+)"
+      description: "Because Workspace Monitoring's Eventhouse fails to provision on trial capacity (LIVE-TENANT-FINDINGS.md 2026-07-02), we track this explicitly. Did monitoring provision cleanly?"
+      placeholder: "e.g. F2 pay-as-you-go — Eventhouse provisioned fine; OR trial — Eventhouse failed with KustoWebV2 error"
 
   - type: dropdown
     id: directquery
