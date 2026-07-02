@@ -168,8 +168,11 @@ PARTS = {
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--pbitools", default=os.environ.get("PBITOOLS_CORE", ""),
-                    help="path to pbi-tools.core.exe (or set PBITOOLS_CORE)")
+    # Auto-discover pbi-tools.core: --pbitools > $PBITOOLS_CORE > pinned ~/.local copy.
+    _pinned = os.path.join(os.path.expanduser("~"), ".local", "pbi-tools-core", "pbi-tools.core.exe")
+    _default = os.environ.get("PBITOOLS_CORE", "") or (_pinned if os.path.exists(_pinned) else "")
+    ap.add_argument("--pbitools", default=_default,
+                    help="path to pbi-tools.core.exe (default: $PBITOOLS_CORE or ~/.local/pbi-tools-core)")
     ap.add_argument("--out", default=os.path.join(HERE, "..", "dist", "gwmon_model.pbit"))
     args = ap.parse_args()
 
