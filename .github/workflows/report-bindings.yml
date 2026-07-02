@@ -1,0 +1,33 @@
+name: Report bindings (headless)
+
+# Structural regression guard for the Power BI report layer. Cross-checks every
+# visual queryRef in gateway_monitor_v2.report.json against the packed .pbit model
+# (tables/columns/measures) and fails the build on any binding that would not
+# resolve in Power BI Desktop. No Desktop / tenant required -- reads the committed
+# .pbit directly. Complements the weekly pbi-gateway-reports loop brake.
+
+on:
+  push:
+    paths:
+      - 'starter/report/**'
+      - 'starter/semantic-model/**'
+      - '.github/workflows/report-bindings.yml'
+  pull_request:
+    paths:
+      - 'starter/report/**'
+      - 'starter/semantic-model/**'
+
+jobs:
+  bindings:
+    name: Validate report queryRefs resolve to the model
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Validate bindings against the packed .pbit
+        run: |
+          python starter/report/build/validate_report_bindings.py \
+            --report starter/report/gateway_monitor_v2.report.json \
+            --pbit   starter/report/dist/gwmon_model.pbit
