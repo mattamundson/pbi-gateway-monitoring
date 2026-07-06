@@ -23,10 +23,13 @@ real data — i.e. the top pain points proven end-to-end, not just locally.
 - [x] **[Amo]** Provision an **F2+ Fabric capacity** (`gwmoncap01`, eastus) and assign it to workspace `Gateway-Pilot`
 - [x] **[Amo]** Enable **Workspace Monitoring** (Eventhouse) — trial refused it; F2 unblocked it (required for D6)
 - [x] **[me→Amo]** Register the **service principal** (app `531bd06b…`, SP `b7d111f8…`) + Tenant.Read.All + admin-consent + group `gwmon-admin-api-sps`  *(script: `starter/deploy/register-spn-admin-api.ps1`)*
-- [ ] **[Amo]** Store the SPN client secret in 1Password — run `starter/deploy/store-spn-secret.ps1` from an **interactive** terminal after `op signin` (background jobs can't reach the 1Password desktop IPC). Store: `op://Amo Personal/Gwmon-SPN-AdminAPI/credential`
-- [ ] **[Amo]** Flip *Tenant settings -> "Service principals can access read-only admin APIs"* -> enable for group `gwmon-admin-api-sps` (portal-only, tenant admin)
-- [ ] **[Amo]** Run `starter/notebooks/tenant_doctor.py` (stdlib-only smoke; secret via `op read` in-shell) — confirm 401 / 0-admin-rows clears
+- [x] **[me]** Store the SPN client secret — in **Azure Key Vault** `kv-gwmon-01` (secret `gwmon-admin-api-secret`); native store for an Azure-service credential, referenceable by Fabric compute, zero interactive auth *(script: `starter/deploy/store-spn-secret-keyvault.ps1`; 1Password alt retained)*
+- [x] **[me]** Verified 2026-07-06: SPN authenticates + acquires an AAD token; admin APIs return **401** pending only the tenant toggle below *(runner: `starter/deploy/run-tenant-doctor.ps1`)*
+- [ ] **[Amo]** Flip *Tenant settings -> "Service principals can access read-only admin APIs"* -> enable for group `gwmon-admin-api-sps` (portal-only, tenant admin) — **the one remaining Phase-1 action**
+- [ ] **[me]** Re-run `run-tenant-doctor.ps1` after the toggle — confirm `RESULT: PASS` (admin rows > 0)
 - [ ] **[Amo]** Decide capacity sizing + cost ceiling (F2 ~$0.36/hr — **pause `gwmoncap01` when idle**)
+
+> Full live resource inventory + verify command: **`docs/PHASE1-TENANT-ENABLEMENT.md`**.
 
 ## Phase 2 — Semantic model + report finalization (Desktop)
 - [x] Branded 14-page PBIR report, DirectLake `.pbit`, one-click PBIP, binding validator (PASS)

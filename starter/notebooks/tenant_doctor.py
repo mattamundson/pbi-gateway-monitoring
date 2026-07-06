@@ -42,7 +42,7 @@ TIMEOUT = 30
 # Read-only admin surfaces to probe. Each returns a JSON object with a "value" array when the
 # grant + tenant setting are effective; a 401 means the SPN cannot read the admin APIs yet.
 PROBES = [
-    ("workspaces", "/groups?$top=5&$filter=state eq 'Active'"),
+    ("workspaces", "/groups?$top=100"),
     ("capacities", "/capacities"),
 ]
 
@@ -76,7 +76,8 @@ def get_token(tenant, client_id, client_secret):
 
 
 def probe(token, label, path):
-    url = ADMIN_BASE + path
+    # Encode defensively so a filter containing spaces/quotes can't raise on urlopen.
+    url = ADMIN_BASE + urllib.parse.quote(path, safe="/?$=&,'")
     req = urllib.request.Request(url, method="GET")
     req.add_header("Authorization", "Bearer " + token)
     try:
