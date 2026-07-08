@@ -66,11 +66,21 @@
 # =============================================================================
 
 # ── Fabric notebook: set these as notebook parameters or pipeline variables ──
-LAKEHOUSE_PATH = (
-    "abfss://<workspace>@onelake.dfs.fabric.microsoft.com/<lakehouse>.Lakehouse"
+# All three roots are overridable via env vars so the ingest can run against a
+# LOCAL temp dir under the pbi-spark harness (no Fabric tenant). Defaults are
+# unchanged -> Fabric runtime behavior is identical.
+import os
+
+LAKEHOUSE_PATH = os.environ.get(
+    "GATEWAYMON_LAKEHOUSE_ROOT",
+    "abfss://<workspace>@onelake.dfs.fabric.microsoft.com/<lakehouse>.Lakehouse",
 )
-LANDING_PATH = f"{LAKEHOUSE_PATH}/Files/bronze_landing"  # Where PS scripts drop JSON
+LANDING_PATH = os.environ.get(
+    "GATEWAYMON_LANDING_ROOT", f"{LAKEHOUSE_PATH}/Files/bronze_landing"
+)  # Where PS scripts drop JSON
 BRONZE_PATH = f"{LAKEHOUSE_PATH}/Tables"  # Delta tables destination
+# Table storage format: delta in Fabric; local tests set GATEWAYMON_TABLE_FORMAT=parquet.
+_TABLE_FORMAT = os.environ.get("GATEWAYMON_TABLE_FORMAT", "delta")
 USE_FPM_BRIDGE = False  # Set True if you have FPM Eventhouse with OneLake availability
 
 # ── FPM bridge config (only used if USE_FPM_BRIDGE = True) ──
@@ -586,7 +596,7 @@ def _write_bronze_delta(df, table_name: str, partition_cols: list):
     """
     table_path = f"{BRONZE_PATH}/{table_name}"
     (
-        df.write.format("delta")
+        df.write.format(_TABLE_FORMAT)
         .mode("append")
         .option("mergeSchema", "true")  # Allow new columns without error
         .partitionBy(*partition_cols)
@@ -918,7 +928,9 @@ def ingest_fpm_bridge():
 
 
 # ── ENTRY POINT ──────────────────────────────────────────────────────────────
-if __name__ == "__main__" or True:  # True: runs in Fabric notebook context
+# Auto-runs in a Fabric notebook (where __name__ is not "__main__"). Set
+# GATEWAYMON_AUTORUN=0 to suppress the auto-run when importing this module (tests).
+if __name__ == "__main__" or os.environ.get("GATEWAYMON_AUTORUN", "1") != "0":
     print(
         f"=== 01_bronze_ingest.py starting at {datetime.now(timezone.utc).isoformat()} ==="
     )

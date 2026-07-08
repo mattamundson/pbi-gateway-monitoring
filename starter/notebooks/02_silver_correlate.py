@@ -36,6 +36,7 @@
 #              Time-window join sizes and thresholds are [Assumption]-based starting points.
 # =============================================================================
 
+import os
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 from pyspark.sql.window import Window
@@ -46,9 +47,17 @@ from datetime import datetime, timezone, timedelta
 spark = SparkSession.builder.getOrCreate()
 
 # ── Configuration ─────────────────────────────────────────────────────────
-LAKEHOUSE_PATH = (
-    "abfss://<workspace>@onelake.dfs.fabric.microsoft.com/<lakehouse>.Lakehouse"
+# LAKEHOUSE_PATH: the Fabric OneLake root. Overridable via GATEWAYMON_LAKEHOUSE_ROOT
+# so the REAL build_silver_* transforms can run against a LOCAL temp dir under the
+# pbi-spark harness (starter/tests/test_medallion_spark.py) with no Fabric tenant.
+# Default is unchanged -> Fabric runtime behavior is identical.
+LAKEHOUSE_PATH = os.environ.get(
+    "GATEWAYMON_LAKEHOUSE_ROOT",
+    "abfss://<workspace>@onelake.dfs.fabric.microsoft.com/<lakehouse>.Lakehouse",
 )
+# Table storage format. Delta in Fabric; local tests set GATEWAYMON_TABLE_FORMAT=parquet
+# to stay hermetic (no Delta JAR fetch). The read/write helpers honor this.
+_TABLE_FORMAT = os.environ.get("GATEWAYMON_TABLE_FORMAT", "delta")
 BRONZE_PATH = f"{LAKEHOUSE_PATH}/Tables"
 SILVER_PATH = f"{LAKEHOUSE_PATH}/Tables"
 
@@ -65,7 +74,7 @@ PROCESS_SINCE_DAYS = 1  # Process last N days; adjust for full backfill
 def read_bronze(table_name: str):
     path = f"{BRONZE_PATH}/{table_name}"
     try:
-        return spark.read.format("delta").load(path)
+        return spark.read.format(_TABLE_FORMAT).load(path)
     except Exception as e:
         print(f"[WARN] Could not read {table_name}: {e}")
         return None
@@ -74,7 +83,7 @@ def read_bronze(table_name: str):
 def write_silver(df, table_name: str, partition_cols=None):
     path = f"{SILVER_PATH}/{table_name}"
     writer = (
-        df.write.format("delta").mode("overwrite").option("overwriteSchema", "true")
+        df.write.format(_TABLE_FORMAT).mode("overwrite").option("overwriteSchema", "true")
     )
     if partition_cols:
         writer = writer.partitionBy(*partition_cols)
@@ -596,7 +605,10 @@ def build_silver_network_correlated():
 
 
 # ── ENTRY POINT ─────────────────────────────────────────────────────────────
-if __name__ == "__main__" or True:
+# Auto-runs in a Fabric notebook (where __name__ is not "__main__"). Tests import
+# this module to call build_* directly, and set GATEWAYMON_AUTORUN=0 to suppress
+# the auto-run so importing does not execute the pipeline against Fabric paths.
+if __name__ == "__main__" or os.environ.get("GATEWAYMON_AUTORUN", "1") != "0":
     print(
         f"=== 02_silver_correlate.py starting at {datetime.now(timezone.utc).isoformat()} ==="
     )

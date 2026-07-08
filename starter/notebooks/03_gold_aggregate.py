@@ -20,6 +20,7 @@
 #              [Assumption]-based starting points — tune after live data collection.
 # =============================================================================
 
+import os
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 from pyspark.sql.window import Window
@@ -29,7 +30,15 @@ from datetime import datetime, timezone
 
 spark = SparkSession.builder.getOrCreate()
 
-LAKEHOUSE_PATH = "abfss://<workspace>@onelake.dfs.fabric.microsoft.com/<lakehouse>.Lakehouse"
+# LAKEHOUSE_PATH overridable via GATEWAYMON_LAKEHOUSE_ROOT so the REAL build_gold_*
+# transforms run against a LOCAL temp dir under the pbi-spark harness with no Fabric
+# tenant. Default unchanged -> Fabric behavior identical. _TABLE_FORMAT lets local
+# tests use parquet (hermetic, no Delta JAR fetch); Fabric keeps delta.
+LAKEHOUSE_PATH = os.environ.get(
+    "GATEWAYMON_LAKEHOUSE_ROOT",
+    "abfss://<workspace>@onelake.dfs.fabric.microsoft.com/<lakehouse>.Lakehouse",
+)
+_TABLE_FORMAT = os.environ.get("GATEWAYMON_TABLE_FORMAT", "delta")
 SILVER_PATH    = f"{LAKEHOUSE_PATH}/Tables"
 GOLD_PATH      = f"{LAKEHOUSE_PATH}/Tables"
 
@@ -37,7 +46,7 @@ GOLD_PATH      = f"{LAKEHOUSE_PATH}/Tables"
 def read_silver(table_name: str):
     path = f"{SILVER_PATH}/{table_name}"
     try:
-        return spark.read.format("delta").load(path)
+        return spark.read.format(_TABLE_FORMAT).load(path)
     except Exception as e:
         print(f"[WARN] Could not read {table_name}: {e}")
         return None
@@ -47,7 +56,7 @@ def write_gold(df, table_name: str, partition_cols=None, mode="overwrite"):
     path = f"{GOLD_PATH}/{table_name}"
     writer = (
         df.write
-          .format("delta")
+          .format(_TABLE_FORMAT)
           .mode(mode)
           .option("overwriteSchema", "true")
     )
@@ -341,7 +350,9 @@ def build_gold_dim_gateway():
 
 
 # ── ENTRY POINT ──────────────────────────────────────────────────────────────
-if __name__ == "__main__" or True:
+# Auto-runs in a Fabric notebook (__name__ != "__main__"). Tests import this module
+# to call build_gold_* directly and set GATEWAYMON_AUTORUN=0 to suppress auto-run.
+if __name__ == "__main__" or os.environ.get("GATEWAYMON_AUTORUN", "1") != "0":
     print(f"=== 03_gold_aggregate.py starting at {datetime.now(timezone.utc).isoformat()} ===")
     build_gold_gateway_health()
     build_gold_query_performance()
