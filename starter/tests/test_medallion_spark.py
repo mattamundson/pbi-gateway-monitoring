@@ -29,6 +29,12 @@ WHAT IT PROVES (against the real notebook code)
     - build_gold_cluster_load: non-null coefficient-of-variation on a multi-node
       cluster (load-skew classification computed, not SINGLE_NODE_OR_NO_DATA)
     - build_gold_dim_gateway: one current row per gateway node
+    - scd2_apply (T5): a tracked-attribute change CLOSES the prior row and opens
+      a new one (history preserved); an unchanged key keeps its original
+      valid_from; a key that stops reporting keeps its row open; exactly one
+      is_current row per key; re-applying the same snapshot is idempotent.
+      The previous implementation was SCD1 wearing an SCD2 label and passed the
+      single-run assertions above, which is why they were not sufficient.
 
 HOW IT STAYS HERMETIC
     Sets GATEWAYMON_LAKEHOUSE_ROOT to a temp dir, GATEWAYMON_TABLE_FORMAT=parquet
@@ -42,8 +48,11 @@ REQUIREMENTS (same as run_local_smoke.py):
     winutils.exe/hadoop.dll on HADOOP_HOME. See reference_pyspark_windows_local_harness.
 
 [Unverified in a live Fabric tenant] This proves the transform logic on a local
-Spark engine; ABFSS I/O, DeltaTable SCD-2 merge, and Activity-Events joins still
-require the Phase-5 tenant pilot.
+Spark engine; ABFSS I/O and the Activity-Events attribution join still require
+the Phase-5 tenant pilot. SCD2 is now proven here rather than deferred: it is a
+full recompute, not a DeltaTable.merge, precisely so it runs under this
+parquet-backed harness -- a merge implementation would have been untestable
+without a Delta JAR, which is how the original STUB survived unnoticed.
 """
 
 import os
@@ -456,6 +465,102 @@ check(
     gdim.filter(F.col("is_current") == True).count() == 3,
     "gold_dim_gateway marks all snapshots is_current=True",
 )
+
+# ═════════════════════════════════════════════════════════════════════════════
+# SCD2 — roadmap T5
+#
+# The two assertions above are exactly what the OLD implementation passed while
+# being SCD1 in disguise: it overwrote the table every run, so a single-run test
+# could never tell the difference. These exercise scd2_apply directly across a
+# simulated second run where one node's Version changed, one is unchanged, one
+# stopped reporting, and one is brand new.
+# ═════════════════════════════════════════════════════════════════════════════
+print("\n-- SCD2 (T5) " + "-" * 57)
+
+from pyspark.sql.types import (  # noqa: E402
+    StructType, StructField, StringType as _S, LongType as _L,
+    TimestampType as _T, BooleanType as _B,
+)
+from datetime import datetime as _dt  # noqa: E402
+
+_scd_schema = StructType([
+    StructField("GatewayObjectId", _S()),
+    StructField("GatewayClusterId", _S()),
+    StructField("GatewayClusterName", _S()),
+    StructField("GatewayNodeName", _S()),
+    StructField("Version", _S()),
+    StructField("Status", _S()),
+    StructField("DatasourceCount", _L()),
+    StructField("valid_from", _T()),
+    StructField("valid_to", _T()),
+    StructField("is_current", _B()),
+])
+
+_t1 = _dt(2026, 7, 1, 10, 0, 0)
+_t2 = _dt(2026, 7, 2, 10, 0, 0)
+
+
+def _row(gid, ver, vfrom, vto=None, cur=True, status="Live", dsc=5):
+    return (gid, "c1", "cluster-1", f"node-{gid}", ver, status, dsc, vfrom, vto, cur)
+
+
+run1 = spark.createDataFrame(
+    [_row("g1", "3000.1", _t1), _row("g2", "3000.1", _t1), _row("g3", "3000.1", _t1)],
+    schema=_scd_schema,
+)
+
+# First run against an empty dimension returns the incoming set unchanged.
+first = gold.scd2_apply(None, run1)
+check(first.count() == 3, f"SCD2 first run opens one version per node: {first.count()} == 3")
+
+# Second run: g1 upgraded, g2 unchanged, g3 stopped reporting, g4 is new.
+run2 = spark.createDataFrame(
+    [_row("g1", "3000.2", _t2), _row("g2", "3000.1", _t2), _row("g4", "3000.2", _t2)],
+    schema=_scd_schema,
+)
+second = gold.scd2_apply(run1, run2)
+rows = {r["GatewayObjectId"]: [] for r in second.select("GatewayObjectId").distinct().collect()}
+for r in second.collect():
+    rows[r["GatewayObjectId"]].append(r)
+
+# History preserved for the changed node.
+g1 = sorted(rows.get("g1", []), key=lambda r: r["valid_from"])
+check(len(g1) == 2, f"SCD2 version change preserves history: g1 has {len(g1)} rows == 2")
+if len(g1) == 2:
+    check(g1[0]["Version"] == "3000.1" and not g1[0]["is_current"],
+          "SCD2 closes the prior version row (is_current=False)")
+    check(g1[0]["valid_to"] == _t2,
+          f"SCD2 closes valid_to at the new version's valid_from: {g1[0]['valid_to']} == {_t2}")
+    check(g1[1]["Version"] == "3000.2" and g1[1]["is_current"],
+          "SCD2 opens the new version row as current")
+
+# Unchanged node must NOT restart its validity interval.
+g2 = rows.get("g2", [])
+check(len(g2) == 1, f"SCD2 unchanged node stays at one row: {len(g2)} == 1")
+if len(g2) == 1:
+    check(g2[0]["valid_from"] == _t1,
+          f"SCD2 unchanged node keeps ORIGINAL valid_from: {g2[0]['valid_from']} == {_t1}")
+    check(g2[0]["is_current"], "SCD2 unchanged node stays current")
+
+# A node absent from the new snapshot is not evidence of decommissioning.
+g3 = rows.get("g3", [])
+check(len(g3) == 1 and g3[0]["is_current"],
+      "SCD2 keeps a non-reporting node's row open (offline is the heartbeat's job)")
+
+g4 = rows.get("g4", [])
+check(len(g4) == 1 and g4[0]["is_current"], "SCD2 opens a first version for a new node")
+
+# The core SCD2 invariant, across every key.
+dupes = (
+    second.filter(F.col("is_current") == True)
+    .groupBy("GatewayObjectId").count().filter(F.col("count") > 1).count()
+)
+check(dupes == 0, f"SCD2 invariant: exactly one is_current row per key ({dupes} violations)")
+
+# Idempotency: re-applying the same snapshot must change nothing.
+third = gold.scd2_apply(second, run2)
+check(third.count() == second.count(),
+      f"SCD2 is idempotent on a repeated snapshot: {third.count()} == {second.count()}")
 
 # ═════════════════════════════════════════════════════════════════════════════
 # SUMMARY

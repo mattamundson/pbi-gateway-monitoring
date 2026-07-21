@@ -332,6 +332,112 @@ def read_mashup_processes(spark, path):
     return df
 
 
+# =============================================================================
+# Medallion table IO -- roadmap T8
+#
+# WHY THIS EXISTS
+# ---------------
+# 02_silver_correlate.read_bronze() and 03_gold_aggregate.read_silver() both
+# wrapped EVERY table read in:
+#
+#     except Exception as e:
+#         print(f"[WARN] Could not read {table_name}: {e}")
+#         return None
+#
+# That is the largest silent-failure blast radius in the codebase: every
+# build_silver_* and build_gold_* function reads through those helpers, so a
+# Delta corruption, a credential expiry, or an ABFS permission denial was
+# indistinguishable from "this table doesn't exist yet on a first run." Both
+# printed a [WARN] to notebook stdout that nobody reads, returned None, and the
+# caller silently dropped that entire data source from the medallion. The gold
+# tables would publish looking healthy, just quietly missing a signal.
+#
+# Only ONE of those cases is benign. This classifier separates them.
+# =============================================================================
+
+# Substrings that indicate a genuinely absent table (benign on a first run).
+# Kept deliberately narrow -- anything not matched here is treated as a real
+# failure and re-raised. Fail-closed: we would rather halt on an unfamiliar
+# error than silently drop a data source.
+_MISSING_TABLE_MARKERS = (
+    "path does not exist",
+    "path_not_found",
+    "is not a delta table",
+    "delta_missing_delta_table",
+    "table or view not found",
+    "table_or_view_not_found",
+    "unable to infer schema",  # empty dir: Spark cannot infer, table not yet written
+    "no such file or directory",
+)
+
+# Substrings that positively identify a NON-benign failure, even if the message
+# happens to also contain a missing-table marker. Checked first.
+_HARD_FAILURE_MARKERS = (
+    "accessdenied",
+    "access denied",
+    "permission denied",
+    "unauthorized",
+    "403",
+    "authentication",
+    "credential",
+    "invalid_token",
+    "operation timed out",
+    "checksum",
+    "corrupt",
+)
+
+
+class TableReadError(RuntimeError):
+    """A medallion table exists but could not be read.
+
+    Raised instead of returning None so a permissions failure, an expired
+    credential, or a corrupt Delta log halts the pipeline loudly rather than
+    silently publishing a gold table with a missing input.
+    """
+
+
+def classify_read_failure(exc: Exception) -> str:
+    """Return 'missing' if the exception means the table is not there yet,
+    otherwise 'error'. Unknown exceptions classify as 'error' (fail-closed)."""
+    msg = f"{type(exc).__name__}: {exc}".lower()
+    for marker in _HARD_FAILURE_MARKERS:
+        if marker in msg:
+            return "error"
+    for marker in _MISSING_TABLE_MARKERS:
+        if marker in msg:
+            return "missing"
+    return "error"
+
+
+def read_table_strict(spark, path: str, table_name: str, fmt: str = "delta"):
+    """Read a medallion table.
+
+    Returns None ONLY when the table genuinely does not exist yet -- the one
+    benign case, normal on a first run before an upstream layer has written.
+
+    Raises TableReadError for every other failure (permissions, expired
+    credential, corrupt Delta log, unreadable schema), because those mean the
+    data source exists but we cannot see it, and continuing would publish a
+    silently incomplete result.
+    """
+    try:
+        return spark.read.format(fmt).load(path)
+    except Exception as exc:  # noqa: BLE001 -- classified immediately below
+        kind = classify_read_failure(exc)
+        if kind == "missing":
+            print(
+                f"[INFO] {table_name} does not exist yet at {path} "
+                f"(normal before its upstream layer has run) -- skipping."
+            )
+            return None
+        raise TableReadError(
+            f"{table_name} exists but could not be read from {path}. "
+            f"This is NOT a missing-table condition and must not be treated as "
+            f"one -- continuing would publish a result silently missing this "
+            f"input. Original error: {type(exc).__name__}: {exc}"
+        ) from exc
+
+
 def gold_mashup_health(df, runaway_working_set_mb=6000.0):
     """Per-gateway mashup rollup: peak/avg working set, container count, and a
     runaway flag when any container's working set exceeds the threshold."""

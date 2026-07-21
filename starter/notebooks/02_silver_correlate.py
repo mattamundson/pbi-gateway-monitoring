@@ -71,13 +71,24 @@ ATTRIBUTION_TIME_WINDOW_SECS = 60  # QS ↔ Activity Events time window
 PROCESS_SINCE_DAYS = 1  # Process last N days; adjust for full backfill
 
 
+# Roadmap T8. Hard import, NOT guarded: there is no sensible fallback for "can I
+# read a table". 01_bronze_ingest.py guards its lib import because it has a real
+# fallback parser; this notebook does not, and a silent degradation here is the
+# exact defect being fixed. If the lib is missing, this notebook must not run.
+from gateway_bronze_lib import read_table_strict, TableReadError  # noqa: E402
+
+
 def read_bronze(table_name: str):
-    path = f"{BRONZE_PATH}/{table_name}"
-    try:
-        return spark.read.format(_TABLE_FORMAT).load(path)
-    except Exception as e:
-        print(f"[WARN] Could not read {table_name}: {e}")
-        return None
+    """Read a bronze table.
+
+    Returns None ONLY if the table does not exist yet (normal on a first run).
+    Raises TableReadError on permissions / credential / corruption failures --
+    previously every one of those returned None and this data source was
+    silently dropped from the medallion.
+    """
+    return read_table_strict(
+        spark, f"{BRONZE_PATH}/{table_name}", table_name, _TABLE_FORMAT
+    )
 
 
 def write_silver(df, table_name: str, partition_cols=None):

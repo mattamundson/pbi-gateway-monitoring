@@ -108,7 +108,13 @@ import csv
 import io
 import base64
 import binascii
+import uuid
 from datetime import datetime, timezone
+
+# Correlates every row this notebook run writes -- schema-drift records now, and
+# the pipeline run log in roadmap T13. Overridable so an orchestrator can thread
+# one id through the whole bronze->silver->gold chain.
+_RUN_ID = os.environ.get("GATEWAYMON_RUN_ID") or f"run-{uuid.uuid4().hex[:12]}"
 
 spark = SparkSession.builder.getOrCreate()
 try:
@@ -617,36 +623,117 @@ def _write_bronze_delta(df, table_name: str, partition_cols: list):
     print(f"[INFO] Wrote {count} rows to {table_name} (path: {table_path})")
 
 
-def _emit_schema_warnings(records: list, known_cols: dict, log_type: str):
-    """
-    Check if any expected column was absent from ALL parsed records.
-    If a known column is consistently missing, emit a warning.
-    This may indicate the gateway version renamed or removed a column.
-    The warning is captured in a Delta table for Activator alerting.
+_INTERNAL_COLS = {
+    "_extra_cols",
+    "_source_file",
+    "_log_type",
+    "_gateway_host",
+    "_ingested_at",
+}
+
+
+def detect_schema_drift(records: list, known_cols: dict, log_type: str) -> dict:
+    """Compare the columns actually present against the expected contract.
+
+    Pure function (no Spark, no IO) so it is directly unit-testable. Returns a
+    drift record; ``severity`` is:
+      ``none``     -- schema matches the contract
+      ``added``    -- new columns appeared (forward-compatible; mergeSchema absorbs)
+      ``missing``  -- expected columns vanished (BREAKING: downstream transforms
+                      and DAX measures reference them by name)
+      ``both``     -- columns both appeared and vanished, i.e. a likely rename
     """
     if not records:
-        return
-    all_cols = set(records[0].keys()) - {
-        "_extra_cols",
-        "_source_file",
-        "_log_type",
-        "_gateway_host",
-        "_ingested_at",
+        return {"severity": "none", "missing": [], "added": []}
+
+    actual = set(records[0].keys()) - _INTERNAL_COLS
+    expected = {v[0] for v in known_cols.values()}
+
+    missing = sorted(expected - actual)
+    added = sorted(actual - expected)
+
+    if missing and added:
+        severity = "both"
+    elif missing:
+        severity = "missing"
+    elif added:
+        severity = "added"
+    else:
+        severity = "none"
+
+    return {
+        "severity": severity,
+        "missing": missing,
+        "added": added,
+        "expected": sorted(expected),
+        "actual": sorted(actual),
+        "log_type": log_type,
     }
-    expected_delta_names = {v[0] for v in known_cols.values()}
-    missing = expected_delta_names - all_cols
-    if missing:
+
+
+def _emit_schema_warnings(records: list, known_cols: dict, log_type: str):
+    """Detect gateway log schema drift and PERSIST it to bronze_schema_warnings.
+
+    Roadmap T7. This previously only print()ed to notebook stdout -- which
+    nobody reads -- while its own docstring claimed the warning was "captured in
+    a Delta table for Activator alerting". It was not. Pain point #4 (a gateway
+    upgrade silently renames or drops a log column) is exactly this signal, so
+    it has to land somewhere queryable and alertable.
+
+    Also now detects ADDED columns, not just missing ones. The previous version
+    checked one direction only, so a gateway upgrade that introduced a new
+    column -- the leading indicator of a schema change -- was invisible.
+    """
+    drift = detect_schema_drift(records, known_cols, log_type)
+    if drift["severity"] == "none":
+        return
+
+    if drift["missing"]:
         print(
-            f"[SCHEMA_WARN] {log_type}: Expected columns not found in logs: {missing}"
+            f"[SCHEMA_WARN] {log_type}: expected columns not found: "
+            f"{drift['missing']} -- these may have been renamed or removed in "
+            f"the current gateway version. Downstream transforms and DAX "
+            f"measures reference them by name."
         )
+    if drift["added"]:
         print(
-            f"[SCHEMA_WARN] These may have been renamed/removed in current gateway version."
+            f"[SCHEMA_WARN] {log_type}: new columns appeared: {drift['added']} "
+            f"-- absorbed by mergeSchema, but confirm the gateway version change."
         )
+    print(
+        "[SCHEMA_WARN] Validate against: https://learn.microsoft.com/en-us/"
+        "data-integration/gateway/service-gateway-performance"
+    )
+
+    try:
+        now = datetime.now(timezone.utc)
+        row = {
+            "run_id": _RUN_ID,
+            "detected_at_utc": now,
+            "log_type": log_type,
+            "severity": drift["severity"],
+            "missing_columns": ",".join(drift["missing"]),
+            "added_columns": ",".join(drift["added"]),
+            "expected_column_count": len(drift["expected"]),
+            "actual_column_count": len(drift["actual"]),
+        }
+        df = spark.createDataFrame([row]).withColumn(
+            "_partition_date", F.to_date(F.col("detected_at_utc"))
+        )
+        _write_bronze_delta(df, "bronze_schema_warnings", ["_partition_date"])
         print(
-            f"[SCHEMA_WARN] Validate against: https://learn.microsoft.com/en-us/data-integration/gateway/service-gateway-performance"
+            f"[SCHEMA_WARN] persisted to bronze_schema_warnings "
+            f"(severity={drift['severity']})"
         )
-        # TODO (Phase 5): write schema_warn rows to a bronze_schema_warnings Delta table
-        # for monitoring in the report and Activator alerting
+    except Exception as exc:  # noqa: BLE001
+        # Deliberately non-fatal: losing the drift RECORD must not abort an
+        # otherwise-good ingest. But it is a real problem, so it is reported at
+        # ERROR, not swallowed into the [WARN] noise floor.
+        print(
+            f"[ERROR] schema drift was DETECTED for {log_type} but could not be "
+            f"persisted to bronze_schema_warnings: {type(exc).__name__}: {exc}. "
+            f"The drift itself is real -- see the [SCHEMA_WARN] lines above."
+        )
 
 
 def ingest_network_metrics():
