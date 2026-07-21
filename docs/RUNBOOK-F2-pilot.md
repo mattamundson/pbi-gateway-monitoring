@@ -39,10 +39,43 @@ CONFIG_PATH=starter/config/config.json python starter/notebooks/tenant_doctor.py
 ```
 It runs 5 checks (SP token, **read-only admin API + tenant setting**, activity events, refreshables, capacity-bridge mode) and prints `VERDICT: READY` or `BLOCKED` with the **exact fix** for each failure. Do not start Track B until this says **READY**. (Exit code is non-zero when blocked, so it also gates CI/automation.)
 > Rehearse the report format with no tenant: `TENANT_DOCTOR_MOCK=1 python starter/notebooks/tenant_doctor.py`.
+>
+> If the SPN secret is in Key Vault (it is — `kv-gwmon-01`), the one-command form does the
+> fetch → run → scrub for you and needs no `config.json` on disk:
+> ```powershell
+> pwsh -File starter/deploy/run-tenant-doctor.ps1
+> ```
+
+**Step 0C — DO NOT re-provision what already exists (checked BEFORE Step 1).**
+Phase 1 was largely completed on **2026-07-06** and recorded in `docs/PHASE1-TENANT-ENABLEMENT.md`
+— capacity **`gwmoncap01`** (F2, centralus) assigned to workspace **`Gateway-Pilot`**, Workspace
+Monitoring/Eventhouse enabled on it, SPN `gwmon-admin-reader` registered with admin consent, secret
+in Key Vault. That record lived on an unmerged branch until 2026-07-21, so **Steps 1–3 below were
+written assuming a from-scratch start and are probably already satisfied.** Creating a second
+capacity would waste both money and paid-window minutes.
+
+Check first, then skip what's done:
+
+| Check | Where | If present |
+|---|---|---|
+| Capacity `gwmoncap01` exists (and is it **Paused** or **Active**?) | Azure portal → the capacity, or `az resource list --resource-type Microsoft.Fabric/capacities -o table` | **Skip Step 1.** If Paused, just **Resume** it — that is the whole of Step 1. |
+| Workspace `Gateway-Pilot` assigned to it | Fabric → Workspace settings → License info | **Skip Step 2.** |
+| Monitoring KQL DB answers `PowerBIDatasetsWorkspace \| take 5` | Fabric → the monitored workspace → Monitoring | **Skip Step 3** (the trial blocker is already cleared). |
+
+> **The one action Phase 1 logged as still open** (portal-only, tenant admin): Admin portal →
+> Tenant settings → **"Service principals can access read-only admin APIs"** → enable for group
+> `gwmon-admin-api-sps`. Verify with `run-tenant-doctor.ps1` → `RESULT: PASS`. This gates **Track B
+> only** — Track A (the flagship match rate) does not need it, so a 401 here should not stop you
+> from getting the flagship number.
 
 ---
 
-## Step 1 — Create the F2 capacity (~5 min)
+## Step 1 — Create the F2 capacity (~5 min) — **likely SKIP, see Step 0C**
+
+> Only run this if Step 0C found no existing `gwmoncap01`. If it exists but is Paused, **Resume**
+> it instead (billing restarts on resume) and go straight to Step 4. Scripted alternative to the
+> portal clicks below: `pwsh starter/deploy/create-f2-capacity.ps1 -ResourceGroup rg-gatewaymon-dev
+> -Name gwmoncap01 -Region centralus` (dry-run by default; add `-Execute` to actually spend).
 
 1. Azure portal → **Create a resource** → search **"Microsoft Fabric"** → **Microsoft Fabric (capacity)** → **Create**.
 2. Fill in:
@@ -53,13 +86,13 @@ It runs 5 checks (SP token, **read-only admin API + tenant setting**, activity e
 3. **Review + create** → **Create**. Wait for deployment (~1–2 min).
 4. **Note the capacity is RUNNING** = billing has started. Move quickly.
 
-## Step 2 — Assign your workspace to the F2 capacity (~2 min)
+## Step 2 — Assign your workspace to the F2 capacity (~2 min) — **likely SKIP, see Step 0C**
 
 1. Fabric portal ([app.fabric.microsoft.com](https://app.fabric.microsoft.com)) → your workspace → **Workspace settings** → **License info** (or **Premium**).
 2. Set **License mode = Fabric capacity** and select **`gw-pilot-f2`**. Apply.
    - *Alt (admin):* Fabric **Admin portal → Capacity settings → gw-pilot-f2 → Workspaces → assign.*
 
-## Step 3 — Enable Workspace Monitoring (the step trial blocks) (~5–10 min)
+## Step 3 — Enable Workspace Monitoring (the step trial blocks) (~5–10 min) — **likely SKIP, see Step 0C**
 
 1. Workspace → **Workspace settings** → **Monitoring** → **+ Eventhouse** (enable).
 2. Fabric creates **Monitoring Eventhouse**, **Monitoring KQL database**, **Monitoring_Eventstream**.
@@ -137,3 +170,28 @@ If you already use **Log Analytics** on the workspace instead of Workspace Monit
 
 ---
 *Status: `[Unverified]` end-to-end — this runbook is the procedure to PRODUCE the first verified match rate. F2-minimum is from this repo's own live findings, not an independent MS statement. Confirm current pricing before provisioning.*
+
+---
+
+## Pre-sitting readiness (verified off-tenant 2026-07-21 — nothing below needs the meter running)
+
+So the paid window is spent on the tenant, not on debugging the kit:
+
+- ✅ **All 3 CI jobs green** on `main` (tier1-parser, tier2-spark, tenant-harness) — MVP acceptance #5.
+- ✅ **All 5 deploy scripts parse clean** under the PowerShell AST parser (no syntax landmines mid-sitting).
+- ✅ **`run-tenant-doctor.ps1` → `tenant_doctor.py` handoff verified** — the script passes credentials
+  as `AZURE_CLIENT_ID`/`AZURE_TENANT_ID`/`AZURE_CLIENT_SECRET`; the checker previously read only a
+  `CONFIG_PATH` JSON file with different key names, so the one-command form would have silently
+  failed on the day. Env-var fallback added and tested.
+- ✅ **Full tenant mock chain runs end-to-end** (`00_tenant_extract` → `01a_tenant_silver_gold` →
+  `04_capacity_bridge`) producing all 4 gold tables, so Track B's shape is proven before it meets a
+  real SP.
+- ✅ **`create-f2-capacity.ps1` defaults to dry-run** — it cannot start billing by accident; `-Execute`
+  is required.
+- ⚠️ **Two placeholders are filled live, by design:** `PILOT-identity-join-test.kql` needs a real
+  `RequestId` (Block 2) and workspace GUID (Block 4) copied from the gateway host. Have the gateway
+  host RDP session open *before* resuming the capacity.
+
+**Not verifiable off-tenant (this is what the sitting is for):** the identity join itself (U19), the
+real match rate (U11), whether Workspace Monitoring column names match our assumptions, Activator
+DSL, and whether the Nexus report's DirectLake bindings resolve in Desktop.
