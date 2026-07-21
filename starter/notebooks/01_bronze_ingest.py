@@ -915,6 +915,93 @@ def ingest_mashup_processes():
     )
 
 
+# ── COLLECTOR SELF-HEALTH ────────────────────────────────────────────────────
+# Roster of every collector that lands a JSON file, its landing glob, and whether
+# it emits a CollectionErrors array. This is the SSOT for "which collectors are
+# supposed to be running" -- a collector that stops producing files entirely is
+# invisible in its own table (no rows) and can only be caught by comparing against
+# an expected roster. Absence of evidence is the failure mode that matters most:
+# a gateway host whose scheduled task died looks exactly like a quiet gateway.
+COLLECTOR_ROSTER = [
+    "Collect-GatewayLogs",
+    "Collect-NetworkMetrics",
+    "Collect-EventLog",
+    "Collect-DiskSpool",
+    "Get-GatewayInventory",
+    "Collect-RefreshHistory",
+    "Collect-MashupProcesses",
+]
+
+
+def find_roster_gaps(observed_names, roster=None):
+    """Names on the roster that produced no health sidecar this run.
+
+    Pure and Spark-free so the roster-gap rule -- the one failure mode that
+    cannot be expressed as a row, because its signature is the absence of one --
+    is unit-testable without a Spark session.
+    """
+    roster = COLLECTOR_ROSTER if roster is None else roster
+    seen = set(observed_names)
+    return [c for c in roster if c not in seen]
+
+
+def ingest_collector_health():
+    """Materialize the collector health sidecars into bronze_collector_health.
+
+    WHY THIS EXISTS: five collectors carefully built a ``CollectionErrors`` array
+    and NOTHING read it. Every ingest function above selects the payload columns
+    and drops the error channel on the floor. The result was that a collector
+    which had been failing for weeks -- wrong spool path, denied event log,
+    expired service principal -- still wrote a JSON file, still landed rows in
+    bronze, and was INDISTINGUISHABLE from a healthy one.
+
+    Two distinct failures are captured:
+      1. ``Status = 'DEGRADED'`` -- the collector ran and reported a problem, or
+         produced zero records (usually a misconfigured filter, not an idle host).
+      2. a rostered collector with NO ROW AT ALL -- it did not run. This is the
+         more dangerous case and the reason the roster is an explicit constant
+         rather than inferred from whichever files happen to exist: a failure
+         whose signature is absence cannot be discovered from the data.
+
+    Sidecars are written by CollectorHealth.ps1 and share one schema, so this
+    parses a single uniform shape rather than seven different payload layouts.
+    """
+    try:
+        df = spark.read.option("multiLine", True).json(
+            f"{LANDING_PATH}/collector_health_*.json"
+        )
+    except Exception as e:  # noqa: BLE001 - absence is itself the alert
+        print(f"[ALERT] collector-health: NO health sidecars at all: {e}")
+        print(f"[ALERT] collector-health: roster gap = {COLLECTOR_ROSTER}")
+        return
+
+    df_health = df.select(
+        F.col("CollectedAtUtc").cast(TimestampType()).alias("CollectedAtUTC"),
+        F.col("GatewayHostName"),
+        F.col("CollectorName"),
+        F.col("Status"),
+        F.col("ErrorCount").cast("int").alias("ErrorCount"),
+        F.coalesce(
+            F.col("CollectionErrors").cast("array<string>"),
+            F.array().cast("array<string>"),
+        ).alias("CollectionErrors"),
+        F.col("RecordCount").cast("long").alias("RecordCount"),
+        F.col("SchemaVersion").cast("int").alias("SchemaVersion"),
+    ).withColumn("_partition_date", F.to_date(F.col("CollectedAtUTC")))
+
+    _write_bronze_delta(
+        df_health, "bronze_collector_health", partition_cols=["_partition_date"]
+    )
+
+    observed = [r["CollectorName"] for r in df_health.select("CollectorName").distinct().collect()]
+    missing = find_roster_gaps(observed)
+    if missing:
+        print(f"[ALERT] collector-health: NO OUTPUT from {len(missing)}: {missing}")
+    degraded = df_health.filter(F.col("Status") != "OK").count()
+    if degraded:
+        print(f"[ALERT] collector-health: {degraded} DEGRADED collector run(s)")
+
+
 # ── OPTIONAL FPM BRIDGE ───────────────────────────────────────────────────────
 def ingest_fpm_bridge():
     """
@@ -953,6 +1040,9 @@ if __name__ == "__main__" or os.environ.get("GATEWAYMON_AUTORUN", "1") != "0":
     ingest_gateway_datasources()
     ingest_refresh_history()
     ingest_mashup_processes()
+    # Runs LAST and unconditionally: it reads the same landing files the ingests
+    # above consumed, and must run even when one of them bailed out early.
+    ingest_collector_health()
     if USE_FPM_BRIDGE:
         ingest_fpm_bridge()
     print("=== 01_bronze_ingest.py complete ===")

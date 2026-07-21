@@ -140,8 +140,8 @@ foreach ($pattern in $logPatterns) {
     # Array-wrap: an empty pipeline assigns $null, and `$newFiles += $null`
     # would append a phantom null element (inflating .Count) under StrictMode.
     $files = @(Get-ChildItem -Path $LogRootPath -Filter $pattern -Recurse -ErrorAction SilentlyContinue |
-        Where-Object { $_.LastWriteTimeUtc -gt $lastProcessedUtc } |
-        Sort-Object LastWriteTimeUtc)
+            Where-Object { $_.LastWriteTimeUtc -gt $lastProcessedUtc } |
+            Sort-Object LastWriteTimeUtc)
     $newFiles += $files
 }
 
@@ -169,21 +169,21 @@ foreach ($file in $newFiles) {
 
         # Determine log type from filename
         $logType = switch -Wildcard ($file.Name) {
-            "*QueryExecutionReport*"            { "QueryExecution" }
-            "*QueryStartReport*"                { "QueryStart" }
+            "*QueryExecutionReport*" { "QueryExecution" }
+            "*QueryStartReport*" { "QueryStart" }
             "*QueryExecutionAggregationReport*" { "QueryAggregation" }
-            "*SystemCounterReport*"             { "SystemCounter" }
-            default                             { "Unknown" }
+            "*SystemCounterReport*" { "SystemCounter" }
+            default { "Unknown" }
         }
 
         $record = @{
-            SourceFile      = $file.FullName
-            SourceFileName  = $file.Name
-            LogType         = $logType
-            GatewayHostName = $env:COMPUTERNAME
+            SourceFile       = $file.FullName
+            SourceFileName   = $file.Name
+            LogType          = $logType
+            GatewayHostName  = $env:COMPUTERNAME
             FileLastWriteUtc = $file.LastWriteTimeUtc.ToString("o")
-            CollectedAtUtc  = (Get-Date).ToUniversalTime().ToString("o")
-            RawCsvContent   = $rawContent
+            CollectedAtUtc   = (Get-Date).ToUniversalTime().ToString("o")
+            RawCsvContent    = $rawContent
         }
         $stagingRecords += $record
 
@@ -192,7 +192,13 @@ foreach ($file in $newFiles) {
         }
     }
     catch {
-        Write-Warning "Failed to read log file $($file.FullName): $_"
+        # Previously a Write-Warning and nothing else. Under a scheduled task
+        # nobody reads warnings, so a log directory the service account cannot
+        # read produced an EMPTY staging file and a successful exit -- a gateway
+        # with zero observability reported as a gateway with zero problems.
+        $errMsg = "Failed to read log file $($file.FullName): $_"
+        Write-Warning $errMsg
+        $collectionErrors += $errMsg
         # Do not update watermark for failed files -- they will retry next run
     }
 }
@@ -221,5 +227,9 @@ Write-Verbose "Staged $($stagingRecords.Count) file records to: $outputFile"
 # ---------------------------------------------------------------------------
 @{ LastProcessedUtc = $maxProcessedUtc.ToString("o") } | ConvertTo-Json | Out-File $watermarkPath -Encoding UTF8
 Write-Verbose "Watermark updated to: $maxProcessedUtc"
+
+. (Join-Path $PSScriptRoot 'CollectorHealth.ps1')
+Write-CollectorHealth -CollectorName 'Collect-GatewayLogs' -OutputPath $OutputPath `
+    -CollectionErrors $collectionErrors -RecordCount $stagingRecords.Count
 
 Write-Output "Collect-GatewayLogs: Staged $($stagingRecords.Count) files. Output: $outputFile"

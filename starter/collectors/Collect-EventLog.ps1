@@ -103,9 +103,9 @@ try {
     Write-Verbose "Querying Application log for gateway provider events..."
 
     $appFilter = @{
-        LogName      = 'Application'
-        StartTime    = $sinceUtc
-        Level        = $levelValues
+        LogName   = 'Application'
+        StartTime = $sinceUtc
+        Level     = $levelValues
     }
 
     # Note: Get-WinEvent -FilterHashtable does not support ProviderName in all
@@ -114,7 +114,7 @@ try {
     # that emits nothing assigns $null, and $null.Count THROWS. @(...) forces an
     # array so .Count is always valid (0 when empty).
     $appEvents = @(Get-WinEvent -FilterHashtable $appFilter -ErrorAction Stop |
-        Where-Object { $_.ProviderName -match "gateway|PBIEgw|OnPremises" })
+            Where-Object { $_.ProviderName -match "gateway|PBIEgw|OnPremises" })
 
     foreach ($evt in $appEvents) {
         $allEvents += @{
@@ -161,7 +161,7 @@ try {
     # Note: Get-WinEvent -FilterHashtable with Id array syntax requires PS 5.1+
     # Array-wrap (see note above): empty pipeline -> $null -> $null.Count throws.
     $sysEvents = @(Get-WinEvent -FilterHashtable $scmFilter -ErrorAction Stop |
-        Where-Object { $_.Message -match $GatewayServiceName -or $_.Message -match "gateway" })
+            Where-Object { $_.Message -match $GatewayServiceName -or $_.Message -match "gateway" })
 
     foreach ($evt in $sysEvents) {
         $allEvents += @{
@@ -206,5 +206,10 @@ $output | ConvertTo-Json -Depth 10 | Out-File $outputFile -Encoding UTF8
 
 # Update watermark
 @{ LastProcessedUtc = $collectedAtUtc.ToString("o") } | ConvertTo-Json | Out-File $watermarkPath -Encoding UTF8
+
+. (Join-Path $PSScriptRoot 'CollectorHealth.ps1')
+Write-CollectorHealth -CollectorName 'Collect-EventLog' -OutputPath $OutputPath `
+    -CollectionErrors $collectionErrors -CollectedAtUtc $collectedAtUtc `
+    -RecordCount $allEvents.Count
 
 Write-Output "Collect-EventLog: $($allEvents.Count) events written to $outputFile"

@@ -76,8 +76,8 @@ $collectedAtUtc = (Get-Date).ToUniversalTime()
 # ---------------------------------------------------------------------------
 if (Test-Path $ConfigPath) {
     $config = Get-Content $ConfigPath -Raw | ConvertFrom-Json
-    if ([string]::IsNullOrWhiteSpace($TenantId))       { $TenantId       = $config.tenantId }
-    if ([string]::IsNullOrWhiteSpace($ApplicationId))  { $ApplicationId  = $config.applicationId }
+    if ([string]::IsNullOrWhiteSpace($TenantId)) { $TenantId = $config.tenantId }
+    if ([string]::IsNullOrWhiteSpace($ApplicationId)) { $ApplicationId = $config.applicationId }
 }
 
 # ---------------------------------------------------------------------------
@@ -105,7 +105,7 @@ try {
     if (-not [string]::IsNullOrWhiteSpace($ClientSecretPath) -and (Test-Path $ClientSecretPath)) {
         # Read the SP client secret from file and connect via service principal.
         $clientSecretRaw = Get-Content $ClientSecretPath -Raw
-        $clientSecretSS  = $clientSecretRaw.Trim() | ConvertTo-SecureString -AsPlainText -Force
+        $clientSecretSS = $clientSecretRaw.Trim() | ConvertTo-SecureString -AsPlainText -Force
 
         Connect-DataGatewayServiceAccount -TenantId $TenantId -ApplicationId $ApplicationId `
             -ClientSecret $clientSecretSS -ErrorAction Stop
@@ -155,19 +155,19 @@ try {
 
             foreach ($member in $members) {
                 $inventoryRecords += @{
-                    CollectedAtUtc    = $collectedAtUtc.ToString("o")
-                    GatewayClusterId  = $cluster.Id.ToString()
+                    CollectedAtUtc     = $collectedAtUtc.ToString("o")
+                    GatewayClusterId   = $cluster.Id.ToString()
                     GatewayClusterName = $cluster.Name
-                    ClusterScope      = "Organization"
-                    GatewayObjectId   = $member.Id.ToString()
-                    GatewayNodeName   = $member.Name
-                    Status            = $member.Status         # e.g., Live, Offline
-                    Version           = $member.Version
+                    ClusterScope       = "Organization"
+                    GatewayObjectId    = $member.Id.ToString()
+                    GatewayNodeName    = $member.Name
+                    Status             = $member.Status         # e.g., Live, Offline
+                    Version            = $member.Version
                     # [Assumption] DatasourceCount may not be a direct property;
                     # may require separate call. Set null if not available.
-                    DatasourceCount   = if ($member.PSObject.Properties['DatasourceCount']) { $member.DatasourceCount } else { $null }
-                    GatewayMachineOs  = if ($member.PSObject.Properties['MachineOs'])      { $member.MachineOs }      else { $null }
-                    GatewayAnnotation = if ($member.PSObject.Properties['Annotation'])     { $member.Annotation }     else { $null }
+                    DatasourceCount    = if ($member.PSObject.Properties['DatasourceCount']) { $member.DatasourceCount } else { $null }
+                    GatewayMachineOs   = if ($member.PSObject.Properties['MachineOs']) { $member.MachineOs }      else { $null }
+                    GatewayAnnotation  = if ($member.PSObject.Properties['Annotation']) { $member.Annotation }     else { $null }
                 }
             }
         }
@@ -189,16 +189,16 @@ try {
 
                 foreach ($ds in $datasources) {
                     $datasourceRecords += @{
-                        CollectedAtUtc    = $collectedAtUtc.ToString("o")
-                        GatewayClusterId  = $cluster.Id.ToString()
+                        CollectedAtUtc     = $collectedAtUtc.ToString("o")
+                        GatewayClusterId   = $cluster.Id.ToString()
                         GatewayClusterName = $cluster.Name
-                        DatasourceId      = $ds.Id.ToString()
-                        DatasourceName    = $ds.DatasourceName
-                        DatasourceType    = $ds.DatasourceType
-                        ConnectionDetails = $ds.ConnectionDetails | ConvertTo-Json -Compress
+                        DatasourceId       = $ds.Id.ToString()
+                        DatasourceName     = $ds.DatasourceName
+                        DatasourceType     = $ds.DatasourceType
+                        ConnectionDetails  = $ds.ConnectionDetails | ConvertTo-Json -Compress
                         # Status field: Live, Unknown, Error -- drives credential-drift alerting
-                        Status            = if ($ds.PSObject.Properties['Status']) { $ds.Status } else { "Unknown" }
-                        LastUpdated       = if ($ds.PSObject.Properties['LastUpdated']) { $ds.LastUpdated } else { $null }
+                        Status             = if ($ds.PSObject.Properties['Status']) { $ds.Status } else { "Unknown" }
+                        LastUpdated        = if ($ds.PSObject.Properties['LastUpdated']) { $ds.LastUpdated } else { $null }
                     }
                 }
             }
@@ -221,20 +221,26 @@ catch {
 # Write output
 # ---------------------------------------------------------------------------
 $output = @{
-    CollectedAtUtc     = $collectedAtUtc.ToString("o")
-    GatewayHostName    = $env:COMPUTERNAME
-    ClusterCount       = ($inventoryRecords | Select-Object -ExpandProperty GatewayClusterId -Unique | Measure-Object).Count
-    NodeCount          = $inventoryRecords.Count
-    DatasourceCount    = $datasourceRecords.Count
-    CollectionErrors   = $collectionErrors
-    Inventory          = $inventoryRecords
-    Datasources        = $datasourceRecords
+    CollectedAtUtc   = $collectedAtUtc.ToString("o")
+    GatewayHostName  = $env:COMPUTERNAME
+    ClusterCount     = ($inventoryRecords | Select-Object -ExpandProperty GatewayClusterId -Unique | Measure-Object).Count
+    NodeCount        = $inventoryRecords.Count
+    DatasourceCount  = $datasourceRecords.Count
+    CollectionErrors = $collectionErrors
+    Inventory        = $inventoryRecords
+    Datasources      = $datasourceRecords
 }
 
 $timestamp = $collectedAtUtc.ToString("yyyyMMdd_HHmmss")
 $outputFile = "$OutputPath\gateway_inventory_$timestamp.json"
 
 $output | ConvertTo-Json -Depth 10 | Out-File $outputFile -Encoding UTF8
+. (Join-Path $PSScriptRoot 'CollectorHealth.ps1')
+Write-CollectorHealth -CollectorName 'Get-GatewayInventory' -OutputPath $OutputPath `
+    -CollectionErrors $collectionErrors -CollectedAtUtc $collectedAtUtc `
+    -RecordCount $inventoryRecords.Count `
+    -Context @{ DatasourceCount = "$($datasourceRecords.Count)" }
+
 Write-Output "Get-GatewayInventory: $($inventoryRecords.Count) nodes, $($datasourceRecords.Count) datasources. Output: $outputFile"
 
 # Disconnect to clean up session
