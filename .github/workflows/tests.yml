@@ -81,6 +81,28 @@ jobs:
           JAVA_HOME: ${{ env.JAVA_HOME_17_X64 }}
         run: python starter/tests/test_tenant_spark.py
 
+      # Tier 2.5 — runs the notebooks' OWN build_silver_*/build_gold_* transforms
+      # against inline bronze in a temp Lakehouse. This is the evidence
+      # PAIN-POINT-COVERAGE.md cites for pain points #2 (triage confidence tiers +
+      # U15 fan-out closure), #6 (cluster-load CV) and #7 (network correlation
+      # dedup) being "local-tested" — but nothing ran it, so a regression in
+      # 02_silver_correlate.py / 03_gold_aggregate.py would have shipped green.
+      # That is the exact failure mode this suite was written to close.
+      - name: Run Tier 2.5 medallion integration test (real build_* transforms)
+        env:
+          JAVA_HOME: ${{ env.JAVA_HOME_17_X64 }}
+        run: python starter/tests/test_medallion_spark.py
+
+      # Tier 3 — the flagship identity-join match-rate simulation. Asserts the
+      # simulated RequestId->OperationId match rate stays inside [0.70, 0.95]
+      # against the committed sim_out/ fixtures, so a regression in the join or
+      # attribution logic is caught structurally before the live-tenant pilot
+      # ever measures the real number.
+      - name: Run Tier 3 identity-join match-rate simulation
+        env:
+          JAVA_HOME: ${{ env.JAVA_HOME_17_X64 }}
+        run: python starter/tests/validate_pipeline_sim.py
+
   tenant-harness:
     name: Tenant-extract harness (mock, Spark-free)
     runs-on: ubuntu-latest

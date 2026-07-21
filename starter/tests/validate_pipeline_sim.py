@@ -46,10 +46,18 @@ Exit 0 = all PASS; Exit 1 = one or more FAIL.
 import os
 import sys
 import json
+import tempfile
 
-# Use /dev/shm for ALL temp dirs -- only writable path in this sandbox
-os.makedirs("/dev/shm/spark_tmp", exist_ok=True)
-os.makedirs("/dev/shm/spark_local", exist_ok=True)
+# Scratch dirs for Spark. Originally hardcoded to /dev/shm (the only writable
+# path in the Linux sandbox this was first authored in), which made the whole
+# suite a silent no-op on Windows AND unrunnable in CI. tempfile.mkdtemp()
+# resolves correctly on every platform; override with GATEWAYMON_SIM_TMP if you
+# specifically want a tmpfs/ramdisk (e.g. /dev/shm) for speed.
+_SCRATCH = os.environ.get("GATEWAYMON_SIM_TMP") or tempfile.mkdtemp(prefix="gwmon_sim_")
+_SPARK_TMP = os.path.join(_SCRATCH, "spark_tmp")
+_SPARK_LOCAL = os.path.join(_SCRATCH, "spark_local")
+os.makedirs(_SPARK_TMP, exist_ok=True)
+os.makedirs(_SPARK_LOCAL, exist_ok=True)
 
 # ---------------------------------------------------------------------------
 # Guard
@@ -71,8 +79,14 @@ _check_prereqs()
 import pyspark
 from pyspark.sql import SparkSession, functions as F
 
-_REAL_TESTS_DIR  = "/home/user/workspace/kit/starter/tests"
-_REAL_NB_DIR     = "/home/user/workspace/kit/starter/notebooks"
+# Resolve the repo's own dirs RELATIVE TO THIS FILE. These were previously
+# hardcoded to /home/user/workspace/kit/... -- absolute paths from the original
+# authoring sandbox that exist on no other machine, so the sys.path insert
+# silently did nothing and `import gateway_bronze_lib` only worked by accident
+# when the caller happened to set PYTHONPATH.
+_HERE            = os.path.dirname(os.path.abspath(__file__))
+_REAL_TESTS_DIR  = _HERE
+_REAL_NB_DIR     = os.path.join(os.path.dirname(_HERE), "notebooks")
 for d in [_REAL_NB_DIR, _REAL_TESTS_DIR]:
     if d not in sys.path and os.path.isdir(d):
         sys.path.insert(0, d)
@@ -138,10 +152,28 @@ from gateway_bronze_lib import (
     QUERY_EXECUTION_RENAME,
 )
 
+# Prefer the REAL shipped cast_query_execution; fall back to the compat shim ONLY
+# on the Python version that actually needs it (3.14+ cannot cloudpickle the
+# lambda inside F.filter within an 8 MB stack). This previously used the shim
+# unconditionally, which meant the flagship match-rate proof validated a
+# *reimplementation* rather than the code that ships -- a bug in the real
+# cast_query_execution would have passed this suite. On CI (Python 3.12) and any
+# 3.11 local harness, the real function is now exercised.
+if sys.version_info >= (3, 14):
+    _cast_qe = _cast_query_execution_compat
+    _CAST_IMPL = "compat shim (Python >=3.14 cloudpickle limitation)"
+else:
+    _cast_qe = _gbl.cast_query_execution
+    _CAST_IMPL = "REAL gateway_bronze_lib.cast_query_execution"
+
 # ---------------------------------------------------------------------------
 # Paths
 # ---------------------------------------------------------------------------
-SIM_OUT   = "/dev/shm/sim_out"
+# The sim fixtures are COMMITTED at starter/tests/sim_out/ -- this previously
+# pointed at /dev/shm/sim_out, so the script looked for them somewhere they have
+# never been checked in, and would regenerate or fail rather than validating
+# against the committed, deterministic fixtures.
+SIM_OUT   = os.environ.get("GATEWAYMON_SIM_OUT") or os.path.join(_HERE, "sim_out")
 QS_CSV    = os.path.join(SIM_OUT, "QueryStartReport_sim.csv")
 QE_CSV    = os.path.join(SIM_OUT, "QueryExecutionReport_sim.csv")
 WS_CSV    = os.path.join(SIM_OUT, "PowerBIDatasetsWorkspace_sim.csv")
@@ -173,7 +205,13 @@ def _assert(cond, msg):
 
 
 def _make_spark():
+    # PYSPARK_PYTHON must point at THIS interpreter: bare `python` on PATH can
+    # resolve to a different (e.g. system 3.14) interpreter for the executor-side
+    # worker, which crashes pyspark 3.5 workers with a socket reset. Set
+    # PYSPARK_DRIVER_PYTHON too -- setting only the former still lets the driver
+    # diverge from the workers.
     os.environ.setdefault("PYSPARK_PYTHON", sys.executable)
+    os.environ.setdefault("PYSPARK_DRIVER_PYTHON", sys.executable)
     return (
         SparkSession.builder
         .appName("validate_pipeline_sim [Simulated]")
@@ -181,11 +219,11 @@ def _make_spark():
         .config("spark.sql.shuffle.partitions", "4")
         .config("spark.ui.enabled", "false")
         .config("spark.driver.memory", "1g")
-        .config("spark.local.dir", "/dev/shm/spark_local")
+        .config("spark.local.dir", _SPARK_LOCAL)
         .config("spark.driver.extraJavaOptions",
-                "-Djava.io.tmpdir=/dev/shm/spark_tmp")
+                f"-Djava.io.tmpdir={_SPARK_TMP}")
         .config("spark.executor.extraJavaOptions",
-                "-Djava.io.tmpdir=/dev/shm/spark_tmp")
+                f"-Djava.io.tmpdir={_SPARK_TMP}")
         .getOrCreate()
     )
 
@@ -240,7 +278,7 @@ def validate_bronze(spark):
     notes = []
     try:
         qe_raw   = read_gateway_csv(spark, QE_CSV, rename_map=QUERY_EXECUTION_RENAME)
-        qe_df    = _cast_query_execution_compat(qe_raw)
+        qe_df    = _cast_qe(qe_raw)
         qe_count = qe_df.count()
         notes.append(f"QueryExecution rows: {qe_count}")
         _assert(qe_count > 0, "QueryExecution bronze empty")
@@ -669,7 +707,7 @@ def main():
     print("validate_pipeline_sim.py  [Simulated -- not tenant-verified]")
     print(f"PySpark {pyspark.__version__}  |  Python {sys.version.split()[0]}")
     print(f"sim_out: {SIM_OUT}")
-    print("Note: cast_query_execution patched (array_compact) for Python 3.14 compat.")
+    print(f"cast_query_execution: {_CAST_IMPL}")
     print("=" * 68)
 
     _ensure_sim_data()
