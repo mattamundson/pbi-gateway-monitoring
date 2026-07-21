@@ -1,0 +1,183 @@
+{
+  "_comment": "Single source of truth for medallion table shapes. Consumed by starter/tests/validate_alert_rules.py (T14) to prove every Activator rule references columns that actually exist, and by starter/tests/test_contract_matches_reality.py to prove this file matches what the transforms actually emit. Derived by reading the transforms directly, not from documentation.",
+  "_provenance": {
+    "gold_gateway_health": "03_gold_aggregate.py:build_gold_gateway_health",
+    "gold_query_performance": "03_gold_aggregate.py:build_gold_query_performance",
+    "gold_cluster_load": "03_gold_aggregate.py:build_gold_cluster_load",
+    "gold_dim_gateway": "03_gold_aggregate.py:build_gold_dim_gateway",
+    "gold_mashup_health": "gateway_bronze_lib.py:gold_mashup_health",
+    "bronze_disk_spool": "01_bronze_ingest.py:ingest_disk_spool",
+    "bronze_gateway_datasources": "01_bronze_ingest.py:ingest_gateway_datasources"
+  },
+  "_materialization_note": "A table listed with \"materialized\": false is referenced by a rule or query but is NOT produced by any scheduled job in this repo. A rule pointing at one can never fire. See roadmap T42.",
+  "tables": {
+    "gold_gateway_health": {
+      "materialized": true,
+      "grain": "one row per GatewayObjectId (latest 5-min window)",
+      "columns": {
+        "GatewayObjectId": "string",
+        "last_heartbeat_utc": "timestamp",
+        "GatewayClusterName": "string",
+        "GatewayNodeName": "string",
+        "status_current": {
+          "type": "string",
+          "vocabulary": ["Live", "Offline"],
+          "note": "Node member status from Get-GatewayInventory.ps1:164. NOT the same vocabulary as datasource Status."
+        },
+        "Version": "string",
+        "heartbeat_age_minutes": "double",
+        "query_count_5min": "long",
+        "error_count_5min": "long",
+        "duration_avg_ms": "double",
+        "duration_p95_ms": "double",
+        "error_rate_pct": {
+          "type": "double",
+          "scale": "percent-0-100",
+          "note": "PERCENT, not fraction. A rule written against a 0-1 fraction fires on virtually every window."
+        },
+        "cpu_pct_avg": "double",
+        "mem_kb_avg": "double",
+        "system_cpu_avg": "double",
+        "last_counter_utc": "timestamp",
+        "spool_free_pct": "double",
+        "spool_dir_size_bytes": "long",
+        "spool_alert_level": "string",
+        "spool_stream_mode_warn": "boolean",
+        "nic_bytes_per_sec_avg": "double",
+        "latency_ms_avg": "double",
+        "latency_ms_p95": "double",
+        "network_utilization_pct_avg": "double",
+        "_computed_at_utc": "timestamp",
+        "_partition_date": "date"
+      }
+    },
+    "gold_query_performance": {
+      "materialized": true,
+      "grain": "GatewayObjectId x DataSource x QueryType x hour",
+      "columns": {
+        "GatewayObjectId": "string",
+        "DataSource": "string",
+        "QueryType": "string",
+        "hour_utc": "timestamp",
+        "query_count": "long",
+        "error_count": "long",
+        "error_rate_pct": {"type": "double", "scale": "percent-0-100"},
+        "duration_avg_ms": "double",
+        "duration_p95_ms": "double",
+        "duration_max_ms": "double",
+        "spool_total_bytes_sum": "long",
+        "spool_writing_ms_avg": "double",
+        "data_reading_ms_avg": "double",
+        "disk_read_bps_avg": "double",
+        "disk_write_bps_avg": "double",
+        "spooled_pct": {"type": "double", "scale": "percent-0-100"},
+        "_partition_date": "date"
+      }
+    },
+    "gold_cluster_load": {
+      "materialized": true,
+      "grain": "GatewayClusterId x hour",
+      "columns": {
+        "GatewayClusterId": "string",
+        "GatewayClusterName": "string",
+        "hour_utc": "timestamp",
+        "node_count": "long",
+        "node_query_mean": "double",
+        "node_query_stddev": "double",
+        "max_node_queries": "long",
+        "total_cluster_queries": "long",
+        "queries_per_node_cv": "double",
+        "load_skew_classification": {
+          "type": "string",
+          "vocabulary": ["SINGLE_NODE_OR_NO_DATA", "SEVERELY_SKEWED", "MODERATELY_SKEWED", "SLIGHTLY_SKEWED", "BALANCED"]
+        },
+        "hottest_node_id": "string",
+        "hottest_node_queries": "long",
+        "hottest_node_query_pct": "double",
+        "_partition_date": "date"
+      }
+    },
+    "gold_dim_gateway": {
+      "materialized": true,
+      "grain": "GatewayObjectId x version-validity-interval (SCD2)",
+      "columns": {
+        "GatewayObjectId": "string",
+        "GatewayClusterId": "string",
+        "GatewayClusterName": "string",
+        "GatewayNodeName": "string",
+        "Version": "string",
+        "Status": {"type": "string", "vocabulary": ["Live", "Offline"]},
+        "DatasourceCount": "long",
+        "valid_from": "timestamp",
+        "valid_to": "timestamp",
+        "is_current": "boolean",
+        "_partition_date": "date"
+      }
+    },
+    "gold_mashup_health": {
+      "materialized": true,
+      "grain": "GatewayObjectId x HostName",
+      "columns": {
+        "GatewayObjectId": "string",
+        "HostName": "string",
+        "peak_working_set_mb": "double",
+        "avg_working_set_mb": "double",
+        "peak_cpu_pct": "double",
+        "distinct_processes": "long",
+        "mashup_samples": "long",
+        "runaway_container": "boolean"
+      }
+    },
+    "bronze_disk_spool": {
+      "materialized": true,
+      "grain": "GatewayHostName x collection",
+      "columns": {
+        "CollectedAtUTC": "timestamp",
+        "GatewayHostName": "string",
+        "SpoolDriveLetter": "string",
+        "FreeSpaceBytes": "long",
+        "TotalSpaceBytes": "long",
+        "FreeSpacePct": {"type": "double", "scale": "percent-0-100"},
+        "SpoolDirSizeBytes": "long",
+        "AlertLevel": "string",
+        "AlertMessage": "string",
+        "StreamBeforeRequestCompletes_Warning": "boolean",
+        "_partition_date": "date"
+      }
+    },
+    "bronze_gateway_datasources": {
+      "materialized": true,
+      "grain": "DatasourceId x collection",
+      "columns": {
+        "CollectedAtUTC": "timestamp",
+        "GatewayClusterId": "string",
+        "GatewayClusterName": "string",
+        "DatasourceId": "string",
+        "DatasourceName": "string",
+        "DatasourceType": "string",
+        "ConnectionDetails": "string",
+        "Status": {
+          "type": "string",
+          "vocabulary": ["Live", "Unknown", "Error"],
+          "note": "Datasource status from Get-GatewayInventory.ps1:199-200. 'Online' is NOT a member of this vocabulary."
+        },
+        "LastUpdated": "string",
+        "_partition_date": "date"
+      }
+    },
+    "gold_predictions": {
+      "materialized": false,
+      "blocked_by": "roadmap T42 - 02_anomaly_forecast.kql is a reference query, never scheduled. No job writes this table.",
+      "grain": "GatewayObjectId x metric x forecast horizon",
+      "columns": {
+        "GatewayObjectId": "string",
+        "GatewayHostName": "string",
+        "metric": "string",
+        "anomaly_score": "double",
+        "min_forecast_free_gb": "double",
+        "forecast_horizon_minutes": "long",
+        "_computed_at_utc": "timestamp"
+      }
+    }
+  }
+}
