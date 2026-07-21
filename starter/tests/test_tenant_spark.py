@@ -37,8 +37,48 @@ def main():
         print(f"[SKIP] PySpark unavailable: {e}")
         return 0
 
+    # Build the (possibly Delta-enabled) session FIRST, before importing the
+    # tenant notebooks below -- both 00_tenant_extract.py and
+    # 01a_tenant_silver_gold.py call `SparkSession.builder.getOrCreate()` at
+    # module-import time. getOrCreate() reuses an already-active SparkContext
+    # and silently ignores new static configs on it ("Using an existing Spark
+    # session; only runtime SQL configurations will take effect."), so static
+    # config like spark.sql.extensions / spark.sql.catalog.* MUST be set on the
+    # first session created in this process, not a later one. Building ours
+    # first means the notebooks' own getOrCreate() calls reuse a session that
+    # already has the Delta catalog wired up correctly.
+    _have_delta = False
+    try:
+        builder = (SparkSession.builder.master("local[2]").appName("tenant-test")
+                   .config("spark.sql.shuffle.partitions", "2")
+                   .config("spark.ui.enabled", "false"))
+        # Delta if the JAR actually resolves; plain parquet otherwise (the write
+        # path is what matters). configure_spark_with_delta_pip() is REQUIRED to
+        # fetch the delta-spark JAR via spark.jars.packages -- just setting the
+        # extension/catalog config strings without it leaves spark_catalog
+        # pointing at a class that was never downloaded, which fails at the
+        # first Delta read/write (not at session creation) with
+        # ClassNotFoundException: org.apache.spark.sql.delta.catalog.DeltaCatalog.
+        try:
+            from delta import configure_spark_with_delta_pip
+            delta_builder = (
+                builder
+                .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension")
+                .config("spark.sql.catalog.spark_catalog",
+                        "org.apache.spark.sql.delta.catalog.DeltaCatalog")
+            )
+            spark = configure_spark_with_delta_pip(delta_builder).getOrCreate()
+            _have_delta = True
+        except Exception:  # noqa: BLE001
+            spark = builder.getOrCreate()
+    except Exception as e:  # noqa: BLE001
+        print(f"[SKIP] Spark session could not start: {e}")
+        return 0
+    spark.sparkContext.setLogLevel("ERROR")
+
     # Load the tenant transform module (pure-Python fns are Spark-independent, but
     # we feed their output into real Spark to prove the Delta write + dtypes).
+    # Import AFTER the session above so their own getOrCreate() reuses it.
     spec = importlib.util.spec_from_file_location(
         "tsg", os.path.join(HERE, "..", "notebooks", "01a_tenant_silver_gold.py"))
     tsg = importlib.util.module_from_spec(spec)
@@ -47,25 +87,6 @@ def main():
         "ext", os.path.join(HERE, "..", "notebooks", "00_tenant_extract.py"))
     ext = importlib.util.module_from_spec(spec2)
     spec2.loader.exec_module(ext)
-
-    try:
-        builder = (SparkSession.builder.master("local[2]").appName("tenant-test")
-                   .config("spark.sql.shuffle.partitions", "2")
-                   .config("spark.ui.enabled", "false"))
-        # Delta if available; plain parquet otherwise (the write path is what matters).
-        try:
-            from delta import configure_spark_with_delta_pip  # noqa: F401
-            builder = (builder
-                       .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension")
-                       .config("spark.sql.catalog.spark_catalog",
-                               "org.apache.spark.sql.delta.catalog.DeltaCatalog"))
-        except Exception:  # noqa: BLE001
-            pass
-        spark = builder.getOrCreate()
-    except Exception as e:  # noqa: BLE001
-        print(f"[SKIP] Spark session could not start: {e}")
-        return 0
-    spark.sparkContext.setLogLevel("ERROR")
     tmp = tempfile.mkdtemp(prefix="tenant_spark_")
 
     # 1) Tenant transforms -> real Spark DataFrame -> Delta/Parquet write
@@ -79,8 +100,7 @@ def main():
     check("refreshables duration_seconds numeric", any(
         c[0] == "duration_seconds" and c[1] in ("double", "bigint", "long")
         for c in ref_df.dtypes))
-    fmt = "delta" if any("delta" in str(v).lower()
-                         for v in spark.sparkContext.getConf().getAll()) else "parquet"
+    fmt = "delta" if _have_delta else "parquet"
     inv_df.write.format(fmt).mode("overwrite").save(os.path.join(tmp, "gold_inventory"))
     check("gold write + read round-trips",
           spark.read.format(fmt).load(os.path.join(tmp, "gold_inventory")).count() == 4)

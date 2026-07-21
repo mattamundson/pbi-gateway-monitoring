@@ -111,10 +111,21 @@ import binascii
 from datetime import datetime, timezone
 
 spark = SparkSession.builder.getOrCreate()
-spark.conf.set("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension")
-spark.conf.set(
-    "spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog"
-)
+try:
+    spark.conf.set("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension")
+    spark.conf.set(
+        "spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog"
+    )
+except Exception:
+    # Static configs can only be set before the SparkContext starts, but
+    # getOrCreate() above may have just returned an ALREADY-ACTIVE session (e.g.
+    # this notebook imported alongside other Spark-touching modules in the same
+    # process, as in test_tenant_spark.py) -- Spark rejects re-setting a static
+    # config post-start even to the same value. If the caller's session already
+    # has Delta wired up (via configure_spark_with_delta_pip or equivalent),
+    # this is a harmless no-op; if it genuinely lacks Delta support, downstream
+    # Delta reads/writes will fail there with a clear error instead.
+    pass
 
 # ── Shared bronze lib: single source of truth for the schema-adaptive,
 #    column-name-sanitizing gateway CSV reader (the tested, real-Spark-proven
