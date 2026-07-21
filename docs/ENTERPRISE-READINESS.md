@@ -44,25 +44,29 @@ table stakes.
 
 ## Tier 0 — Blocks adoption at intake (cheap, high-consequence)
 
-### 1. The licensing contradiction — **fix before anyone external sees this repo**
-`LICENSE` reads *"PROPRIETARY AND CONFIDENTIAL … No license, express or implied, is granted to any
-party to use, copy, modify, merge, publish, distribute…"*. Meanwhile `README.md` advertises a
-**"fork-ready open-source accelerator,"** the repo ships `CONTRIBUTING.md` and a pilot-report issue
-template, and `NOTICE` positions the work as built on two **MIT-licensed** community projects.
+### 1. ~~The licensing contradiction~~ — ✅ **RESOLVED 2026-07-21**
+`LICENSE` previously read *"PROPRIETARY AND CONFIDENTIAL … No license, express or implied, is
+granted to any party to use, copy, modify, merge, publish, distribute…"* while `README.md`
+advertised a **"fork-ready open-source accelerator,"** the repo shipped `CONTRIBUTING.md` and a
+pilot-report issue template, and `NOTICE` positioned the work as built on two **MIT-licensed**
+community projects. An enterprise OSS-review board rejects that combination automatically — the
+stated intent (fork it, contribute back) was legally impossible under the actual license.
 
-An enterprise OSS-review board rejects this combination automatically: the stated intent (fork it,
-contribute back) is legally impossible under the actual license. It also creates a real question
-about the MIT-derived design influence recorded in `NOTICE`.
+**Resolved in favour of the open-accelerator path:**
+- `LICENSE` → **Apache License 2.0**. Chosen over MIT deliberately: Apache-2.0 carries an **express
+  patent grant** (§3) and a **trademark clause** (§6), which is specifically what enterprise
+  open-source review boards look for. MIT has neither.
+- `NOTICE` → now Apache-§4(d)-conformant (product name + copyright + license pointer, then the
+  third-party attributions), so it correctly travels with redistributions.
+- `README.md` License section → rewritten to state the actual grant and obligations, and to point
+  adopters at this document before enterprise deployment.
+- `CONTRIBUTING.md` → adds an explicit contribution-licensing section (Apache-2.0 §5 inbound=outbound,
+  no separate CLA) and instructions for attributing adapted third-party code.
 
-**Decision required — it is one of two, and they are very different businesses:**
-
-| Path | License | What it enables | What it forecloses |
-|---|---|---|---|
-| **Open accelerator** | Apache-2.0 (preferred over MIT here — includes an express patent grant + trademark clause, which enterprise legal teams specifically look for) | Forks, community pilot reports that fill the `[Unverified]` matrix, F500 adoption without a contract | Selling licenses; the code is public |
-| **Commercial product** | Keep proprietary, but **fix the README** to stop advertising fork-readiness, remove/rewrite `CONTRIBUTING.md`, and move to a dual-license or eval-agreement model | Paid pilots, support contracts, per-tenant licensing | Community validation — the `[Unverified]` items stay unverified until *you* run every pilot yourself |
-
-There is no third option where both are true. **Until this is resolved, "template any F500 can use"
-is not achievable regardless of code quality.**
+**Why this was the right call for the stated goal:** community pilot reports are the only realistic
+mechanism for converting the `[Unverified]` matrix into verified status — no single operator has
+access to every gateway version, tenant shape, and Fabric SKU. A proprietary license forecloses
+exactly that.
 
 ### 2. Privacy posture on the flagship feature — the DPIA conversation
 The tool's headline capability joins gateway queries to **real user UPNs** (`ExecutingUser`) and
