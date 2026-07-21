@@ -144,6 +144,25 @@
       "_fixed": "Condition carried an inline '// MB; tune per host RAM' comment. No expression surface accepts inline comments, so the condition was unparseable as written; the prose also tokenized into phantom column references. Moved to a threshold_note field."
     },
     {
+      "name": "schema-drift",
+      "tier": 1,
+      "pain": "#4 gateway upgrades silently change log columns",
+      "source_object": "bronze_schema_warnings (written by 01_bronze_ingest.py)",
+      "source_table": "bronze_schema_warnings",
+      "condition": "severity != 'added'",
+      "grouping": "per log_type",
+      "transition": "fires on any new row -- rows are written ONLY when drift is detected, so every row is actionable by construction",
+      "background": "A gateway version upgrade can rename or drop a column in the CSV logs. The schema-adaptive parser absorbs the change without failing, which is correct for availability but means the change is otherwise INVISIBLE -- downstream silver transforms and DAX measures reference columns by name and start returning nulls with no error. This is pain point #4, and until roadmap T7 the signal was print()ed to notebook stdout and discarded.",
+      "remediation": "Compare missing_columns against the current gateway version's documented schema (https://learn.microsoft.com/en-us/data-integration/gateway/service-gateway-performance). If a column was renamed, add the mapping to the parser's column contract. If dropped, audit which silver transforms and DAX measures reference it -- they are now silently producing nulls.",
+      "action": {
+        "type": "notify",
+        "channels": ["Teams"],
+        "message": "Gateway log schema drift in {log_type} (severity {severity}): missing [{missing_columns}], added [{added_columns}]. Expected {expected_column_count} columns, saw {actual_column_count}. Downstream transforms referencing the missing columns are now returning nulls."
+      },
+      "autonomous": true,
+      "_note": "Condition excludes severity='added' because a purely additive change is forward-compatible -- mergeSchema absorbs it and nothing downstream breaks. Additive drift is still recorded in the table for audit, just not paged on."
+    },
+    {
       "name": "network-saturation",
       "tier": 2,
       "pain": "#7 network saturation blind spot (differentiator #4)",

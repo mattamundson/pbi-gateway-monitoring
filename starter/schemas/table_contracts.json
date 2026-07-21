@@ -165,6 +165,26 @@
         "_partition_date": "date"
       }
     },
+    "bronze_schema_warnings": {
+      "materialized": true,
+      "grain": "one row per ingest run per log_type that drifted",
+      "note": "Pain point #4 signal -- a gateway upgrade silently renaming or dropping a log column. Written by 01_bronze_ingest.py:_emit_schema_warnings. Rows appear ONLY when drift is detected, so any row is actionable.",
+      "columns": {
+        "run_id": "string",
+        "detected_at_utc": "timestamp",
+        "log_type": "string",
+        "severity": {
+          "type": "string",
+          "vocabulary": ["added", "missing", "both"],
+          "note": "'none' is never persisted -- a clean schema writes no row. 'missing'/'both' are breaking; 'added' is forward-compatible."
+        },
+        "missing_columns": "string",
+        "added_columns": "string",
+        "expected_column_count": "long",
+        "actual_column_count": "long",
+        "_partition_date": "date"
+      }
+    },
     "gold_predictions": {
       "materialized": false,
       "blocked_by": "roadmap T42 - 02_anomaly_forecast.kql is a reference query, never scheduled. No job writes this table.",

@@ -40,6 +40,14 @@ jobs:
       - name: Run Tier 1 cast-quarantine + capacity-bridge test (U14 + M6)
         run: python starter/tests/test_cast_and_bridge.py
 
+      # Roadmap T7 + T8 — the two defects where the pipeline failed SILENTLY:
+      # read_bronze/read_silver classified every failure as "table missing" and
+      # returned None (so a permissions error or corrupt Delta log silently
+      # dropped a whole data source), and schema drift was print()ed to stdout
+      # and discarded despite the docstring claiming it was persisted.
+      - name: Run Tier 1 medallion integrity tests (T7 drift + T8 read classify)
+        run: python starter/tests/test_medallion_integrity.py
+
       # Roadmap T14 — proves every Activator rule references columns that
       # actually exist on a table something actually writes. Before this ran,
       # 4 of 7 rules could never fire (credential-drift tested a column that

@@ -43,13 +43,21 @@ SILVER_PATH    = f"{LAKEHOUSE_PATH}/Tables"
 GOLD_PATH      = f"{LAKEHOUSE_PATH}/Tables"
 
 
+# Roadmap T8. Hard import -- see the matching note in 02_silver_correlate.py.
+from gateway_bronze_lib import read_table_strict, TableReadError  # noqa: E402
+
+
 def read_silver(table_name: str):
-    path = f"{SILVER_PATH}/{table_name}"
-    try:
-        return spark.read.format(_TABLE_FORMAT).load(path)
-    except Exception as e:
-        print(f"[WARN] Could not read {table_name}: {e}")
-        return None
+    """Read a silver (or bronze passthrough) table.
+
+    Returns None ONLY if the table does not exist yet. Raises TableReadError on
+    permissions / credential / corruption failures, which previously returned
+    None and caused this data source to vanish from the gold layer with only a
+    [WARN] on stdout.
+    """
+    return read_table_strict(
+        spark, f"{SILVER_PATH}/{table_name}", table_name, _TABLE_FORMAT
+    )
 
 
 def write_gold(df, table_name: str, partition_cols=None, mode="overwrite"):
@@ -317,6 +325,126 @@ def build_gold_cluster_load():
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# SCD Type 2 engine — roadmap T5
+#
+# The previous implementation was labelled SCD2 and behaved as SCD1: it
+# overwrote the table with the latest snapshot on every run, so every gateway
+# version change, status change, and cluster re-membership in the fleet's
+# history was silently destroyed. The "fleet history" the report claims to show
+# never existed beyond the most recent run.
+#
+# WHY A FULL RECOMPUTE, NOT DeltaTable.merge()
+# --------------------------------------------
+# The canonical Delta SCD2 pattern uses a two-branch MERGE with a null-mergeKey
+# union to close-and-insert in one pass. It is the right call for a large
+# dimension. This one is tens-to-hundreds of gateway nodes -- the entire table
+# fits comfortably in memory -- so a full recompute is semantically identical,
+# far easier to reason about, and (critically) exercises the SAME code path
+# under the parquet-backed local test harness as under Delta in Fabric. A MERGE
+# implementation would be untestable without a Delta JAR, which is exactly how
+# the original STUB survived unnoticed.
+#
+# Revisit if the dimension ever exceeds ~1e6 rows.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Attributes whose change opens a new version. Deliberately excludes
+# valid_from/valid_to/is_current (SCD bookkeeping) and _partition_date.
+SCD2_TRACKED_COLS = [
+    "GatewayClusterId",
+    "GatewayClusterName",
+    "GatewayNodeName",
+    "Version",
+    "Status",
+    "DatasourceCount",
+]
+SCD2_KEY = "GatewayObjectId"
+
+
+def scd2_apply(existing, incoming):
+    """Apply SCD Type 2 semantics and return the FULL new dimension content.
+
+    ``existing`` may be None (first run). ``incoming`` is the latest snapshot,
+    one row per key, already shaped with valid_from / valid_to / is_current.
+
+    Guarantees, each asserted by test_medallion_spark.py:
+      * exactly one is_current=True row per key
+      * a tracked-attribute change closes the prior row (valid_to set to the new
+        row's valid_from) and opens a new one -- history is never destroyed
+      * an unchanged key keeps its ORIGINAL valid_from (the version did not
+        restart just because we looked again)
+      * a key that stops reporting keeps its current row open; disappearing from
+        an inventory snapshot is not evidence the node was decommissioned, and
+        gateway-offline alerting already covers the liveness case
+    """
+    if existing is None:
+        return incoming
+
+    # Rows already closed are immutable history -- never touched again.
+    historical = existing.filter(F.col("is_current") == False)  # noqa: E712
+    open_rows = existing.filter(F.col("is_current") == True)  # noqa: E712
+
+    changed_expr = None
+    for c in SCD2_TRACKED_COLS:
+        # Null-safe inequality: <=> is null-safe equality, so NOT(a <=> b) is a
+        # correct "differs, treating null as a value" test. A plain != returns
+        # null when either side is null and the row would be silently skipped.
+        cmp = ~F.col(f"cur.{c}").eqNullSafe(F.col(f"new.{c}"))
+        changed_expr = cmp if changed_expr is None else (changed_expr | cmp)
+
+    joined = open_rows.alias("cur").join(
+        incoming.alias("new"), on=SCD2_KEY, how="full_outer"
+    )
+
+    # After a full_outer join on a shared key column the key is coalesced, so
+    # side presence must be detected via a non-key column that is guaranteed
+    # non-null on each side. valid_from is never null in either frame.
+    present_cur = F.col("cur.valid_from").isNotNull()
+    present_new = F.col("new.valid_from").isNotNull()
+
+    _cols = [SCD2_KEY] + SCD2_TRACKED_COLS + ["valid_from", "valid_to", "is_current"]
+
+    def _pick(side, **overrides):
+        out = []
+        for c in _cols:
+            if c in overrides:
+                out.append(overrides[c].alias(c))
+            elif c == SCD2_KEY:
+                out.append(F.col(SCD2_KEY))
+            else:
+                out.append(F.col(f"{side}.{c}").alias(c))
+        return out
+
+    # 1. Unchanged, still reporting -> keep the existing open row untouched.
+    unchanged = joined.filter(
+        present_cur & present_new & ~changed_expr
+    ).select(*_pick("cur"))
+
+    # 2. Changed -> close the old row, open a new one.
+    closed = joined.filter(present_cur & present_new & changed_expr).select(
+        *_pick(
+            "cur",
+            valid_to=F.col("new.valid_from"),
+            is_current=F.lit(False).cast(BooleanType()),
+        )
+    )
+    reopened = joined.filter(present_cur & present_new & changed_expr).select(
+        *_pick("new")
+    )
+
+    # 3. Brand-new key -> open its first version.
+    brand_new = joined.filter(~present_cur & present_new).select(*_pick("new"))
+
+    # 4. Stopped reporting -> leave the open row open (see docstring).
+    dormant = joined.filter(present_cur & ~present_new).select(*_pick("cur"))
+
+    return historical.select(*_cols).unionByName(
+        unchanged
+    ).unionByName(closed).unionByName(reopened).unionByName(
+        brand_new
+    ).unionByName(dormant)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # GOLD 4: gold_dim_gateway — Slowly Changing Dimension (SCD Type 2)
 #
 # Tracks gateway node properties over time to detect version changes,
@@ -335,17 +463,19 @@ def build_gold_dim_gateway():
     current_state = inv_df.withColumn("_rn", F.row_number().over(latest_window)) \
                           .filter(F.col("_rn") == 1).drop("_rn")
 
-    dim = current_state.select(
+    incoming = current_state.select(
         "GatewayObjectId", "GatewayClusterId", "GatewayClusterName",
         "GatewayNodeName", "Version", "Status", "DatasourceCount",
         F.col("CollectedAtUTC").alias("valid_from"),
         F.lit(None).cast(TimestampType()).alias("valid_to"),
         F.lit(True).cast(BooleanType()).alias("is_current"),
-    ).withColumn("_partition_date", F.to_date(F.col("valid_from")))
+    )
 
-    # [STUB] Full SCD2 merge requires DeltaTable.merge() to handle
-    # version changes correctly. Simplified here to overwrite current.
-    # In Phase 5: implement proper SCD2 merge on GatewayObjectId + Version.
+    existing = read_silver("gold_dim_gateway")
+    dim = scd2_apply(existing, incoming).withColumn(
+        "_partition_date", F.to_date(F.col("valid_from"))
+    )
+
     write_gold(dim, "gold_dim_gateway", partition_cols=["_partition_date"])
 
 

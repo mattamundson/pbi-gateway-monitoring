@@ -35,7 +35,7 @@ rules against Delta tables.
 
 ---
 
-**8 rules defined: 6 live, 2 disabled pending an unmet dependency.**
+**9 rules defined: 7 live, 2 disabled pending an unmet dependency.**
 
 | # | Rule | Pain | Source table | Status |
 |---|---|---|---|---|
@@ -46,7 +46,8 @@ rules against Delta tables.
 | 5 | `error-rate-spike` | #2 unified failure triage | `gold_gateway_health` | live |
 | 6 | `cpu-anomaly` | #5 mashup CPU/memory bloat | `gold_predictions` | **disabled** |
 | 7 | `mashup-container-runaway` | #5 mashup memory/CPU bloat, per-process visibility | `gold_mashup_health` | live |
-| 8 | `network-saturation` | #7 network saturation blind spot (differentiator #4) | `gold_gateway_health` | live |
+| 8 | `schema-drift` | #4 gateway upgrades silently change log columns | `bronze_schema_warnings` | live |
+| 9 | `network-saturation` | #7 network saturation blind spot (differentiator #4) | `gold_gateway_health` | live |
 
 ## Rule 1: `gateway-offline`
 
@@ -247,7 +248,32 @@ Condition carried an inline '// MB; tune per host RAM' comment. No expression su
 
 ---
 
-## Rule 8: `network-saturation`
+## Rule 8: `schema-drift`
+
+**Pain point:** #4 gateway upgrades silently change log columns  
+**Tier:** 1  
+**Source table:** `bronze_schema_warnings`  
+**Grouping:** per log_type
+
+A gateway version upgrade can rename or drop a column in the CSV logs. The schema-adaptive parser absorbs the change without failing, which is correct for availability but means the change is otherwise INVISIBLE -- downstream silver transforms and DAX measures reference columns by name and start returning nulls with no error. This is pain point #4, and until roadmap T7 the signal was print()ed to notebook stdout and discarded.
+
+```
+WHEN severity != 'added'
+
+Transition: fires on any new row -- rows are written ONLY when drift is detected, so every row is actionable by construction
+```
+
+**Action:** `notify` -> Teams
+
+> Gateway log schema drift in {log_type} (severity {severity}): missing [{missing_columns}], added [{added_columns}]. Expected {expected_column_count} columns, saw {actual_column_count}. Downstream transforms referencing the missing columns are now returning nulls.
+
+**Remediation.** Compare missing_columns against the current gateway version's documented schema (https://learn.microsoft.com/en-us/data-integration/gateway/service-gateway-performance). If a column was renamed, add the mapping to the parser's column contract. If dropped, audit which silver transforms and DAX measures reference it -- they are now silently producing nulls.
+
+*Note: Condition excludes severity='added' because a purely additive change is forward-compatible -- mergeSchema absorbs it and nothing downstream breaks. Additive drift is still recorded in the table for audit, just not paged on.*
+
+---
+
+## Rule 9: `network-saturation`
 
 **Pain point:** #7 network saturation blind spot (differentiator #4)  
 **Tier:** 2  
