@@ -48,20 +48,30 @@ def main():
     ext = importlib.util.module_from_spec(spec2)
     spec2.loader.exec_module(ext)
 
+    _have_delta = False
     try:
         builder = (SparkSession.builder.master("local[2]").appName("tenant-test")
                    .config("spark.sql.shuffle.partitions", "2")
                    .config("spark.ui.enabled", "false"))
-        # Delta if available; plain parquet otherwise (the write path is what matters).
+        # Delta if the JAR actually resolves; plain parquet otherwise (the write
+        # path is what matters). configure_spark_with_delta_pip() is REQUIRED to
+        # fetch the delta-spark JAR via spark.jars.packages -- just setting the
+        # extension/catalog config strings without it leaves spark_catalog
+        # pointing at a class that was never downloaded, which fails at the
+        # first Delta read/write (not at session creation) with
+        # ClassNotFoundException: org.apache.spark.sql.delta.catalog.DeltaCatalog.
         try:
-            from delta import configure_spark_with_delta_pip  # noqa: F401
-            builder = (builder
-                       .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension")
-                       .config("spark.sql.catalog.spark_catalog",
-                               "org.apache.spark.sql.delta.catalog.DeltaCatalog"))
+            from delta import configure_spark_with_delta_pip
+            delta_builder = (
+                builder
+                .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension")
+                .config("spark.sql.catalog.spark_catalog",
+                        "org.apache.spark.sql.delta.catalog.DeltaCatalog")
+            )
+            spark = configure_spark_with_delta_pip(delta_builder).getOrCreate()
+            _have_delta = True
         except Exception:  # noqa: BLE001
-            pass
-        spark = builder.getOrCreate()
+            spark = builder.getOrCreate()
     except Exception as e:  # noqa: BLE001
         print(f"[SKIP] Spark session could not start: {e}")
         return 0
@@ -79,8 +89,7 @@ def main():
     check("refreshables duration_seconds numeric", any(
         c[0] == "duration_seconds" and c[1] in ("double", "bigint", "long")
         for c in ref_df.dtypes))
-    fmt = "delta" if any("delta" in str(v).lower()
-                         for v in spark.sparkContext.getConf().getAll()) else "parquet"
+    fmt = "delta" if _have_delta else "parquet"
     inv_df.write.format(fmt).mode("overwrite").save(os.path.join(tmp, "gold_inventory"))
     check("gold write + read round-trips",
           spark.read.format(fmt).load(os.path.join(tmp, "gold_inventory")).count() == 4)
