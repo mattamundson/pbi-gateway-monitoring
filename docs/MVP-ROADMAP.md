@@ -30,11 +30,25 @@ An MVP exists when **all** of the following are true:
 ---
 
 ## M1 — Live-tenant validation (CRITICAL PATH) 🟠→🟢
-- [ ] Provision F2 pay-as-you-go capacity; run `docs/RUNBOOK-F2-pilot.md` end-to-end, pause after.
+- [x] **F2 capacity + SPN already provisioned once** (2026-07-06, recorded in a since-orphaned
+      branch, reconciled into `docs/PHASE1-TENANT-ENABLEMENT.md`): capacity `gwmoncap01` (F2,
+      centralus) assigned to workspace `Gateway-Pilot`; Workspace Monitoring/Eventhouse enabled
+      on it (cleared the trial-capacity block); SPN `gwmon-admin-reader` registered with
+      `Tenant.Read.All` + admin consent + security group `gwmon-admin-api-sps`; secret in Key
+      Vault `kv-gwmon-01`. **Status as of this reconciliation (2026-07-21) is unconfirmed — Amo
+      is re-checking directly in Azure/Fabric whether the capacity is still provisioned or was
+      paused/deleted; treat as unknown-current-state, not confirmed-live, until that check lands.**
+      Cost note: F2 PAYG bills ~$0.36/hr — pause when idle.
+- [ ] **The one remaining Phase-1 action (as of 2026-07-06, needs re-verification):** tenant
+      setting *"Service principals can access read-only admin APIs"* → enable for group
+      `gwmon-admin-api-sps`. Verify with `pwsh -File starter/deploy/run-tenant-doctor.ps1` — PASS
+      means Phase 1 is fully clear.
+- [ ] If capacity was paused/deleted since 2026-07-06: re-provision via
+      `starter/deploy/create-f2-capacity.ps1` (dry-run by default; `-Execute` to spend) instead of
+      redoing the manual `RUNBOOK-F2-pilot.md` portal walkthrough from scratch.
 - [ ] **Track A — flagship number (U19 + U11):** run `04_identity_match_rate.kql` Block A (`match_rate_pct`), B (Refresh vs DirectQuery), C (unattributed sample).
 - [ ] Confirm identity join key `OperationId == RequestId` holds live (U19); else fall back to U11 fuzzy time-window.
 - [ ] **Track B — tenant extract live:** run `Deploy_TenantExtract` with a real admin-scoped SP; confirm `gold_inventory/activities/refreshables` populate.
-- [ ] Confirm Workspace Monitoring Eventhouse provisions on **F2** (validate the F2-minimum claim from Session 3).
 - [ ] Verify the enhanced Nexus report renders on real data — open PBIP in Desktop, fix DirectLake bindings, check all 12 pages.
 - [ ] File the pilot-report issue (both tracks); update `PAIN-POINT-COVERAGE.md` 🟠→🟢 where proven.
 
@@ -75,6 +89,18 @@ An MVP exists when **all** of the following are true:
 - [ ] Validate `queryRef`/`visualType` re-serialization by Desktop (R1–R5 caveats).
 - [ ] Visually QA all 12 pages (text overflow, broken visuals, empty-state handling).
 - [ ] Confirm the theme renders and the left status rail works as designed.
+- [ ] **RuiRomano-parity pages Nexus doesn't have yet** — Logs Explorer, Mashups Logs (Nexus has
+      one combined Mashup Health page), Requests, Counters Deep-Dive, Gateway Profile, Alerting
+      State. A separate report attempt (`gwmon`, a since-orphaned branch predating the
+      tenant-breadth pipeline) already authored all six as real PBIR pages against the
+      gateway-only gold/silver schema — see `docs/REPORT-BUILDOUT-PLAN.md` §1 for the full page
+      spec (visuals, measures, data sources) and pull the page JSON from that branch as a
+      starting template rather than authoring from scratch. Not merged automatically: `gwmon`
+      and Nexus are two independently-evolved PBIP/TMDL trees (different table sets — `gwmon`
+      predates `gold_inventory`/`gold_activities`/`gold_refreshables`/`gold_capacities`) and
+      splicing report JSON/TMDL by hand without opening both in Desktop risks a report that looks
+      merged but doesn't actually open. Port page-by-page in Desktop, rebind to Nexus's real
+      table/column names, and run `validate_report_bindings.py`-style structural validation after.
 
 ## M8 — Deployment & orchestration (pain #8) 🟠→🟢
 - [ ] Validate `Deploy_GatewayMonitor.ipynb` in Fabric (Lakehouse + Eventhouse create, notebook import, pipeline schedule).

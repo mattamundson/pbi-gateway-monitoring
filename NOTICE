@@ -1,0 +1,20 @@
+NOTICE — third-party references
+
+The v2 report buildout (docs/REPORT-BUILDOUT-PLAN.md and starter/report/*) is informed by
+two MIT-licensed community solutions. Feature sets, page taxonomy, and historical-trending
+approach were used as design references. Any adapted source retains the original MIT terms;
+where a page or measure was built clean-room from the documented behavior, attribution is
+recorded here as good practice.
+
+1. RuiRomano/pbigtwmonitor — On-Premises Data Gateway monitor (MIT License)
+   https://github.com/RuiRomano/pbigtwmonitor
+   Referenced for: operator report page taxonomy (Logs, Queries, Gateway Profile, Counters,
+   Requests, Mashups Profiles, Mashups Logs) and NumberDays/SinceDate historical trending.
+
+2. GT-Analytics/fuam-basic — Fabric Unified Admin Monitoring, basic (MIT License)
+   https://github.com/GT-Analytics/fuam-basic
+   Referenced for: holistic overview-report/landing pattern, DirectLake-over-Delta serving,
+   and notebook-based one-click deployment approach.
+
+If actual source files from either project are vendored into this repository, the full text
+of the corresponding MIT LICENSE must be added alongside them and listed here.

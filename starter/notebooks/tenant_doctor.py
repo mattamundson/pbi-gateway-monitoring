@@ -157,5 +157,17 @@ if __name__ == "__main__":
     cfg_path = os.getenv("CONFIG_PATH", "")
     if cfg_path and os.path.exists(cfg_path):
         cfg = json.load(open(cfg_path))
+    # Also accept the AZURE_CLIENT_ID/AZURE_TENANT_ID/AZURE_CLIENT_SECRET env-var
+    # convention (used by starter/deploy/run-tenant-doctor.ps1, which fetches the
+    # secret from Key Vault into a transient env var) as a fallback when no
+    # CONFIG_PATH is set -- lets the one-command script and this checker agree on
+    # how credentials are passed without requiring a config file on disk.
+    if not cfg.get("applicationId") and os.getenv("AZURE_CLIENT_ID"):
+        cfg = {
+            **cfg,
+            "applicationId": os.environ["AZURE_CLIENT_ID"],
+            "tenantId": os.environ.get("AZURE_TENANT_ID", cfg.get("tenantId", "")),
+            "clientSecret": os.environ.get("AZURE_CLIENT_SECRET", cfg.get("clientSecret", "")),
+        }
     out = run(cfg)
     sys.exit(0 if out["verdict"] == "READY" else 2)
