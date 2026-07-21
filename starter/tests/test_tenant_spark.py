@@ -37,17 +37,16 @@ def main():
         print(f"[SKIP] PySpark unavailable: {e}")
         return 0
 
-    # Load the tenant transform module (pure-Python fns are Spark-independent, but
-    # we feed their output into real Spark to prove the Delta write + dtypes).
-    spec = importlib.util.spec_from_file_location(
-        "tsg", os.path.join(HERE, "..", "notebooks", "01a_tenant_silver_gold.py"))
-    tsg = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(tsg)
-    spec2 = importlib.util.spec_from_file_location(
-        "ext", os.path.join(HERE, "..", "notebooks", "00_tenant_extract.py"))
-    ext = importlib.util.module_from_spec(spec2)
-    spec2.loader.exec_module(ext)
-
+    # Build the (possibly Delta-enabled) session FIRST, before importing the
+    # tenant notebooks below -- both 00_tenant_extract.py and
+    # 01a_tenant_silver_gold.py call `SparkSession.builder.getOrCreate()` at
+    # module-import time. getOrCreate() reuses an already-active SparkContext
+    # and silently ignores new static configs on it ("Using an existing Spark
+    # session; only runtime SQL configurations will take effect."), so static
+    # config like spark.sql.extensions / spark.sql.catalog.* MUST be set on the
+    # first session created in this process, not a later one. Building ours
+    # first means the notebooks' own getOrCreate() calls reuse a session that
+    # already has the Delta catalog wired up correctly.
     _have_delta = False
     try:
         builder = (SparkSession.builder.master("local[2]").appName("tenant-test")
@@ -76,6 +75,18 @@ def main():
         print(f"[SKIP] Spark session could not start: {e}")
         return 0
     spark.sparkContext.setLogLevel("ERROR")
+
+    # Load the tenant transform module (pure-Python fns are Spark-independent, but
+    # we feed their output into real Spark to prove the Delta write + dtypes).
+    # Import AFTER the session above so their own getOrCreate() reuses it.
+    spec = importlib.util.spec_from_file_location(
+        "tsg", os.path.join(HERE, "..", "notebooks", "01a_tenant_silver_gold.py"))
+    tsg = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(tsg)
+    spec2 = importlib.util.spec_from_file_location(
+        "ext", os.path.join(HERE, "..", "notebooks", "00_tenant_extract.py"))
+    ext = importlib.util.module_from_spec(spec2)
+    spec2.loader.exec_module(ext)
     tmp = tempfile.mkdtemp(prefix="tenant_spark_")
 
     # 1) Tenant transforms -> real Spark DataFrame -> Delta/Parquet write
