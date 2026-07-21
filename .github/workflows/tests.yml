@@ -40,6 +40,28 @@ jobs:
       - name: Run Tier 1 cast-quarantine + capacity-bridge test (U14 + M6)
         run: python starter/tests/test_cast_and_bridge.py
 
+      # Roadmap T14 — proves every Activator rule references columns that
+      # actually exist on a table something actually writes. Before this ran,
+      # 4 of 7 rules could never fire (credential-drift tested a column that
+      # existed nowhere against a value outside its vocabulary; error-rate-spike
+      # named two nonexistent columns; two more pointed at an unmaterialized
+      # table) and nothing would ever have reported it.
+      - name: Validate Activator rules against table contracts (T14)
+        run: python starter/tests/validate_alert_rules.py
+
+      # A validator that only ever passes is indistinguishable from a no-op.
+      # This injects one deliberately broken rule per defect class and asserts
+      # the validator rejects it and says why.
+      - name: Self-test the alert-rule validator (T14)
+        run: python starter/tests/test_alert_rule_validator.py
+
+      # Roadmap T4 — activator-rules.md is generated from activator-rules.json.
+      # Fails if someone edited the generated file or changed the JSON without
+      # regenerating. The two files previously disagreed about their own
+      # thresholds and rule count.
+      - name: Check activator-rules.md is in sync with its source JSON (T4)
+        run: python starter/alerting/generate_rules_md.py --check
+
   tier2-spark:
     name: Tier 2 medallion (PySpark + JDK 17)
     runs-on: ubuntu-latest
