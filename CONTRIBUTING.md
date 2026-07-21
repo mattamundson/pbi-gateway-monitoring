@@ -130,6 +130,18 @@ Before submitting a pull request, confirm all of the following:
 
 ---
 
+## Licensing of contributions
+
+This project is licensed under the **[Apache License 2.0](LICENSE)**. Per Apache-2.0 §5, any
+contribution you intentionally submit for inclusion in the work is licensed under those same terms,
+with no additional conditions, unless you explicitly state otherwise. There is no separate CLA.
+
+If you submit code adapted from another project, say so in the PR, keep its original copyright and
+license headers intact, and add the attribution to [`NOTICE`](NOTICE) — Apache-2.0 §4(d) requires
+`NOTICE` to travel with redistributions.
+
+---
+
 ## Code of conduct
 
 This project follows the [Contributor Covenant Code of Conduct](https://www.contributor-covenant.org/version/2/1/code_of_conduct/). Be direct, be honest, and cite your sources — the same standard the research pipeline holds itself to.

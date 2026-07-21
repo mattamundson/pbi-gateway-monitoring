@@ -253,7 +253,22 @@ rest of this notebook they are **[Unverified] in live Fabric** until the pilot r
 
 ## License
 
-Proprietary and confidential — internal evaluation and use only. All rights
-reserved. Not licensed for public distribution. See [LICENSE](LICENSE).
+**[Apache License 2.0](LICENSE)** — free to use, fork, modify, and redistribute, including
+commercially, provided you retain the license, the copyright/attribution notices, and
+[`NOTICE`](NOTICE), and mark any files you change. Apache-2.0 (rather than MIT) is deliberate: it
+carries an **express patent grant** and a **trademark clause**, which is what enterprise open-source
+review boards look for.
+
+Contributions are accepted under the same license (Apache-2.0 §5) — see
+[`CONTRIBUTING.md`](CONTRIBUTING.md). Community pilot reports are the intended path for converting
+`[Unverified]` items into verified ones; no single operator has access to every gateway version,
+tenant shape, and Fabric SKU.
+
+> **Before you deploy this in an enterprise**, read
+> [`docs/ENTERPRISE-READINESS.md`](docs/ENTERPRISE-READINESS.md). The query→identity attribution
+> feature processes **real user identities** (`ExecutingUser` UPNs) and persists them beyond
+> Microsoft's native 30-day Workspace Monitoring retention — you are the data controller for that,
+> and it warrants a privacy review. That doc also covers the row-level-security, multi-gateway
+> configuration, and deployment-automation gaps that matter at enterprise scale.
 
 This repo was designed via an evidence-based research pipeline. Read [`research/`](research/) to follow the full methodology, and [`DECISIONS.md`](DECISIONS.md) to understand why each architectural choice was made.
