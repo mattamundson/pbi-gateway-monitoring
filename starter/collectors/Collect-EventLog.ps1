@@ -72,7 +72,19 @@ $watermark = @{ LastProcessedUtc = $collectedAtUtc.AddMinutes(-$LookbackMinutes)
 if (Test-Path $watermarkPath) {
     $watermark = Get-Content $watermarkPath -Raw | ConvertFrom-Json
 }
-$sinceUtc = [datetime]::Parse($watermark.LastProcessedUtc)
+# See Collect-GatewayLogs.ps1 for the full explanation of both stacked bugs:
+# ConvertFrom-Json (PS 7.6+) auto-coerces an ISO-8601 JSON string to a correct
+# Kind=Utc [datetime], and force-parsing that already-correct value through
+# [datetime]::Parse(string, ...) silently re-stringifies it via the LOCALE
+# DEFAULT ToString() first -- dropping sub-second precision and the UTC
+# marker, then reintroducing a Local-time misinterpretation on re-parse.
+$rawWatermark = $watermark.LastProcessedUtc
+$sinceUtc = if ($rawWatermark -is [datetime]) {
+    [datetime]::SpecifyKind($rawWatermark, [System.DateTimeKind]::Utc)
+}
+else {
+    [datetime]::Parse([string]$rawWatermark, [System.Globalization.CultureInfo]::InvariantCulture, [System.Globalization.DateTimeStyles]::RoundtripKind)
+}
 Write-Verbose "Collecting Event Log entries since: $sinceUtc"
 
 # ---------------------------------------------------------------------------
@@ -204,8 +216,19 @@ $outputFile = "$OutputPath\event_log_$timestamp.json"
 
 $output | ConvertTo-Json -Depth 10 | Out-File $outputFile -Encoding UTF8
 
-# Update watermark
-@{ LastProcessedUtc = $collectedAtUtc.ToString("o") } | ConvertTo-Json | Out-File $watermarkPath -Encoding UTF8
+# Update watermark ONLY on a clean run. Both log queries share this single
+# watermark; if either failed with a real error (not the benign "no events
+# were found"), the window that failed to read must be retried next run, not
+# silently skipped. Advancing unconditionally -- the previous behavior --
+# reported success while the events in that window were gone forever with no
+# indication anything was lost. Same failure shape fixed in Collect-GatewayLogs
+# ("do not update watermark for failed files").
+if ($collectionErrors.Count -eq 0) {
+    @{ LastProcessedUtc = $collectedAtUtc.ToString("o") } | ConvertTo-Json | Out-File $watermarkPath -Encoding UTF8
+}
+else {
+    Write-Warning "Not advancing watermark: $($collectionErrors.Count) collection error(s) this run. Window since $sinceUtc will be retried."
+}
 
 . (Join-Path $PSScriptRoot 'CollectorHealth.ps1')
 Write-CollectorHealth -CollectorName 'Collect-EventLog' -OutputPath $OutputPath `
