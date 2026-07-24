@@ -65,8 +65,18 @@ def gen_query_execution(n=20, add_extra_column=True):
         "The operation was canceled.",
     ]
     for i in range(n):
-        success = random.random() > 0.25
-        err = "" if success else random.choice(errs[1:])
+        # Rows 1 and 2 deterministically carry the comma-bearing edge cases this
+        # generator exists to embed (see module docstring) -- leaving err selection
+        # entirely to random.choice() let CI occasionally emit zero comma-bearing
+        # rows, failing the "comma rows survived" assertion for a reason that had
+        # nothing to do with the parser (flaky, not a real defect).
+        if i == 0:
+            success, err = False, errs[1]  # "Timeout expired, retry failed, code 42"
+        elif i == 1:
+            success, err = False, errs[2]  # embedded quotes + comma
+        else:
+            success = random.random() > 0.25
+            err = "" if success else random.choice(errs[1:])
         row = {
             "GatewayObjectId": f"gw-{random.randint(1,3):03d}",
             "RequestId": f"req-{1000+i}",
@@ -257,6 +267,9 @@ def gen_refresh_history(n=16):
 
 
 def main():
+    # Fixed seed: CI runs must be reproducible, and an unseeded generator can
+    # (rarely) fail an edge-case assertion through bad luck rather than a real bug.
+    random.seed(1337)
     out = (
         sys.argv[1]
         if len(sys.argv) > 1
