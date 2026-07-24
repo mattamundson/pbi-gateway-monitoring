@@ -4,11 +4,15 @@ on:
   push:
     paths:
       - 'scripts/**.ps1'
+      - 'starter/collectors/**.ps1'
+      - 'starter/deploy/**.ps1'
       - 'PSScriptAnalyzerSettings.psd1'
       - '.github/workflows/lint.yml'
   pull_request:
     paths:
       - 'scripts/**.ps1'
+      - 'starter/collectors/**.ps1'
+      - 'starter/deploy/**.ps1'
       - 'PSScriptAnalyzerSettings.psd1'
   workflow_dispatch:
 
@@ -30,7 +34,13 @@ jobs:
         shell: pwsh
         run: |
           $settings = Join-Path $PWD 'PSScriptAnalyzerSettings.psd1'
-          $results = Invoke-ScriptAnalyzer -Path ./scripts -Recurse -Settings $settings
+          # Extended from ./scripts to include the collectors and deploy scripts.
+          # These run on customer production gateway hosts and had ZERO static
+          # analysis in CI (the audit's finding). Fails only on Error severity;
+          # the pre-existing collector warnings are reported but non-blocking.
+          $paths = @('./scripts', './starter/collectors', './starter/deploy') |
+            Where-Object { Test-Path $_ }
+          $results = Invoke-ScriptAnalyzer -Path $paths -Recurse -Settings $settings
           if ($results) {
             $results | Format-Table -AutoSize | Out-String | Write-Host
           } else {
