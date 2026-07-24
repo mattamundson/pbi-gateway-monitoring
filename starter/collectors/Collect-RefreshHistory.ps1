@@ -159,7 +159,14 @@ try {
                 $endTimeRaw = if ($r.PSObject.Properties['endTime']) { $r.endTime } else { $null }
                 # Lookback filter: keep entries with no end time (in-progress) or within window.
                 if (-not [string]::IsNullOrWhiteSpace($endTimeRaw)) {
-                    $endParsed = $null
+                    # $endParsed MUST be typed (not bare $null) or [ref] carries no
+                    # type info and .NET cannot resolve the TryParse(string, ref T)
+                    # overload -- "Cannot find an overload... argument count: 2",
+                    # confirmed live. Every refresh with a real endTime hit this,
+                    # was swallowed into the dataset-level catch below, and was
+                    # never recorded; only in-progress (no endTime) refreshes ever
+                    # got through. Same fix already used in Get-GatewayInventory.ps1.
+                    $endParsed = [datetime]::MinValue
                     if ([datetime]::TryParse($endTimeRaw, [ref]$endParsed)) {
                         if ($endParsed.ToUniversalTime() -lt $cutoffUtc) { continue }
                     }

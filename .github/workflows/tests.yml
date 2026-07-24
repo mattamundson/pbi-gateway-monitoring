@@ -121,6 +121,18 @@ jobs:
           Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
           Install-Module -Name Pester -MinimumVersion 6.0.0 -Force -SkipPublisherCheck -Scope CurrentUser
 
+      - name: Install collector module dependencies
+        # Get-GatewayInventory.ps1 and Collect-RefreshHistory.ps1 call real
+        # DataGateway / MicrosoftPowerBIMgmt cmdlets. Pester can only Mock a
+        # command that already resolves (confirmed empirically -- mocking a
+        # nonexistent command name throws CommandNotFoundException), so these
+        # suites need the real modules installed here even though every call
+        # they make is mocked and nothing touches a live tenant.
+        shell: pwsh
+        run: |
+          Install-Module -Name DataGateway -Force -SkipPublisherCheck -Scope CurrentUser
+          Install-Module -Name MicrosoftPowerBIMgmt -Force -SkipPublisherCheck -Scope CurrentUser
+
       - name: Run collector Pester suites
         shell: pwsh
         run: |
