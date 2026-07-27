@@ -244,6 +244,109 @@ Describe 'Collect-DiskSpool' {
         }
     }
 
+    Context 'service account discovery (T10)' {
+        # "PBIEgwService" is the WINDOWS SERVICE name, not the account's home-folder
+        # name. Under a custom (domain or dedicated local) service account, the old
+        # hardcoded guess pointed at a folder that never existed -- every spool
+        # metric silently became "path not found" on the common production
+        # configuration. These tests drive the Win32_Service lookup directly rather
+        # than relying on a real PBIEgwService instance, which won't exist on a CI
+        # runner or dev box.
+
+        It 'derives the spool path from the real service account when discoverable' {
+            Mock -CommandName Get-PSDrive -MockWith { [pscustomobject]@{ Free = 500GB; Used = 500GB } }
+            Mock -CommandName Get-CimInstance -MockWith {
+                [pscustomobject]@{ StartName = '.\PowerBIGatewaySvc' }
+            } -ParameterFilter { $ClassName -eq 'Win32_Service' }
+
+            $r = Invoke-Collector
+
+            $r.SpoolPath | Should -Be "$env:SystemDrive\Users\PowerBIGatewaySvc\AppData\Local\Microsoft\On-premises data gateway\Spooler"
+            $r.SpoolPathAccountSource | Should -Be 'discovered'
+            $r.SpoolPathIsDefault | Should -BeTrue -Because 'no explicit SpoolPath was configured -- discovery only replaces the GUESS, not the fact that this is still a default'
+        }
+
+        It 'strips a domain prefix from the discovered account' {
+            Mock -CommandName Get-PSDrive -MockWith { [pscustomobject]@{ Free = 500GB; Used = 500GB } }
+            Mock -CommandName Get-CimInstance -MockWith {
+                [pscustomobject]@{ StartName = 'CONTOSO\svc-pbigw' }
+            } -ParameterFilter { $ClassName -eq 'Win32_Service' }
+
+            $r = Invoke-Collector
+
+            $r.SpoolPath | Should -Be "$env:SystemDrive\Users\svc-pbigw\AppData\Local\Microsoft\On-premises data gateway\Spooler"
+        }
+
+        It 'falls back to the hardcoded guess when the service is not found' {
+            Mock -CommandName Get-PSDrive -MockWith { [pscustomobject]@{ Free = 500GB; Used = 500GB } }
+            Mock -CommandName Get-CimInstance -MockWith { $null } -ParameterFilter { $ClassName -eq 'Win32_Service' }
+
+            $r = Invoke-Collector
+
+            $r.SpoolPath | Should -Be "$env:SystemDrive\Users\PBIEgwService\AppData\Local\Microsoft\On-premises data gateway\Spooler"
+            $r.SpoolPathAccountSource | Should -Be 'default-guess'
+        }
+
+        It 'falls back to the hardcoded guess when the service runs as a built-in account' {
+            Mock -CommandName Get-PSDrive -MockWith { [pscustomobject]@{ Free = 500GB; Used = 500GB } }
+            Mock -CommandName Get-CimInstance -MockWith {
+                [pscustomobject]@{ StartName = 'NT AUTHORITY\NetworkService' }
+            } -ParameterFilter { $ClassName -eq 'Win32_Service' }
+
+            $r = Invoke-Collector
+
+            $r.SpoolPathAccountSource | Should -Be 'default-guess' -Because `
+                'built-in accounts have no per-user AppData folder to probe'
+        }
+
+        It 'falls back gracefully when the CIM query itself throws' {
+            Mock -CommandName Get-PSDrive -MockWith { [pscustomobject]@{ Free = 500GB; Used = 500GB } }
+            Mock -CommandName Get-CimInstance -MockWith { throw 'WMI query failed' } -ParameterFilter { $ClassName -eq 'Win32_Service' }
+
+            { Invoke-Collector } | Should -Not -Throw
+            $r = Invoke-Collector
+            $r.SpoolPathAccountSource | Should -Be 'default-guess'
+        }
+
+        It 'does not override an explicitly configured SpoolPath' {
+            Mock -CommandName Get-PSDrive -MockWith { [pscustomobject]@{ Free = 500GB; Used = 500GB } }
+            Mock -CommandName Get-CimInstance -MockWith {
+                [pscustomobject]@{ StartName = '.\PowerBIGatewaySvc' }
+            } -ParameterFilter { $ClassName -eq 'Win32_Service' }
+            $explicit = New-SpoolDir
+
+            $r = Invoke-Collector -Params @{ SpoolPath = $explicit }
+
+            $r.SpoolPath | Should -Be $explicit
+            $r.SpoolPathAccountSource | Should -Be 'configured'
+            $r.SpoolPathIsDefault | Should -BeFalse
+        }
+
+        It 'probes the gateway config file under the discovered account, not the hardcoded guess' {
+            Mock -CommandName Get-PSDrive -MockWith { [pscustomobject]@{ Free = 500GB; Used = 500GB } }
+            Mock -CommandName Get-CimInstance -MockWith {
+                [pscustomobject]@{ StartName = '.\PowerBIGatewaySvc' }
+            } -ParameterFilter { $ClassName -eq 'Win32_Service' }
+            $expectedConfigPath = "$env:SystemDrive\Users\PowerBIGatewaySvc\AppData\Local\Microsoft\On-premises data gateway\Microsoft.PowerBI.DataMovement.Pipeline.GatewayCore.dll.config"
+            # Once Test-Path is mocked with a filter, EVERY call in scope must match
+            # some mock -- Pester has no implicit fall-through to the real cmdlet, and
+            # even a module-qualified call back to the cmdlet re-enters the mock
+            # (confirmed: call-depth overflow). Reimplement Test-Path's file/directory
+            # check via .NET directly so the default doesn't recurse through Pester.
+            Mock -CommandName Test-Path -MockWith {
+                param($Path)
+                [System.IO.File]::Exists($Path) -or [System.IO.Directory]::Exists($Path)
+            }
+            Mock -CommandName Test-Path -MockWith { $true } -ParameterFilter { $Path -eq $expectedConfigPath }
+            Mock -CommandName Get-Content -MockWith { 'no relevant setting here' } -ParameterFilter { $Path -eq $expectedConfigPath }
+
+            $r = Invoke-Collector -Params @{ SpoolPath = (New-SpoolDir) }
+
+            $r.ConfigProbeAttempted | Should -BeTrue -Because `
+                'the probe must look under the DISCOVERED account, not the hardcoded PBIEgwService guess'
+        }
+    }
+
     Context 'output contract' {
 
         It 'emits every field the bronze ingest contract expects' {
@@ -253,7 +356,8 @@ Describe 'Collect-DiskSpool' {
             # These names are consumed by 01_bronze_ingest.py:ingest_disk_spool
             # and pinned in starter/schemas/table_contracts.json.
             foreach ($f in 'CollectedAtUtc', 'GatewayHostName', 'DiskInfo', 'SpoolDirSizeBytes',
-                'AlertLevel', 'AlertMessage', 'StreamBeforeRequestCompletes_Warning', 'CollectionErrors') {
+                'AlertLevel', 'AlertMessage', 'StreamBeforeRequestCompletes_Warning', 'CollectionErrors',
+                'SpoolPathAccountSource') {
                 $r.PSObject.Properties.Name | Should -Contain $f
             }
             foreach ($f in 'DriveLetter', 'FreeSpaceBytes', 'TotalSpaceBytes', 'FreeSpacePct') {

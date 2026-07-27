@@ -86,15 +86,45 @@ if ([string]::IsNullOrWhiteSpace($SpoolPath) -and (Test-Path $ConfigPath)) {
 # Tracks whether the path below is the hardcoded built-in guess rather than a
 # configured value, so a "spool path not found" error can say which one failed.
 $spoolPathIsDefault = $false
+$spoolPathAccountSource = "configured"
+
+# T10: "PBIEgwService" is the WINDOWS SERVICE name, not necessarily the
+# account's home-folder name -- the account it actually LOGS ON AS
+# (Win32_Service.StartName) is whatever was chosen at install time (a domain
+# account, a dedicated local service account, etc.) and is what the AppData
+# path is really under. The prior code assumed these were the same string.
+# Discover the real account once, up front, so both the spool-path guess
+# below and the gateway-config-file probe further down can use it.
+$discoveredServiceAccount = $null
+try {
+    $svc = Get-CimInstance -ClassName Win32_Service -Filter "Name='PBIEgwService'" -ErrorAction Stop
+    if ($svc -and $svc.StartName -and $svc.StartName -notmatch '^(LocalSystem|NT AUTHORITY\\|NT SERVICE\\)') {
+        # StartName is DOMAIN\user, .\user, or a bare user; the AppData
+        # folder is named after the bare account, so strip any prefix.
+        $discoveredServiceAccount = ($svc.StartName -split '\\')[-1]
+    }
+}
+catch {
+    Write-Verbose "PBIEgwService account discovery failed, falling back to the default guess: $_"
+}
 
 if ([string]::IsNullOrWhiteSpace($SpoolPath)) {
-    # [Assumption] Default spool location under PBIEgwService service account
-    # Actual path: confirm by inspecting gateway config or running Get-DataGatewayInfo
-    $SpoolPath = "$env:SystemDrive\Users\PBIEgwService\AppData\Local\Microsoft\On-premises data gateway\Spooler"
+    if ($discoveredServiceAccount) {
+        $SpoolPath = "$env:SystemDrive\Users\$discoveredServiceAccount\AppData\Local\Microsoft\On-premises data gateway\Spooler"
+        $spoolPathAccountSource = "discovered"
+        Write-Verbose "Spool path derived from the gateway service's actual account ($discoveredServiceAccount): $SpoolPath"
+    }
+    else {
+        # [Assumption] Default spool location under a service account literally
+        # named PBIEgwService. Actual path: confirm by inspecting gateway
+        # config or running Get-DataGatewayInfo.
+        $SpoolPath = "$env:SystemDrive\Users\PBIEgwService\AppData\Local\Microsoft\On-premises data gateway\Spooler"
+        $spoolPathAccountSource = "default-guess"
+        Write-Verbose "Using default spool path (may be incorrect): $SpoolPath"
+        Write-Verbose "Override by setting spoolPath in config.json"
+        Write-Verbose "See: https://learn.microsoft.com/en-us/data-integration/gateway/service-gateway-performance"
+    }
     $spoolPathIsDefault = $true
-    Write-Verbose "Using default spool path (may be incorrect): $SpoolPath"
-    Write-Verbose "Override by setting spoolPath in config.json"
-    Write-Verbose "See: https://learn.microsoft.com/en-us/data-integration/gateway/service-gateway-performance"
 }
 
 $result = @{
@@ -104,6 +134,10 @@ $result = @{
     SpoolPath                            = $SpoolPath
     SpoolPathExists                      = $false
     SpoolPathIsDefault                   = $spoolPathIsDefault
+    # "configured" (explicit SpoolPath/config.json) | "discovered" (real
+    # PBIEgwService StartName resolved via CIM) | "default-guess" (fallback
+    # literal PBIEgwService folder name -- discovery found nothing usable).
+    SpoolPathAccountSource               = $spoolPathAccountSource
     DiskInfo                             = $null
     # $null means NOT MEASURED. Zero means measured and genuinely empty. These are
     # different facts and the collector must never conflate them -- a wrong spool
@@ -235,7 +269,9 @@ catch {
 # [Assumption] Config file location; validate in Phase 5.
 # ---------------------------------------------------------------------------
 try {
-    $gatewayConfigPath = "$env:SystemDrive\Users\PBIEgwService\AppData\Local\Microsoft\On-premises data gateway\Microsoft.PowerBI.DataMovement.Pipeline.GatewayCore.dll.config"
+    # T10: reuse the account discovered above rather than re-assuming PBIEgwService.
+    $gatewayConfigAccount = if ($discoveredServiceAccount) { $discoveredServiceAccount } else { "PBIEgwService" }
+    $gatewayConfigPath = "$env:SystemDrive\Users\$gatewayConfigAccount\AppData\Local\Microsoft\On-premises data gateway\Microsoft.PowerBI.DataMovement.Pipeline.GatewayCore.dll.config"
     if (Test-Path $gatewayConfigPath) {
         $result.ConfigProbeAttempted = $true
         $configContent = Get-Content $gatewayConfigPath -Raw
@@ -270,10 +306,11 @@ $result | ConvertTo-Json -Depth 5 | Out-File $outputFile -Encoding UTF8
 Write-CollectorHealth -CollectorName 'Collect-DiskSpool' -OutputPath $OutputPath `
     -CollectionErrors $result.CollectionErrors -CollectedAtUtc $collectedAtUtc `
     -RecordCount 1 -Context @{
-    SpoolPath          = $SpoolPath
-    SpoolPathExists    = "$($result.SpoolPathExists)"
-    SpoolPathIsDefault = "$($result.SpoolPathIsDefault)"
-    AlertLevel         = $result.AlertLevel
+    SpoolPath              = $SpoolPath
+    SpoolPathExists        = "$($result.SpoolPathExists)"
+    SpoolPathIsDefault     = "$($result.SpoolPathIsDefault)"
+    SpoolPathAccountSource = $result.SpoolPathAccountSource
+    AlertLevel             = $result.AlertLevel
 }
 
 # $result.DiskInfo is $null whenever the drive read failed. Dereferencing
