@@ -76,8 +76,8 @@ $collectedAtUtc = (Get-Date).ToUniversalTime()
 # ---------------------------------------------------------------------------
 if (Test-Path $ConfigPath) {
     $config = Get-Content $ConfigPath -Raw | ConvertFrom-Json
-    if ([string]::IsNullOrWhiteSpace($TenantId))       { $TenantId       = $config.tenantId }
-    if ([string]::IsNullOrWhiteSpace($ApplicationId))  { $ApplicationId  = $config.applicationId }
+    if ([string]::IsNullOrWhiteSpace($TenantId)) { $TenantId = $config.tenantId }
+    if ([string]::IsNullOrWhiteSpace($ApplicationId)) { $ApplicationId = $config.applicationId }
 }
 
 # ---------------------------------------------------------------------------
@@ -105,7 +105,7 @@ try {
     if (-not [string]::IsNullOrWhiteSpace($ClientSecretPath) -and (Test-Path $ClientSecretPath)) {
         # Read the SP client secret from file and connect via service principal.
         $clientSecretRaw = Get-Content $ClientSecretPath -Raw
-        $clientSecretSS  = $clientSecretRaw.Trim() | ConvertTo-SecureString -AsPlainText -Force
+        $clientSecretSS = $clientSecretRaw.Trim() | ConvertTo-SecureString -AsPlainText -Force
 
         Connect-DataGatewayServiceAccount -TenantId $TenantId -ApplicationId $ApplicationId `
             -ClientSecret $clientSecretSS -ErrorAction Stop
@@ -138,6 +138,32 @@ $inventoryRecords = @()
 $datasourceRecords = @()
 $collectionErrors = @()
 
+# ---------------------------------------------------------------------------
+# Version-expiry ladder (audit gap #3 -- previously unmonitored)
+# Get-DataGatewayAvailableUpdates returns the supported version ladder for the
+# tenant. It needs no cluster context, so fetch it ONCE up front and use it to
+# grade every node's installed version below. A gateway past its ExpiryDate is
+# blocked by Microsoft and every refresh through it fails -- the most
+# predictable outage in gateway ops, and nothing here watched for it.
+# ---------------------------------------------------------------------------
+. (Join-Path $PSScriptRoot 'GatewayVersion.ps1')
+$availableVersions = @()
+$latestAvailableVersion = $null
+try {
+    $updates = @(Get-DataGatewayAvailableUpdates -ErrorAction Stop)
+    $availableVersions = @($updates | ForEach-Object { $_.GatewayInstallerVersion } |
+            Where-Object { $_ })
+    $latestStale = Get-GatewayVersionStaleness -InstalledVersion '0.0.0' -AvailableVersions $availableVersions
+    $latestAvailableVersion = $latestStale.LatestVersion
+    Write-Verbose "Available versions: $($availableVersions.Count); latest=$latestAvailableVersion"
+}
+catch {
+    # Non-fatal: inventory still collects, staleness just degrades to 'Unknown'.
+    $errMsg = "Get-DataGatewayAvailableUpdates failed; version staleness unavailable: $_"
+    Write-Warning $errMsg
+    $collectionErrors += $errMsg
+}
+
 try {
     Write-Verbose "Enumerating all gateway clusters (Scope: Organization)..."
     # Array-wrap so .Count is valid whether the cmdlet returns 0, 1, or many.
@@ -151,23 +177,77 @@ try {
         # [ADAPTED-FROM-SQLvariant] Extending the gist pattern to collect node details
         # ---------------------------------------------------------------------------
         try {
-            $members = Get-DataGatewayClusterMember -GatewayClusterId $cluster.Id -ErrorAction Stop
+            # THE ORIGINAL CODE CALLED Get-DataGatewayClusterMember, WHICH DOES NOT
+            # EXIST. Verified 2026-07-21 against DataGateway 3000.318.6: the module
+            # exposes only Add-/Remove-/Restore-/Update-DataGatewayClusterMember.
+            # The call threw CommandNotFoundException into the catch below, which
+            # only logged -- so this collector emitted ZERO nodes and exited 0 on
+            # every run it has ever made. Gateway heartbeat (pain #1), the fleet
+            # view (pain #6), gold_dim_gateway and gold_gateway_health were all
+            # silently empty, and nothing said so.
+            #
+            # No extra call is needed: Get-DataGatewayCluster already returns
+            # MemberGateways (IEnumerable<MemberGateway>) on the cluster object.
+            $members = @($cluster.MemberGateways)
+
+            if ($members.Count -eq 0) {
+                # A cluster with no members is either a genuinely empty cluster or
+                # a shape change in the API. Either way it is reportable, not
+                # something to pass over in silence -- silence is what hid the bug
+                # above for the entire life of this collector.
+                $errMsg = "Cluster '$($cluster.Name)' returned 0 member gateways."
+                Write-Warning $errMsg
+                $collectionErrors += $errMsg
+            }
 
             foreach ($member in $members) {
+                # Grade this node's installed version against the supported ladder
+                # and its own ExpiryDate. This is the version-expiry signal that
+                # was entirely absent -- Expired / ExpiringSoon / Stale / Behind /
+                # Current -- computed by the pure, unit-tested helper.
+                $memberExpiry = $null
+                if ($member.PSObject.Properties['ExpiryDate'] -and $member.ExpiryDate) {
+                    $parsedExpiry = [datetime]::MinValue
+                    if ([datetime]::TryParse("$($member.ExpiryDate)", [ref]$parsedExpiry)) {
+                        $memberExpiry = $parsedExpiry.ToUniversalTime()
+                    }
+                }
+                $staleness = Get-GatewayVersionStaleness `
+                    -InstalledVersion "$($member.Version)" `
+                    -AvailableVersions $availableVersions `
+                    -ExpiryDate $memberExpiry
+
                 $inventoryRecords += @{
-                    CollectedAtUtc    = $collectedAtUtc.ToString("o")
-                    GatewayClusterId  = $cluster.Id.ToString()
-                    GatewayClusterName = $cluster.Name
-                    ClusterScope      = "Organization"
-                    GatewayObjectId   = $member.Id.ToString()
-                    GatewayNodeName   = $member.Name
-                    Status            = $member.Status         # e.g., Live, Offline
-                    Version           = $member.Version
-                    # [Assumption] DatasourceCount may not be a direct property;
-                    # may require separate call. Set null if not available.
-                    DatasourceCount   = if ($member.PSObject.Properties['DatasourceCount']) { $member.DatasourceCount } else { $null }
-                    GatewayMachineOs  = if ($member.PSObject.Properties['MachineOs'])      { $member.MachineOs }      else { $null }
-                    GatewayAnnotation = if ($member.PSObject.Properties['Annotation'])     { $member.Annotation }     else { $null }
+                    CollectedAtUtc         = $collectedAtUtc.ToString("o")
+                    GatewayClusterId       = $cluster.Id.ToString()
+                    GatewayClusterName     = $cluster.Name
+                    ClusterScope           = "Organization"
+                    GatewayObjectId        = $member.Id.ToString()
+                    GatewayNodeName        = $member.Name
+                    Status                 = $member.Status         # e.g., Live, Offline
+                    Version                = $member.Version
+                    # --- version lifecycle (was entirely absent) ---------------
+                    # A gateway version is supported for ~6 months; past expiry
+                    # Microsoft BLOCKS the gateway and every refresh through it
+                    # fails. It is the most predictable outage in gateway
+                    # operations and nothing here monitored it -- confirmed the
+                    # hard way on 2026-07-21, when registering this very pilot
+                    # failed with "Upgrade the gateway version to continue".
+                    # These fields ride along on MemberGateway for free.
+                    VersionStatus          = if ($member.PSObject.Properties['VersionStatus']) { $member.VersionStatus } else { $null }
+                    ExpiryDate             = if ($member.PSObject.Properties['ExpiryDate']) { $member.ExpiryDate }    else { $null }
+                    UpdateStatus           = if ($member.PSObject.Properties['OnPremGatewayUpdateStatus']) { "$($member.OnPremGatewayUpdateStatus)" } else { $null }
+                    LastUpdateCheckUtc     = if ($member.PSObject.Properties['LastGatewayUpdateStatusCheckTime']) { $member.LastGatewayUpdateStatusCheckTime } else { $null }
+                    NodeState              = if ($member.PSObject.Properties['State']) { $member.State }        else { $null }
+                    # --- computed version-expiry verdict ---
+                    LatestAvailableVersion = $latestAvailableVersion
+                    VersionsBehind         = $staleness.VersionsBehind
+                    DaysUntilExpiry        = $staleness.DaysUntilExpiry
+                    VersionVerdict         = $staleness.Verdict   # Expired/ExpiringSoon/Stale/Behind/Current/Unknown
+                    # DatasourceCount is a CLUSTER-level fact, not a node one --
+                    # Datasources hangs off the cluster object, not the member.
+                    DatasourceCount        = @($cluster.Datasources).Count
+                    GatewayAnnotation      = if ($member.PSObject.Properties['Annotation']) { $member.Annotation }     else { $null }
                 }
             }
         }
@@ -188,17 +268,51 @@ try {
                 $datasources = Get-DataGatewayClusterDatasource -GatewayClusterId $cluster.Id -ErrorAction Stop
 
                 foreach ($ds in $datasources) {
+                    # GatewayClusterDatasource HAS NO Status PROPERTY. Verified
+                    # 2026-07-21 by reflecting the returned type: Id, ClusterId,
+                    # ClusterName, DatasourceType, ConnectionDetails, Key,
+                    # CredentialDetails, DatasourceName, Users, DatasourceUsers,
+                    # DatasourceErrorDetails, SingleSignOnEnabled, ... and no
+                    # Status. The old `if ($ds.PSObject.Properties['Status'])`
+                    # therefore ALWAYS fell through to the literal "Unknown", so
+                    # credential drift (pain #10) reported every datasource on
+                    # every gateway as Unknown forever -- and the credential-drift
+                    # rule (Status != 'Live') would have fired on all of them.
+                    #
+                    # The real probe is a separate per-datasource call.
+                    $dsStatus = $null
+                    $dsStatusSource = 'not-probed'
+                    try {
+                        $probe = Get-DataGatewayClusterDatasourceStatus `
+                            -GatewayClusterId $cluster.Id -GatewayClusterDatasourceId $ds.Id -ErrorAction Stop
+                        # A successful probe with no error payload is the healthy case.
+                        $dsStatus = if ($probe -and $probe.PSObject.Properties['Status'] -and $probe.Status) { "$($probe.Status)" } else { 'Live' }
+                        $dsStatusSource = 'probe'
+                    }
+                    catch {
+                        # Do NOT silently degrade to "Unknown" -- that is what made a
+                        # broken probe indistinguishable from a broken credential.
+                        $dsStatus = 'ProbeFailed'
+                        $dsStatusSource = 'probe-failed'
+                        $collectionErrors += "Datasource status probe failed for '$($ds.DatasourceName)' on cluster '$($cluster.Name)': $_"
+                    }
+
                     $datasourceRecords += @{
-                        CollectedAtUtc    = $collectedAtUtc.ToString("o")
-                        GatewayClusterId  = $cluster.Id.ToString()
-                        GatewayClusterName = $cluster.Name
-                        DatasourceId      = $ds.Id.ToString()
-                        DatasourceName    = $ds.DatasourceName
-                        DatasourceType    = $ds.DatasourceType
-                        ConnectionDetails = $ds.ConnectionDetails | ConvertTo-Json -Compress
-                        # Status field: Live, Unknown, Error -- drives credential-drift alerting
-                        Status            = if ($ds.PSObject.Properties['Status']) { $ds.Status } else { "Unknown" }
-                        LastUpdated       = if ($ds.PSObject.Properties['LastUpdated']) { $ds.LastUpdated } else { $null }
+                        CollectedAtUtc      = $collectedAtUtc.ToString("o")
+                        GatewayClusterId    = $cluster.Id.ToString()
+                        GatewayClusterName  = $cluster.Name
+                        DatasourceId        = $ds.Id.ToString()
+                        DatasourceName      = $ds.DatasourceName
+                        DatasourceType      = $ds.DatasourceType
+                        ConnectionDetails   = $ds.ConnectionDetails | ConvertTo-Json -Compress
+                        # Live / ProbeFailed / whatever the service reports. Drives
+                        # credential-drift alerting, so its provenance is recorded
+                        # alongside it: a rule must be able to tell a real status
+                        # from an absent one.
+                        Status              = $dsStatus
+                        StatusSource        = $dsStatusSource
+                        ErrorDetails        = if ($ds.PSObject.Properties['DatasourceErrorDetails']) { "$($ds.DatasourceErrorDetails)" } else { $null }
+                        SingleSignOnEnabled = if ($ds.PSObject.Properties['SingleSignOnEnabled']) { $ds.SingleSignOnEnabled } else { $null }
                     }
                 }
             }
@@ -221,20 +335,27 @@ catch {
 # Write output
 # ---------------------------------------------------------------------------
 $output = @{
-    CollectedAtUtc     = $collectedAtUtc.ToString("o")
-    GatewayHostName    = $env:COMPUTERNAME
-    ClusterCount       = ($inventoryRecords | Select-Object -ExpandProperty GatewayClusterId -Unique | Measure-Object).Count
-    NodeCount          = $inventoryRecords.Count
-    DatasourceCount    = $datasourceRecords.Count
-    CollectionErrors   = $collectionErrors
-    Inventory          = $inventoryRecords
-    Datasources        = $datasourceRecords
+    CollectedAtUtc         = $collectedAtUtc.ToString("o")
+    GatewayHostName        = $env:COMPUTERNAME
+    ClusterCount           = ($inventoryRecords | Select-Object -ExpandProperty GatewayClusterId -Unique | Measure-Object).Count
+    NodeCount              = $inventoryRecords.Count
+    DatasourceCount        = $datasourceRecords.Count
+    LatestAvailableVersion = $latestAvailableVersion
+    CollectionErrors       = $collectionErrors
+    Inventory              = $inventoryRecords
+    Datasources            = $datasourceRecords
 }
 
 $timestamp = $collectedAtUtc.ToString("yyyyMMdd_HHmmss")
 $outputFile = "$OutputPath\gateway_inventory_$timestamp.json"
 
 $output | ConvertTo-Json -Depth 10 | Out-File $outputFile -Encoding UTF8
+. (Join-Path $PSScriptRoot 'CollectorHealth.ps1')
+Write-CollectorHealth -CollectorName 'Get-GatewayInventory' -OutputPath $OutputPath `
+    -CollectionErrors $collectionErrors -CollectedAtUtc $collectedAtUtc `
+    -RecordCount $inventoryRecords.Count `
+    -Context @{ DatasourceCount = "$($datasourceRecords.Count)" }
+
 Write-Output "Get-GatewayInventory: $($inventoryRecords.Count) nodes, $($datasourceRecords.Count) datasources. Output: $outputFile"
 
 # Disconnect to clean up session

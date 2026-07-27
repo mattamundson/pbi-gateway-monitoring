@@ -103,6 +103,62 @@ jobs:
           JAVA_HOME: ${{ env.JAVA_HOME_17_X64 }}
         run: python starter/tests/validate_pipeline_sim.py
 
+  collectors-pester:
+    name: Collector Pester suite (Windows)
+    # The seven collectors run on Windows gateway hosts and had ZERO test
+    # coverage AND ZERO CI until now. Run on windows-latest, not ubuntu, because
+    # they exercise Windows-only surfaces (Get-PSDrive, Split-Path -Qualifier,
+    # the Windows event log, service-account paths) -- testing them on Linux
+    # pwsh would prove the wrong thing.
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Pester 6
+        shell: pwsh
+        run: |
+          Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
+          Install-Module -Name Pester -MinimumVersion 6.0.0 -Force -SkipPublisherCheck -Scope CurrentUser
+
+      - name: Install collector module dependencies
+        # Get-GatewayInventory.ps1 and Collect-RefreshHistory.ps1 call real
+        # DataGateway / MicrosoftPowerBIMgmt cmdlets. Pester can only Mock a
+        # command that already resolves (confirmed empirically -- mocking a
+        # nonexistent command name throws CommandNotFoundException), so these
+        # suites need the real modules installed here even though every call
+        # they make is mocked and nothing touches a live tenant.
+        shell: pwsh
+        run: |
+          Install-Module -Name DataGateway -Force -SkipPublisherCheck -Scope CurrentUser
+          Install-Module -Name MicrosoftPowerBIMgmt -Force -SkipPublisherCheck -Scope CurrentUser
+
+      - name: Run collector Pester suites
+        shell: pwsh
+        run: |
+          Import-Module Pester -MinimumVersion 6.0.0 -Force
+          $cfg = New-PesterConfiguration
+          $cfg.Run.Path = 'starter/tests/collectors'
+          $cfg.Run.PassThru = $true
+          $cfg.Output.Verbosity = 'Detailed'
+          $cfg.TestResult.Enabled = $true
+          $cfg.TestResult.OutputPath = 'collector-pester.xml'
+          $r = Invoke-Pester -Configuration $cfg
+          # Fail the job explicitly on any failure rather than relying on the
+          # module's exit-code behaviour, which has varied across Pester versions.
+          Write-Host "Passed=$($r.PassedCount) Failed=$($r.FailedCount) Skipped=$($r.SkippedCount)"
+          if ($r.FailedCount -gt 0) {
+            Write-Host "::error::$($r.FailedCount) collector test(s) failed."
+            exit 1
+          }
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: collector-pester-results
+          path: collector-pester.xml
+
   tenant-harness:
     name: Tenant-extract harness (mock, Spark-free)
     runs-on: ubuntu-latest

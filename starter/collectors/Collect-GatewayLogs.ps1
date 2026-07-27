@@ -117,7 +117,34 @@ $watermark = @{ LastProcessedUtc = (Get-Date).AddDays(-1).ToUniversalTime().ToSt
 if (Test-Path $watermarkPath) {
     $watermark = Get-Content $watermarkPath -Raw | ConvertFrom-Json
 }
-$lastProcessedUtc = [datetime]::Parse($watermark.LastProcessedUtc)
+# TWO STACKED BUGS, both confirmed live on this host:
+#
+# 1. ConvertFrom-Json (PS 7.6+) auto-detects an ISO-8601-shaped JSON string
+#    and silently coerces it to a [datetime] -- correctly, with Kind=Utc and
+#    full tick precision. $watermark.LastProcessedUtc is therefore ALREADY a
+#    correct [datetime], not a string, on this PowerShell version.
+# 2. The previous code then force-fed that DateTime into
+#    [datetime]::Parse(string, ...). PowerShell implicitly stringifies the
+#    argument to satisfy the string parameter using the LOCALE DEFAULT
+#    ToString() -- which drops sub-second precision AND the UTC marker
+#    entirely. Re-parsing that lossy string then reintroduced the exact
+#    Local-time misinterpretation this comment used to describe, PLUS lost
+#    up to a full second of precision. Net effect: the watermark almost never
+#    exactly matched a file's LastWriteTimeUtc, so the "-gt" comparison
+#    silently re-staged the same already-processed file on every subsequent
+#    run, forever (verified: watermark ticks off by ~0.49s from the file's
+#    real ticks after one round trip through the old code).
+#
+# Fix: use the value AS-IS when ConvertFrom-Json already gave us a correct
+# [datetime]; only parse-from-string as a fallback for a hand-edited or
+# differently-typed watermark file.
+$rawWatermark = $watermark.LastProcessedUtc
+$lastProcessedUtc = if ($rawWatermark -is [datetime]) {
+    [datetime]::SpecifyKind($rawWatermark, [System.DateTimeKind]::Utc)
+}
+else {
+    [datetime]::Parse([string]$rawWatermark, [System.Globalization.CultureInfo]::InvariantCulture, [System.Globalization.DateTimeStyles]::RoundtripKind)
+}
 
 Write-Verbose "Incremental watermark: $lastProcessedUtc"
 
@@ -140,8 +167,8 @@ foreach ($pattern in $logPatterns) {
     # Array-wrap: an empty pipeline assigns $null, and `$newFiles += $null`
     # would append a phantom null element (inflating .Count) under StrictMode.
     $files = @(Get-ChildItem -Path $LogRootPath -Filter $pattern -Recurse -ErrorAction SilentlyContinue |
-        Where-Object { $_.LastWriteTimeUtc -gt $lastProcessedUtc } |
-        Sort-Object LastWriteTimeUtc)
+            Where-Object { $_.LastWriteTimeUtc -gt $lastProcessedUtc } |
+            Sort-Object LastWriteTimeUtc)
     $newFiles += $files
 }
 
@@ -162,6 +189,15 @@ if ($newFiles.Count -eq 0) {
 # ---------------------------------------------------------------------------
 $stagingRecords = @()
 $maxProcessedUtc = $lastProcessedUtc
+# Must be initialized here, not just assigned inside the catch below. Under
+# Set-StrictMode -Version Latest, `+=` on an unset variable is tolerated, but
+# READING one (as the -CollectionErrors parameter below does) throws. Without
+# this line the collector crashed on every CLEAN run -- the common case -- and
+# only appeared to work when at least one file failed, because the catch
+# block's `+=` happened to create the variable as a side effect. A regression
+# introduced earlier in this same PR when the health sidecar call was added;
+# caught by Collect-GatewayLogs.Tests.ps1's happy-path tests.
+$collectionErrors = @()
 
 foreach ($file in $newFiles) {
     try {
@@ -169,21 +205,21 @@ foreach ($file in $newFiles) {
 
         # Determine log type from filename
         $logType = switch -Wildcard ($file.Name) {
-            "*QueryExecutionReport*"            { "QueryExecution" }
-            "*QueryStartReport*"                { "QueryStart" }
+            "*QueryExecutionReport*" { "QueryExecution" }
+            "*QueryStartReport*" { "QueryStart" }
             "*QueryExecutionAggregationReport*" { "QueryAggregation" }
-            "*SystemCounterReport*"             { "SystemCounter" }
-            default                             { "Unknown" }
+            "*SystemCounterReport*" { "SystemCounter" }
+            default { "Unknown" }
         }
 
         $record = @{
-            SourceFile      = $file.FullName
-            SourceFileName  = $file.Name
-            LogType         = $logType
-            GatewayHostName = $env:COMPUTERNAME
+            SourceFile       = $file.FullName
+            SourceFileName   = $file.Name
+            LogType          = $logType
+            GatewayHostName  = $env:COMPUTERNAME
             FileLastWriteUtc = $file.LastWriteTimeUtc.ToString("o")
-            CollectedAtUtc  = (Get-Date).ToUniversalTime().ToString("o")
-            RawCsvContent   = $rawContent
+            CollectedAtUtc   = (Get-Date).ToUniversalTime().ToString("o")
+            RawCsvContent    = $rawContent
         }
         $stagingRecords += $record
 
@@ -192,7 +228,13 @@ foreach ($file in $newFiles) {
         }
     }
     catch {
-        Write-Warning "Failed to read log file $($file.FullName): $_"
+        # Previously a Write-Warning and nothing else. Under a scheduled task
+        # nobody reads warnings, so a log directory the service account cannot
+        # read produced an EMPTY staging file and a successful exit -- a gateway
+        # with zero observability reported as a gateway with zero problems.
+        $errMsg = "Failed to read log file $($file.FullName): $_"
+        Write-Warning $errMsg
+        $collectionErrors += $errMsg
         # Do not update watermark for failed files -- they will retry next run
     }
 }
@@ -221,5 +263,9 @@ Write-Verbose "Staged $($stagingRecords.Count) file records to: $outputFile"
 # ---------------------------------------------------------------------------
 @{ LastProcessedUtc = $maxProcessedUtc.ToString("o") } | ConvertTo-Json | Out-File $watermarkPath -Encoding UTF8
 Write-Verbose "Watermark updated to: $maxProcessedUtc"
+
+. (Join-Path $PSScriptRoot 'CollectorHealth.ps1')
+Write-CollectorHealth -CollectorName 'Collect-GatewayLogs' -OutputPath $OutputPath `
+    -CollectionErrors $collectionErrors -RecordCount $stagingRecords.Count
 
 Write-Output "Collect-GatewayLogs: Staged $($stagingRecords.Count) files. Output: $outputFile"

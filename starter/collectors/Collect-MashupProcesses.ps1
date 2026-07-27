@@ -51,12 +51,14 @@ function Get-MatchingProcs {
     Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.Name -match $patternRegex }
 }
 
+$collectionErrors = @()
 $snap1 = @{}
 foreach ($p in Get-MatchingProcs) {
     try { $snap1[$p.Id] = $p.TotalProcessorTime.TotalMilliseconds } catch {}
 }
 Start-Sleep -Milliseconds $CpuSampleMs
-$nowUtc = (Get-Date).ToUniversalTime().ToString('o')
+$collectedAtUtc = (Get-Date).ToUniversalTime()
+$nowUtc = $collectedAtUtc.ToString('o')
 
 $records = New-Object System.Collections.Generic.List[object]
 foreach ($p in Get-MatchingProcs) {
@@ -71,22 +73,25 @@ foreach ($p in Get-MatchingProcs) {
         $startTimeUtc = $null
         try { $startTimeUtc = $p.StartTime.ToUniversalTime().ToString('o') } catch { $startTimeUtc = $null }
         $records.Add([pscustomobject]@{
-            CollectedAtUtc   = $nowUtc
-            GatewayObjectId  = $GatewayObjectId
-            HostName         = $env:COMPUTERNAME
-            ProcessId        = $p.Id
-            ProcessName      = $p.Name
-            IsMashupContainer= $isMashup
-            WorkingSetMB     = [math]::Round($p.WorkingSet64 / 1MB, 1)
-            PrivateBytesMB   = [math]::Round($p.PrivateMemorySize64 / 1MB, 1)
-            CpuPercent       = $cpuPctMachine
-            ThreadCount      = $p.Threads.Count
-            HandleCount      = $p.HandleCount
-            StartTimeUtc     = $startTimeUtc
-            LogicalCores     = $logicalCores
-        })
-    } catch {
-        Write-Warning "skip PID $($p.Id): $($_.Exception.Message)"
+                CollectedAtUtc    = $nowUtc
+                GatewayObjectId   = $GatewayObjectId
+                HostName          = $env:COMPUTERNAME
+                ProcessId         = $p.Id
+                ProcessName       = $p.Name
+                IsMashupContainer = $isMashup
+                WorkingSetMB      = [math]::Round($p.WorkingSet64 / 1MB, 1)
+                PrivateBytesMB    = [math]::Round($p.PrivateMemorySize64 / 1MB, 1)
+                CpuPercent        = $cpuPctMachine
+                ThreadCount       = $p.Threads.Count
+                HandleCount       = $p.HandleCount
+                StartTimeUtc      = $startTimeUtc
+                LogicalCores      = $logicalCores
+            })
+    }
+    catch {
+        $errMsg = "skip PID $($p.Id): $($_.Exception.Message)"
+        Write-Warning $errMsg
+        $collectionErrors += $errMsg
     }
 }
 
@@ -99,3 +104,11 @@ $outFile = Join-Path $OutDir "MashupProcesses_$stamp.json"
 # newline-delimited JSON (one record per line) -- friendly to the bronze reader
 $records | ForEach-Object { $_ | ConvertTo-Json -Compress } | Set-Content -Path $outFile -Encoding UTF8
 Write-Host "Wrote $($records.Count) process record(s) -> $outFile"
+
+# This collector had no health sidecar at all until now -- silently indistinguishable
+# from a healthy 0-process run whether Get-Process enumeration was denied, the process
+# patterns stopped matching after a gateway upgrade, or it genuinely found nothing.
+. (Join-Path $PSScriptRoot 'CollectorHealth.ps1')
+Write-CollectorHealth -CollectorName 'Collect-MashupProcesses' -OutputPath $OutDir `
+    -CollectionErrors $collectionErrors -CollectedAtUtc $collectedAtUtc `
+    -RecordCount $records.Count

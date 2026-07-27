@@ -108,8 +108,8 @@ Import-Module MicrosoftPowerBIMgmt -ErrorAction Stop
 try {
     if (-not [string]::IsNullOrWhiteSpace($ClientSecretPath) -and (Test-Path $ClientSecretPath)) {
         $clientSecretRaw = Get-Content $ClientSecretPath -Raw
-        $clientSecretSS  = $clientSecretRaw.Trim() | ConvertTo-SecureString -AsPlainText -Force
-        $spCredential    = New-Object System.Management.Automation.PSCredential($ApplicationId, $clientSecretSS)
+        $clientSecretSS = $clientSecretRaw.Trim() | ConvertTo-SecureString -AsPlainText -Force
+        $spCredential = New-Object System.Management.Automation.PSCredential($ApplicationId, $clientSecretSS)
         Connect-PowerBIServiceAccount -ServicePrincipal -Credential $spCredential -Tenant $TenantId -ErrorAction Stop | Out-Null
         Write-Verbose "Authenticated via service principal"
     }
@@ -130,7 +130,7 @@ catch {
 # [Unverified] -Scope Organization dataset shape (esp. workspaceId presence) and
 #              per-dataset refresh route require Phase 5 confirmation.
 # ---------------------------------------------------------------------------
-$refreshRecords   = @()
+$refreshRecords = @()
 $collectionErrors = @()
 
 try {
@@ -139,8 +139,8 @@ try {
     Write-Verbose "Enumerating refresh history for $($datasets.Count) dataset(s)"
 
     foreach ($ds in $datasets) {
-        $datasetId   = if ($ds.PSObject.Properties['Id'])          { $ds.Id.ToString() } else { $null }
-        $datasetName = if ($ds.PSObject.Properties['Name'])        { $ds.Name }          else { $null }
+        $datasetId = if ($ds.PSObject.Properties['Id']) { $ds.Id.ToString() } else { $null }
+        $datasetName = if ($ds.PSObject.Properties['Name']) { $ds.Name }          else { $null }
         $workspaceId = if ($ds.PSObject.Properties['WorkspaceId']) { $ds.WorkspaceId }   else { $null }
         if ([string]::IsNullOrWhiteSpace($datasetId)) { continue }
 
@@ -148,7 +148,7 @@ try {
         if ($ds.PSObject.Properties['IsRefreshable'] -and $ds.IsRefreshable -eq $false) { continue }
 
         try {
-            $url  = "datasets/$datasetId/refreshes?`$top=$TopPerDataset"
+            $url = "datasets/$datasetId/refreshes?`$top=$TopPerDataset"
             $resp = Invoke-PowerBIRestMethod -Url $url -Method Get -ErrorAction Stop
             $parsed = $resp | ConvertFrom-Json
             # The refreshes endpoint returns { "value": [ ... ] }.
@@ -159,7 +159,14 @@ try {
                 $endTimeRaw = if ($r.PSObject.Properties['endTime']) { $r.endTime } else { $null }
                 # Lookback filter: keep entries with no end time (in-progress) or within window.
                 if (-not [string]::IsNullOrWhiteSpace($endTimeRaw)) {
-                    $endParsed = $null
+                    # $endParsed MUST be typed (not bare $null) or [ref] carries no
+                    # type info and .NET cannot resolve the TryParse(string, ref T)
+                    # overload -- "Cannot find an overload... argument count: 2",
+                    # confirmed live. Every refresh with a real endTime hit this,
+                    # was swallowed into the dataset-level catch below, and was
+                    # never recorded; only in-progress (no endTime) refreshes ever
+                    # got through. Same fix already used in Get-GatewayInventory.ps1.
+                    $endParsed = [datetime]::MinValue
                     if ([datetime]::TryParse($endTimeRaw, [ref]$endParsed)) {
                         if ($endParsed.ToUniversalTime() -lt $cutoffUtc) { continue }
                     }
@@ -168,13 +175,13 @@ try {
                 $refreshRecords += @{
                     CollectedAtUtc       = $collectedAtUtc.ToString("o")
                     # RequestId is the join key to the gateway log's RequestId.
-                    RequestId            = if ($r.PSObject.Properties['requestId'])          { $r.requestId }          else { $null }
+                    RequestId            = if ($r.PSObject.Properties['requestId']) { $r.requestId }          else { $null }
                     DatasetId            = $datasetId
                     DatasetName          = $datasetName
                     WorkspaceId          = $workspaceId
-                    RefreshType          = if ($r.PSObject.Properties['refreshType'])        { $r.refreshType }        else { $null }
-                    Status               = if ($r.PSObject.Properties['status'])             { $r.status }             else { $null }
-                    StartTime            = if ($r.PSObject.Properties['startTime'])          { $r.startTime }          else { $null }
+                    RefreshType          = if ($r.PSObject.Properties['refreshType']) { $r.refreshType }        else { $null }
+                    Status               = if ($r.PSObject.Properties['status']) { $r.status }             else { $null }
+                    StartTime            = if ($r.PSObject.Properties['startTime']) { $r.startTime }          else { $null }
                     EndTime              = $endTimeRaw
                     ServiceExceptionJson = if ($r.PSObject.Properties['serviceExceptionJson']) { $r.serviceExceptionJson } else { $null }
                 }
@@ -205,9 +212,14 @@ $output = @{
     RefreshRecords   = $refreshRecords
 }
 
-$timestamp  = $collectedAtUtc.ToString("yyyyMMdd_HHmmss")
+$timestamp = $collectedAtUtc.ToString("yyyyMMdd_HHmmss")
 $outputFile = "$OutputPath\refresh_history_$timestamp.json"
 $output | ConvertTo-Json -Depth 10 | Out-File $outputFile -Encoding UTF8
+. (Join-Path $PSScriptRoot 'CollectorHealth.ps1')
+Write-CollectorHealth -CollectorName 'Collect-RefreshHistory' -OutputPath $OutputPath `
+    -CollectionErrors $collectionErrors -CollectedAtUtc $collectedAtUtc `
+    -RecordCount $refreshRecords.Count -Context @{ LookbackHours = "$LookbackHours" }
+
 Write-Output "Collect-RefreshHistory: $($refreshRecords.Count) refresh records, $($collectionErrors.Count) errors. Output: $outputFile"
 
 # Clean up the session

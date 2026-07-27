@@ -61,10 +61,10 @@ if (-not (Test-Path $OutputPath)) { New-Item -ItemType Directory -Path $OutputPa
 
 $collectedAtUtc = (Get-Date).ToUniversalTime()
 $result = @{
-    CollectedAtUtc  = $collectedAtUtc.ToString("o")
-    GatewayHostName = $env:COMPUTERNAME
-    NicMetrics      = @()
-    LatencyProbe    = $null
+    CollectedAtUtc   = $collectedAtUtc.ToString("o")
+    GatewayHostName  = $env:COMPUTERNAME
+    NicMetrics       = @()
+    LatencyProbe     = $null
     CollectionErrors = @()
 }
 
@@ -86,9 +86,9 @@ try {
     )
 
     $counterData = Get-Counter -Counter $counterPaths `
-                               -SampleInterval $SampleIntervalSeconds `
-                               -MaxSamples $SampleCount `
-                               -ErrorAction Stop
+        -SampleInterval $SampleIntervalSeconds `
+        -MaxSamples $SampleCount `
+        -ErrorAction Stop
 
     # Average across samples per NIC instance
     $nicSamples = @{}
@@ -97,7 +97,7 @@ try {
             $nicName = $sample.InstanceName
             if (-not $nicSamples.ContainsKey($nicName)) {
                 $nicSamples[$nicName] = @{
-                    BytesTotalPerSec   = @()
+                    BytesTotalPerSec    = @()
                     CurrentBandwidthBps = @()
                 }
             }
@@ -115,16 +115,17 @@ try {
         if ($nicName -match "isatap|teredo|loopback|6to4" ) { continue }
 
         $bytesPerSec = $nicSamples[$nicName].BytesTotalPerSec
-        $bandwidth   = $nicSamples[$nicName].CurrentBandwidthBps
+        $bandwidth = $nicSamples[$nicName].CurrentBandwidthBps
 
         $avgBytesPerSec = if ($bytesPerSec.Count -gt 0) { ($bytesPerSec | Measure-Object -Average).Average } else { 0 }
-        $avgBandwidth   = if ($bandwidth.Count -gt 0)   { ($bandwidth   | Measure-Object -Average).Average } else { 0 }
+        $avgBandwidth = if ($bandwidth.Count -gt 0) { ($bandwidth   | Measure-Object -Average).Average } else { 0 }
 
         # Utilization: (BytesTotalPerSec * 8) / CurrentBandwidthBps * 100
         # BytesTotalPerSec is bytes; CurrentBandwidthBps is bits per second
         $utilizationPct = if ($avgBandwidth -gt 0) {
             [Math]::Min(100, ($avgBytesPerSec * 8) / $avgBandwidth * 100)
-        } else { $null }
+        }
+        else { $null }
 
         $result.NicMetrics += @{
             NicName              = $nicName
@@ -161,29 +162,29 @@ try {
     # Test-Connection -ComputerName returns PingStatus objects
     # [Unverified] ResponseTime property name confirmed for PS 5.1+; PS 7 uses Latency
     $pings = Test-Connection -ComputerName $LatencyProbeTarget `
-                              -Count $LatencyProbeCount `
-                              -ErrorAction Stop
+        -Count $LatencyProbeCount `
+        -ErrorAction Stop
 
     # Handle both PS 5.1 (ResponseTime) and PS 7 (Latency) property names.
     # NOTE: under `Set-StrictMode -Version Latest` (set above), accessing a
     # property that doesn't exist THROWS instead of returning $null, so we must
     # probe for the property via PSObject.Properties rather than `$ping.X`.
     $latencies = foreach ($ping in $pings) {
-        $rt  = $ping.PSObject.Properties['ResponseTime']
+        $rt = $ping.PSObject.Properties['ResponseTime']
         $lat = $ping.PSObject.Properties['Latency']
-        if     ($rt  -and $null -ne $rt.Value)  { $rt.Value }
+        if ($rt -and $null -ne $rt.Value) { $rt.Value }
         elseif ($lat -and $null -ne $lat.Value) { $lat.Value }
         else { $null }
     }
     $latencies = $latencies | Where-Object { $null -ne $_ }
 
     $result.LatencyProbe = @{
-        TargetHost      = $LatencyProbeTarget
-        LatencyMs_avg   = if ($latencies.Count -gt 0) { [Math]::Round(($latencies | Measure-Object -Average).Average, 1) } else { $null }
-        LatencyMs_min   = if ($latencies.Count -gt 0) { ($latencies | Measure-Object -Minimum).Minimum } else { $null }
-        LatencyMs_max   = if ($latencies.Count -gt 0) { ($latencies | Measure-Object -Maximum).Maximum } else { $null }
-        ProbeCount      = $latencies.Count
-        ProbeMethod     = "ICMP (proxy for Service Bus latency)"
+        TargetHost    = $LatencyProbeTarget
+        LatencyMs_avg = if ($latencies.Count -gt 0) { [Math]::Round(($latencies | Measure-Object -Average).Average, 1) } else { $null }
+        LatencyMs_min = if ($latencies.Count -gt 0) { ($latencies | Measure-Object -Minimum).Minimum } else { $null }
+        LatencyMs_max = if ($latencies.Count -gt 0) { ($latencies | Measure-Object -Maximum).Maximum } else { $null }
+        ProbeCount    = $latencies.Count
+        ProbeMethod   = "ICMP (proxy for Service Bus latency)"
     }
     Write-Verbose "Latency to $LatencyProbeTarget`: avg=$($result.LatencyProbe.LatencyMs_avg)ms"
 }
@@ -192,8 +193,8 @@ catch {
     Write-Warning $errMsg
     $result.CollectionErrors += $errMsg
     $result.LatencyProbe = @{
-        TargetHost   = $LatencyProbeTarget
-        Error        = $errMsg
+        TargetHost = $LatencyProbeTarget
+        Error      = $errMsg
     }
 }
 
@@ -204,4 +205,9 @@ $timestamp = $collectedAtUtc.ToString("yyyyMMdd_HHmmss")
 $outputFile = "$OutputPath\network_metrics_$timestamp.json"
 
 $result | ConvertTo-Json -Depth 5 | Out-File $outputFile -Encoding UTF8
+. (Join-Path $PSScriptRoot 'CollectorHealth.ps1')
+Write-CollectorHealth -CollectorName 'Collect-NetworkMetrics' -OutputPath $OutputPath `
+    -CollectionErrors $result.CollectionErrors -CollectedAtUtc $collectedAtUtc `
+    -RecordCount $result.NicMetrics.Count
+
 Write-Output "Collect-NetworkMetrics: Wrote $outputFile (NICs: $($result.NicMetrics.Count), errors: $($result.CollectionErrors.Count))"
